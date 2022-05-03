@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
-import kotlin.reflect.full.isSubclassOf
 
 open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruct {
 
@@ -17,58 +16,33 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
         tags[tag] = value
     }
 
-    operator fun <T : Any> invoke(tag: UByte, type: KClass<T>, defaultValue: () -> T): Delegation<T> {
+    protected fun <T : Any> field(tag: UByte, defaultValue: () -> T): Delegation<T> {
         tags.computeIfAbsent(tag) { defaultValue() }
-        val delegation = Delegation<T>(tag)
-        if (type.isSubclassOf(Number::class)) {
-            @Suppress("UNCHECKED_CAST")
-            return (delegation + (type as KClass<out Number>)) as Delegation<T>
-        }
-        return delegation
+        return Delegation(tag)
     }
 
-    @Suppress("USELESS_CAST")
-    operator fun <T : Any> invoke(tag: UByte, type: KClass<T>, defaultValue: T) =
-        invoke(tag, type, { defaultValue } as () -> T)
+    protected fun <T : Any> field(tag: UByte, defaultValue: T) = field(tag) { defaultValue }
+    protected fun string(tag: UByte): Delegation<String> = field(tag, "")
+    protected fun <K, V> map(tag: UByte): Delegation<MutableMap<K, V>> = field(tag) { mutableMapOf() }
+    protected fun <E> list(tag: UByte): Delegation<MutableList<E>> = field(tag) { mutableListOf() }
+    protected fun <E> set(tag: UByte): Delegation<MutableSet<E>> = field(tag) { mutableSetOf() }
+    protected fun byteBuf(tag: UByte): Delegation<ByteBuf> = field(tag) { ByteBufAllocator.DEFAULT.heapBuffer() }
 
-    @Suppress("UNCHECKED_CAST")
-    operator fun <T : Any> invoke(tag: UByte, type: KClass<T>) = this(
-        tag, type, when (type) {
-            Byte::class -> {
-                0.toByte() as T
-            }
-            Short::class -> {
-                0.toShort() as T
-            }
-            Int::class -> {
-                0 as T
-            }
-            Long::class -> {
-                0L as T
-            }
-            Float::class -> {
-                0.0F as T
-            }
-            Double::class -> {
-                0.0 as T
-            }
-            String::class -> {
-                "" as T
-            }
-            Map::class -> {
-                mutableMapOf<UByte, Any>() as T
-            }
-            Collection::class -> {
-                mutableListOf<Any>() as T
-            }
-            ByteBuf::class -> {
-                ByteBufAllocator.DEFAULT.heapBuffer() as T
-            }
-            else -> throw UnsupportedOperationException("No builtin default value for $type")
-        }
-    )
+    protected fun <T : Number> number(tag: UByte, type: KClass<T>, defaultValue: Number = 0): NumberDelegation<T> {
+        tags.putIfAbsent(tag, defaultValue)
+        return NumberDelegation(tag, type)
+    }
 
-    fun dump() = ByteBufAllocator.DEFAULT.heapBuffer().writeJcePureStruct(this)
+    protected inline fun <reified T : Number> number(tag: UByte, defaultValue: Number = 0) =
+        number(tag, T::class, defaultValue)
+
+    fun dump(release: Boolean = true): ByteBuf {
+        val data = ByteBufAllocator.DEFAULT.heapBuffer().writeJcePureStruct(this)
+        if(release) release()
+        return data
+    }
+
+    open fun release() {}
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -90,12 +64,9 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
             tags[tag] = value
         }
 
-        @Suppress("UNCHECKED_CAST")
-        open operator fun <T : Number> plus(type: KClass<T>) = NumberDelegation(tag, type)
-
     }
 
-    inner class NumberDelegation<T : Number>(tag: UByte, type: KClass<T>) :
+    inner class NumberDelegation<T : Number>(tag: UByte, type: KClass<out Number>) :
         Delegation<T>(tag) {
 
         @Suppress("UNCHECKED_CAST")
