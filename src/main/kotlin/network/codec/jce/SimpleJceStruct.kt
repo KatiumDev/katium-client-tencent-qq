@@ -1,5 +1,6 @@
 package katium.client.qq.network.codec.jce
 
+import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -16,8 +17,8 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
         tags[tag] = value
     }
 
-    operator fun <T : Any> invoke(tag: UByte, type: KClass<T>, defaultValue: T): Delegation<T> {
-        tags.putIfAbsent(tag, defaultValue)
+    operator fun <T : Any> invoke(tag: UByte, type: KClass<T>, defaultValue: () -> T): Delegation<T> {
+        tags.computeIfAbsent(tag) { defaultValue() }
         val delegation = Delegation<T>(tag)
         if (type.isSubclassOf(Number::class)) {
             @Suppress("UNCHECKED_CAST")
@@ -25,6 +26,47 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
         }
         return delegation
     }
+
+    @Suppress("USELESS_CAST")
+    operator fun <T : Any> invoke(tag: UByte, type: KClass<T>, defaultValue: T) =
+        invoke(tag, type, { defaultValue } as () -> T)
+
+    @Suppress("UNCHECKED_CAST")
+    operator fun <T : Any> invoke(tag: UByte, type: KClass<T>) = this(
+        tag, type, when (type) {
+            Byte::class -> {
+                0.toByte() as T
+            }
+            Short::class -> {
+                0.toShort() as T
+            }
+            Int::class -> {
+                0 as T
+            }
+            Long::class -> {
+                0L as T
+            }
+            Float::class -> {
+                0.0F as T
+            }
+            Double::class -> {
+                0.0 as T
+            }
+            String::class -> {
+                "" as T
+            }
+            Map::class -> {
+                mutableMapOf<UByte, Any>() as T
+            }
+            Collection::class -> {
+                mutableListOf<Any>() as T
+            }
+            ByteBuf::class -> {
+                ByteBufAllocator.DEFAULT.heapBuffer() as T
+            }
+            else -> throw UnsupportedOperationException("No builtin default value for $type")
+        }
+    )
 
     fun dump() = ByteBufAllocator.DEFAULT.heapBuffer().writeJcePureStruct(this)
 
