@@ -124,10 +124,10 @@ fun ByteBuf.writeJceString(tag: UByte, value: String, charset: Charset = JceCons
 
 fun ByteBuf.writeJceMap(tag: UByte, value: Map<*, *>): ByteBuf {
     writeJceHead(JceConstants.TYPE_MAP, tag)
-    writeJceInt(0u, value.size)
+    writeJceInt(JceConstants.TAG_LENGTH, value.size)
     value.forEach { (key, value) ->
-        writeJceTag(0u, key!!)
-        writeJceTag(1u, value!!)
+        writeJceTag(JceConstants.TAG_MAP_KEY, key!!)
+        writeJceTag(JceConstants.TAG_MAP_VALUE, value!!)
     }
     return this
 }
@@ -140,8 +140,8 @@ fun ByteBuf.writeJceList(tag: UByte, value: Collection<*>): ByteBuf {
         writeJceSimpleList(tag, buffer)
     } else {
         writeJceHead(JceConstants.TYPE_LIST, tag)
-        writeJceInt(0u, value.size)
-        value.forEach { writeJceTag(0u, it!!) }
+        writeJceInt(JceConstants.TAG_LENGTH, value.size)
+        value.forEach { writeJceTag(JceConstants.TAG_LIST_ELEMENT, it!!) }
     }
     return this
 }
@@ -154,7 +154,7 @@ fun ByteBuf.writeJceSimpleList(tag: UByte, value: ByteBuf): ByteBuf {
 
 fun ByteBuf.writeJceSimpleList(tag: UByte, value: ByteArray): ByteBuf {
     writeJceHead(JceConstants.TYPE_SIMPLE_LIST, tag)
-    writeJceHead(JceConstants.TYPE_BYTE, 0u)
+    writeJceHead(JceConstants.TYPE_BYTE, JceConstants.TAG_BYTES)
     writeJceInt(0u, value.size)
     writeBytes(value)
     return this
