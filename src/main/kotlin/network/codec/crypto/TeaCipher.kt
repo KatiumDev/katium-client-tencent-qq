@@ -48,6 +48,8 @@ class TeaCipher(val key: UIntArray) {
 
     }
 
+    constructor(key: UByteArray) : this(decodeByteKey(key))
+
     init {
         if (key.size != 4) {
             throw IllegalArgumentException("The key of TEA crypto should be u32[4]")

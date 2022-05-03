@@ -31,7 +31,13 @@ import kotlin.random.Random
  */
 class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
 
-    fun encrypt(data: ByteBuf): ByteBuf {
+    @Suppress("OPT_IN_USAGE")
+    constructor(key: UByteArray) : this(TeaCipher(key))
+
+    @Suppress("OPT_IN_USAGE")
+    constructor(vararg key: UInt) : this(TeaCipher(key))
+
+    fun encrypt(data: ByteBuf, release: Boolean): ByteBuf {
         val fillSize = 9 - ((data.readableBytes() + 1) % 8)
         val buffer = data.alloc().buffer(1 + fillSize + data.readableBytes() + 7)
         buffer.writeByte((fillSize - 2) or (random.nextInt() and 0b11111000))
@@ -53,10 +59,14 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
             buffer.setULong(index, iv1)
         }
 
+        if(release) {
+            data.release()
+        }
+
         return buffer
     }
 
-    fun decrypt(buffer: ByteBuf): ByteBuf {
+    fun decrypt(buffer: ByteBuf, release: Boolean): ByteBuf {
         if (buffer.readableBytes() < 16 || buffer.readableBytes() % 8 != 0) {
             throw IllegalArgumentException("Size of QQTea encrypted data should greater than 16 and multiplier of 8")
         }
@@ -75,7 +85,12 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
 
         val fillSize = (buffer.readByte() and 0b00000111) + 2
         val dataLength = buffer.readableBytes() - 7 - fillSize
-        return buffer.copy(buffer.readerIndex() + fillSize, dataLength)
+
+        val result = buffer.copy(buffer.readerIndex() + fillSize, dataLength)
+        if(release) {
+            buffer.release()
+        }
+        return result
     }
 
     override fun equals(other: Any?): Boolean {
