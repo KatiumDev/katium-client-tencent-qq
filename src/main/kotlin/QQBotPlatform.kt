@@ -28,6 +28,6 @@ object QQBotPlatform: BotPlatform {
     override val fullName: String
         get() = "TencentQQ"
 
-    override fun createBot(config: Map<String, String>) = QQBot(config["qq.user"]!!.toLong())
+    override fun createBot(config: Map<String, String>) = QQBot(config)
 
 }

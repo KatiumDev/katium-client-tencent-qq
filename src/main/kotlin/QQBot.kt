@@ -19,14 +19,13 @@ package katium.client.qq
 
 import katium.client.qq.network.QQClient
 import katium.core.Bot
-import katium.core.BotPlatform
 import katium.core.chat.LocalChatID
 import katium.core.user.Contact
 import katium.core.user.User
 import kotlinx.coroutines.Job
 import javax.swing.GroupLayout
 
-class QQBot(uid: Long) : Bot(QQBotPlatform, QQLocalChatID(uid)) {
+class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user"]!!.toLong()), config) {
 
     val client: QQClient = QQClient(this)
 
