@@ -44,7 +44,7 @@ fun ByteBuf.writeJceHead(type: UByte, tag: UByte) {
     if (type > 0xfu || type < 0u) {
         throw IllegalArgumentException("Attempting to write overflow Jce type $type")
     }
-    if (tag in 1u..0xeu) {
+    if (tag in 0u..0xeu) {
         writeUByte((tag.toInt() shl 4).toUByte() or type)
     } else {
         writeUByte(0xf0u.toUByte() or type)
