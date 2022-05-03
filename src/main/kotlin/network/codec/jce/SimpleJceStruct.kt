@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBufAllocator
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
-open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruct {
+open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruct, AutoCloseable {
 
     constructor() : this(mutableMapOf())
 
@@ -47,6 +47,7 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
 
     open fun release() {}
     operator fun unaryMinus() = release()
+    override fun close() = release()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
