@@ -23,7 +23,7 @@ fun ByteBuf.readJceTag(type: UByte): Any {
         JceConstants.TYPE_MAP -> readJceMap()
         JceConstants.TYPE_LIST -> readJceList()
         JceConstants.TYPE_STRUCT_BEGIN -> readJceStruct()
-        JceConstants.TYPE_ZERO -> 0u
+        JceConstants.TYPE_ZERO -> 0
         JceConstants.TYPE_SIMPLE_LIST -> readJceSimpleList()
         else -> throw UnsupportedOperationException("$type at ${readerIndex()}")
     }
