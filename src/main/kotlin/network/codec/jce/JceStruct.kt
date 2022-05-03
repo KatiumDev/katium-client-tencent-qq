@@ -4,7 +4,6 @@ import kotlin.reflect.KClass
 
 interface JceStruct {
 
-    val tags: Map<UByte, Any>
 
 }
 
@@ -26,5 +25,6 @@ open class SimpleJceStruct(override val tags: Map<UByte, Any>) : JceStruct {
     override fun hashCode() = tags.hashCode()
 
     override fun toString() = "SimpleJceStruct($tags)"
+    val tags: MutableMap<UByte, Any>
 
 }

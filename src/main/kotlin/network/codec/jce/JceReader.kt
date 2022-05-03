@@ -60,7 +60,7 @@ fun ByteBuf.readJceString4(charset: Charset = JceConstants.defaultCharset): Stri
     return String(buffer, charset)
 }
 
-fun ByteBuf.readJceMap(): Map<*, *> {
+fun ByteBuf.readJceMap(): MutableMap<*, *> {
     val map = mutableMapOf<Any, Any>()
     val size = readJceTagValue<Number>().toInt()
     if (size < 0) {
@@ -69,10 +69,10 @@ fun ByteBuf.readJceMap(): Map<*, *> {
     for (i in 0 until size) {
         map[readJceTagValue()] = readJceTagValue()
     }
-    return map.toMap()
+    return map
 }
 
-fun ByteBuf.readJceList(): List<*> {
+fun ByteBuf.readJceList(): MutableList<*> {
     val list = mutableListOf<Any>()
     val size = readJceTagValue<Number>().toInt()
     if (size < 0) {
@@ -81,7 +81,7 @@ fun ByteBuf.readJceList(): List<*> {
     for (i in 0 until size) {
         list.add(readJceTagValue())
     }
-    return list.toList()
+    return list
 }
 
 fun ByteBuf.readJceStruct(): SimpleJceStruct {
