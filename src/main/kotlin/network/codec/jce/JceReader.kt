@@ -1,7 +1,7 @@
 package katium.client.qq.network.codec.jce
 
 import io.netty.buffer.ByteBuf
-import katium.core.util.readUByte
+import katium.core.util.netty.readUByte
 import java.nio.charset.Charset
 
 fun <T> ByteBuf.readJceTag(): Pair<UByte, T> {

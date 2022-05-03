@@ -18,7 +18,7 @@
 package katium.client.qq.network.codec.jce
 
 import io.netty.buffer.ByteBuf
-import katium.core.util.writeUByte
+import katium.core.util.netty.writeUByte
 import java.nio.charset.Charset
 
 fun ByteBuf.writeJceTag(tag: UByte, value: Any): ByteBuf {

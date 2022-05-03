@@ -18,8 +18,8 @@
 package katium.client.qq.network.codec.crypto
 
 import io.netty.buffer.ByteBuf
-import katium.core.util.getULong
-import katium.core.util.setULong
+import katium.core.util.netty.getULong
+import katium.core.util.netty.setULong
 import kotlin.experimental.and
 import kotlin.random.Random
 
