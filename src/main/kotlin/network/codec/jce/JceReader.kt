@@ -87,6 +87,9 @@ fun ByteBuf.readJceList(): List<*> {
 fun ByteBuf.readJceStruct(): SimpleJceStruct {
     val tags: MutableMap<UByte, Any> = mutableMapOf()
     while (true) {
+        if(!isReadable) {
+            break
+        }
         val (type, tag) = readJceHead()
         if (type == JceConstants.TYPE_STRUCT_END) {
             break

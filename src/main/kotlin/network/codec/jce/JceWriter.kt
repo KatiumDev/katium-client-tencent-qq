@@ -162,11 +162,16 @@ fun ByteBuf.writeJceSimpleList(tag: UByte, value: ByteArray): ByteBuf {
 
 fun ByteBuf.writeJceStruct(tag: UByte, value: JceStruct): ByteBuf {
     writeJceHead(JceConstants.TYPE_STRUCT_BEGIN, tag)
+    writeJcePureStruct(value)
+    writeJceHead(JceConstants.TYPE_STRUCT_END, JceConstants.TAG_STRUCT_END)
+    return this
+}
+
+fun ByteBuf.writeJcePureStruct(value: JceStruct): ByteBuf {
     value.tags.entries
         .sortedBy(Map.Entry<UByte, Any>::key)
         .forEach { (tag, value) ->
             writeJceTag(tag, value)
         }
-    writeJceHead(JceConstants.TYPE_STRUCT_END, 0u)
     return this
 }
