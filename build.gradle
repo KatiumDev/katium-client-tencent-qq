@@ -17,6 +17,7 @@ dependencies {
     api "katium:katium-core:${version}"
 
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation 'org.slf4j:slf4j-simple:2.0.0-alpha7'
 }
 
 test {
