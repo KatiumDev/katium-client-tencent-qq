@@ -22,26 +22,23 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
     }
 
     protected fun <T : Any> field(tag: UByte, defaultValue: T) = field(tag) { defaultValue }
-    protected infix fun string(tag: UByte): Delegation<String> = field(tag, "")
-    protected infix fun <K, V> map(tag: UByte): Delegation<MutableMap<K, V>> = field(tag) { mutableMapOf() }
-    protected infix fun <E> list(tag: UByte): Delegation<MutableList<E>> = field(tag) { mutableListOf() }
-    protected infix fun <E> set(tag: UByte): Delegation<MutableSet<E>> = field(tag) { mutableSetOf() }
-    protected infix fun byteBuf(tag: UByte): Delegation<ByteBuf> = field(tag) { ByteBufAllocator.DEFAULT.heapBuffer() }
+    protected fun string(tag: UByte, defaultValue: String = ""): Delegation<String> = field(tag, defaultValue)
+    protected fun <K, V> map(tag: UByte): Delegation<MutableMap<K, V>> = field(tag) { mutableMapOf() }
+    protected fun <E> list(tag: UByte): Delegation<MutableList<E>> = field(tag) { mutableListOf() }
+    protected fun <E> set(tag: UByte): Delegation<MutableSet<E>> = field(tag) { mutableSetOf() }
+    protected fun byteBuf(tag: UByte): Delegation<ByteBuf> = field(tag) { ByteBufAllocator.DEFAULT.heapBuffer() }
 
     protected fun <T : Number> number(tag: UByte, type: KClass<T>, defaultValue: Number = 0): NumberDelegation<T> {
         tags.putIfAbsent(tag, defaultValue)
         return NumberDelegation(tag, type)
     }
 
-    protected inline infix fun <reified T : Number> number(tag: UByte) =
-        number(tag, T::class)
-
     protected inline fun <reified T : Number> number(tag: UByte, defaultValue: Number = 0) =
         number(tag, T::class, defaultValue)
 
     fun dump(release: Boolean = true): ByteBuf {
         val data = ByteBufAllocator.DEFAULT.heapBuffer().writeJcePureStruct(this)
-        if(release) release()
+        if (release) release()
         return data
     }
 
@@ -58,7 +55,7 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
 
     override fun hashCode() = tags.hashCode()
 
-    override fun toString() = "SimpleJceStruct($tags)"
+    override fun toString() = tags.toString()
 
     open inner class Delegation<T : Any>(val tag: UByte) {
 
