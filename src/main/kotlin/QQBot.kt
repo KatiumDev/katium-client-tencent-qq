@@ -22,15 +22,20 @@ import katium.core.Bot
 import katium.core.chat.LocalChatID
 import katium.core.user.Contact
 import katium.core.user.User
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import javax.swing.GroupLayout
 
 class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user"]!!.toLong()), config) {
 
     val client: QQClient = QQClient(this)
 
-    override val loopJob: Job
-        get() = TODO("Not yet implemented")
+    var loopContinuation: CancellableContinuation<Unit>?  = null
+    override val loopJob = launch(start = CoroutineStart.LAZY) {
+        client.connect()
+        suspendCancellableCoroutine {
+            loopContinuation = it
+        }
+    }
 
     override val allContacts: Set<Contact>
         get() = TODO("Not yet implemented")
