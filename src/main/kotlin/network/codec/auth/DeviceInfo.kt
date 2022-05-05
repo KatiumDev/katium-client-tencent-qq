@@ -24,7 +24,6 @@ import kotlinx.serialization.Serializable
  * https://github.com/lz1998/rs-qq/blob/master/rq-engine/src/protocol/device.rs
  * https://github.com/Mrs4s/MiraiGo/blob/master/client/internal/auth/device.go
  */
-// @TODO: serializer
 // @TODO: random generator
 @Serializable
 data class DeviceInfo(
@@ -34,7 +33,7 @@ data class DeviceInfo(
     val board: String = "eomam",
     val model: String = "MI 6",
     val fingerprint: String = "xiaomi/iarim/sagit:10/eomam.200122.001/2365489:user/release-keys",
-    @SerialName("boot_id") val bootId: String = "ee19fb60-808d-46ff-9164-292fac4d2f63",
+    @SerialName("boot_id") val bootID: String = "ee19fb60-808d-46ff-9164-292fac4d2f63",
     @SerialName("proc_version") val procVersion: String = "Linux 5.4.0-54-generic-d5ea85b4 (android-build@google.com)",
     /**
      * 0: Pad 1: Phone 2: Watch
@@ -49,10 +48,10 @@ data class DeviceInfo(
     @SerialName("os_type") val osType: String = "android",
     @SerialName("mac_address") val macAddress: String = "00:50:56:C0:00:08",
     @SerialName("ip_address") val ipAddress: IntArray = intArrayOf(10, 0, 1, 3),
-    @SerialName("wifi_bssid") val wifiBssid: String = "00:50:56:C0:00:08",
-    @SerialName("wifi_ssid") val wifiSsid: String = "<unknown ssid>",
-    @SerialName("imsi_md5") val IMSIMd5: String = "c28d938d7b0cdcf681cdb24acb4859fd",
-    @SerialName("android_id") val androidId: String = "7b0cdcf681cdb24a",
+    @SerialName("wifi_bssid") val wifiBSSID: String = "00:50:56:C0:00:08",
+    @SerialName("wifi_ssid") val wifiSSID: String = "<unknown ssid>",
+    @SerialName("imsi_md5") val IMSIMD5: String = "c28d938d7b0cdcf681cdb24acb4859fd",
+    @SerialName("android_id") val androidID: String = "7b0cdcf681cdb24a",
     val apn: String = "wifi",
     @SerialName("vendor_name") val vendorName: String = "MIUI",
     @SerialName("vendor_os_name") val vendorOSName: String = "gmc",
