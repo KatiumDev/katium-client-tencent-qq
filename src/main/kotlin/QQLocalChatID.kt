@@ -19,7 +19,7 @@ package katium.client.qq
 
 import katium.core.chat.LocalChatID
 
-class QQLocalChatID(val longID: Long) : LocalChatID(longID.toString())
+class QQLocalChatID(val uin: Long) : LocalChatID(uin.toString())
 
 val LocalChatID.asQQ: QQLocalChatID
     get() = if (this is QQLocalChatID) this else QQLocalChatID(id.toLong())
