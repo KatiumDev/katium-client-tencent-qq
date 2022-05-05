@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.codec.crypto
+package katium.client.qq.network.codec.crypto.tea
 
 import io.netty.buffer.ByteBuf
 import katium.core.util.netty.getULong
@@ -43,24 +43,25 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
             buffer.writeByte(random.nextInt())
         }
         buffer.writeBytes(data)
-            .writeBytes(byteArrayOf(0, 0, 0, 0, 0, 0, 0)) // fill padding
+            .writeZero(7)
+
         var iv1 = 0uL
         var iv2 = 0uL
         var holder: ULong
-
         for (index in 0 until buffer.readableBytes() step 8) {
             val block = buffer.getULong(index)
             holder = block xor iv1
-            iv1 = cipher.encrypt(holder)
-            iv1 = iv1 xor iv2
+            iv1 = cipher.encrypt(holder) xor iv2
             iv2 = holder
             buffer.setULong(index, iv1)
         }
 
-        if(release) {
+        if (release) {
             data.release()
         }
 
+        assert(buffer.writerIndex() == buffer.capacity())
+        assert(buffer.readableBytes() % 8 == 0)
         return buffer
     }
 
@@ -85,7 +86,7 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
         val dataLength = buffer.readableBytes() - 7 - fillSize
 
         val result = buffer.copy(buffer.readerIndex() + fillSize, dataLength)
-        if(release) {
+        if (release) {
             buffer.release()
         }
         return result

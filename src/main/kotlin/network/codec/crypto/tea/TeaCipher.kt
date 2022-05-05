@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.codec.crypto
+package katium.client.qq.network.codec.crypto.tea
 
 /**
  * https://github.com/lz1998/rs-qq/blob/master/rq-engine/src/crypto/qqtea.rs

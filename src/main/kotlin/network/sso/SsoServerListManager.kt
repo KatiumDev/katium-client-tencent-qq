@@ -25,7 +25,7 @@ import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
-import katium.client.qq.network.codec.crypto.QQTeaCipher
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 import katium.client.qq.network.codec.jce.readJceStruct
 import katium.client.qq.network.codec.struct.*
@@ -64,7 +64,7 @@ object SsoServerListManager {
     suspend fun fetchRecords(): List<SsoServerRecord> {
         LOGGER.info("Fetching SSO server list...")
         val payload = CIPHER.encrypt(ByteBufAllocator.DEFAULT.buffer {
-            writeIntLvPacket {
+            writeWithIntLength {
                 writeBytes(
                     RequestPacket(
                         version = 3,
