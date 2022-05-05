@@ -43,8 +43,19 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     val logger by bot::logger
 
     val serverAddresses: List<InetSocketAddress> by lazy {
-        runBlocking(coroutineContext) {
-            SsoServerListManager.fetchAddressesForConnection().toList()
+        if ("qq.remote_server_address" in bot.config) {
+            listOf(
+                InetSocketAddress(
+                    bot.config["qq.remote_server_address"]!!,
+                    (bot.config["qq.remote_server_port"]
+                        ?: throw IllegalArgumentException("qq.remote_server_port not found but qq.remote_server_address set"))
+                        .toInt()
+                )
+            )
+        } else {
+            runBlocking(coroutineContext) {
+                SsoServerListManager.fetchAddressesForConnection().toList()
+            }
         }
     }
     var currentServerCounter = 0
