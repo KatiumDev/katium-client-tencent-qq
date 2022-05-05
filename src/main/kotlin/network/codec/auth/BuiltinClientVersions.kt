@@ -23,6 +23,7 @@ object BuiltinClientVersions {
     val ANDROID_PHONE = ClientVersionInfo(
         apkID = "com.tencent.mobileqq",
         appID = 537066978,
+        subAppID = 537066978,
         version = "8.5.5",
         sdkVersion = "6.0.0.2463",
         miscBitMap = 150470524,
@@ -38,6 +39,7 @@ object BuiltinClientVersions {
     val ANDROID_PAD = ClientVersionInfo(
         apkID = "com.tencent.mobileqq",
         appID = 537062409,
+        subAppID = 537062409,
         version = "8.4.18",
         sdkVersion = "6.0.0.2454",
         miscBitMap = 184024956,
@@ -53,6 +55,7 @@ object BuiltinClientVersions {
     val ANDROID_WATCH = ClientVersionInfo(
         apkID = "com.tencent.mobileqq",
         appID = 537061176,
+        subAppID = 537061176,
         version = "8.2.7",
         sdkVersion = "6.0.0.2413",
         miscBitMap = 184024956,
@@ -68,6 +71,7 @@ object BuiltinClientVersions {
     val MAC_OS = ClientVersionInfo(
         apkID = "com.tencent.minihd.qq",
         appID = 537064315,
+        subAppID = 537064315,
         version = "5.8.9",
         sdkVersion = "6.0.0.2433",
         miscBitMap = 150470524,
@@ -83,6 +87,7 @@ object BuiltinClientVersions {
     val I_PAD = ClientVersionInfo(
         apkID = "com.tencent.minihd.qq",
         appID = 537065739,
+        subAppID = 537065739,
         version = "5.8.9",
         sdkVersion = "6.0.0.2433",
         miscBitMap = 150470524,
@@ -92,6 +97,14 @@ object BuiltinClientVersions {
         buildTime = 1595836208L,
         ssoVersion = 12,
         protocolType = ProtocolType.I_PAD,
+    )
+
+    val versions = mapOf(
+        ProtocolType.ANDROID_PHONE to ANDROID_PHONE,
+        ProtocolType.ANDROID_PAD to ANDROID_PAD,
+        ProtocolType.ANDROID_WATCH to ANDROID_WATCH,
+        ProtocolType.MAC_OS to MAC_OS,
+        ProtocolType.I_PAD to I_PAD,
     )
 
 }

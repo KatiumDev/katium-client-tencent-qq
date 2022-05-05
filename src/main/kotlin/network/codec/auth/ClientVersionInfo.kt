@@ -22,7 +22,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ClientVersionInfo(
     val apkID: String,
-    val appID: Long,
+    val appID: Int,
+    val subAppID: Int,
     val version: String,
     val sdkVersion: String,
     val miscBitMap: Int,
@@ -39,6 +40,7 @@ data class ClientVersionInfo(
         if (other !is ClientVersionInfo) return false
         if (apkID != other.apkID) return false
         if (appID != other.appID) return false
+        if (subAppID != other.subAppID) return false
         if (version != other.version) return false
         if (sdkVersion != other.sdkVersion) return false
         if (miscBitMap != other.miscBitMap) return false
@@ -54,6 +56,7 @@ data class ClientVersionInfo(
     override fun hashCode(): Int {
         var result = apkID.hashCode()
         result = 31 * result + appID.hashCode()
+        result = 31 * result + subAppID.hashCode()
         result = 31 * result + version.hashCode()
         result = 31 * result + sdkVersion.hashCode()
         result = 31 * result + miscBitMap
