@@ -73,7 +73,7 @@ object SsoServerListManager {
         ).run {
             RequestDataV3(this.buffer.readJceStruct()).run {
                 @Suppress("UNCHECKED_CAST")
-                val records = (this.map["HttpServerListRes"]!!.decodeUniRequestData()
+                val records = (this["HttpServerListRes"]!!.decodeUniRequestData()
                     .readJceStruct()[2u] as Collection<SimpleJceStruct>)
                     .map(::SsoServerRecord)
                 LOGGER.info("Got ${records.size} SSO server records")

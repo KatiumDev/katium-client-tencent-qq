@@ -10,6 +10,9 @@ class RequestDataV3(other: SimpleJceStruct) : SimpleJceStruct(other) {
 
     var map: MutableMap<String, ByteBuf> by map(0u)
 
+    operator fun get(key: String) = map[key]
+    operator fun set(key: String, value: ByteBuf) = map.put(key, value)
+
     override fun release() {
         super.release()
         map.values.forEach(ByteBuf::release)
