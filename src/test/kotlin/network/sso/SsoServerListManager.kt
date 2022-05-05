@@ -18,6 +18,11 @@
 package katium.client.qq.test.network.sso
 
 import katium.client.qq.network.sso.SsoServerListManager
+import katium.core.BotPlatform
+import katium.core.event.BotOnlineEvent
+import katium.core.util.event.EventListener
+import katium.core.util.event.Subscribe
+import katium.core.util.event.register
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 
@@ -38,14 +43,28 @@ class SsoServerListManager {
             bot.startAndJoin()
         }*/
         runBlocking {
-            println(SsoServerListManager.fetch())
+            println("All server records: ${SsoServerListManager.fetchRecords()}")
         }
     }
 
     @Test
     fun `Resolve Server Addresses`() {
         runBlocking {
-            println(SsoServerListManager.getServerAddresses())
+            println("Resolved server addresses: ${SsoServerListManager.fetchAddresses()}")
+        }
+    }
+
+    @Test
+    fun `Sorted Server Addresses`() {
+        runBlocking {
+            println("Sorted server addresses: ${SsoServerListManager.fetchSortedAddresses()}")
+        }
+    }
+
+    @Test
+    fun `Addresses for Connection`() {
+        runBlocking {
+            println("Addresses for connection: ${SsoServerListManager.fetchAddressesForConnection()}")
         }
     }
 

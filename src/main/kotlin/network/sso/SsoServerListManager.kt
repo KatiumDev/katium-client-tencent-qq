@@ -1,7 +1,13 @@
 package katium.client.qq.network.sso
 
 import com.google.common.net.InetAddresses
+import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBufAllocator
+import io.netty.channel.ChannelInitializer
+import io.netty.channel.ChannelOption
+import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.socket.SocketChannel
+import io.netty.channel.socket.nio.NioSocketChannel
 import katium.client.qq.network.codec.crypto.QQTeaCipher
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 import katium.client.qq.network.codec.jce.readJceStruct
@@ -12,12 +18,16 @@ import katium.core.util.okhttp.await
 import katium.core.util.okhttp.expected
 import katium.core.util.okhttp.toRequestBody
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 object SsoServerListManager {
 
@@ -32,8 +42,10 @@ object SsoServerListManager {
     @JvmField
     val LOGGER: Logger = LoggerFactory.getLogger("SsoServerListManager")
 
-    suspend fun fetch(): List<SsoServerRecord> {
-        LOGGER.trace("Fetching SSO server list...")
+    val qualityTestEventLoopGroup = NioEventLoopGroup()
+
+    suspend fun fetchRecords(): List<SsoServerRecord> {
+        LOGGER.info("Fetching SSO server list...")
         val payload = CIPHER.encrypt(ByteBufAllocator.DEFAULT.buffer {
             writeIntLvPacket {
                 writeBytes(
@@ -64,15 +76,15 @@ object SsoServerListManager {
                 val records = (this.map["HttpServerListRes"]!!.decodeUniRequestData()
                     .readJceStruct()[2u] as Collection<SimpleJceStruct>)
                     .map(::SsoServerRecord)
-                LOGGER.trace("Got ${records.size} SSO server records")
+                LOGGER.info("Got ${records.size} SSO server records")
                 return records
             }
         }
     }
 
-    suspend fun getServerAddresses(): Set<InetSocketAddress> {
-        val records = fetch()
-        LOGGER.trace("Resolving SSO server addresses...")
+    suspend fun fetchAddresses(): Set<InetSocketAddress> {
+        val records = fetchRecords()
+        LOGGER.info("Resolving SSO server addresses...")
         val addresses = mutableSetOf<InetSocketAddress>()
         // IP addresses
         addresses.addAll(records.filter { InetAddresses.isInetAddress(it.address) }
@@ -86,8 +98,50 @@ object SsoServerListManager {
         // Default server
         addresses.addAll(withContext(Dispatchers.IO) { InetAddress.getAllByName("msfwifi.3g.qq.com") }
             .map { InetSocketAddress(it, 8080) })
-        LOGGER.trace("Resolved ${addresses.size} SSO server addresses")
+        LOGGER.info("Resolved ${addresses.size} server addresses")
         return addresses
+    }
+
+    suspend fun fetchSortedAddresses(): Set<InetSocketAddress> {
+        val addresses = fetchAddresses()
+        val result = mutableMapOf<InetSocketAddress, Int>()
+        LOGGER.info("Starting server quality test...")
+        coroutineScope {
+            withContext(Dispatchers.IO) {
+                addresses.forEach {
+                    launch {
+                        result[it] = doQualityTest(it)
+                    }
+                }
+            }
+        }
+        return addresses.sortedBy { result[it] }.toSet()
+    }
+
+    suspend fun doQualityTest(address: InetSocketAddress): Int {
+        val startTime = System.currentTimeMillis()
+        return suspendCoroutine { continuation ->
+            Bootstrap()
+                .channel(NioSocketChannel::class.java)
+                .group(qualityTestEventLoopGroup)
+                .handler(object : ChannelInitializer<SocketChannel>() {
+                    override fun initChannel(ch: SocketChannel) {
+                    }
+                })
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                .connect(address)
+                .addListener {
+                    if (it.isSuccess) {
+                        continuation.resume((System.currentTimeMillis() - startTime).toInt())
+                    } else {
+                        continuation.resume(9999)
+                    }
+                }
+        }
+    }
+
+    suspend fun fetchAddressesForConnection() = fetchSortedAddresses().run {
+        reversed().drop(size / 2).reversed().toSet()
     }
 
 }
