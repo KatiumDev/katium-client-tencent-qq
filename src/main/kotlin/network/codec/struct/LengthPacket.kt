@@ -18,11 +18,40 @@
 package katium.client.qq.network.codec.struct
 
 import io.netty.buffer.ByteBuf
+import katium.core.util.netty.writeUByteArray
 
-inline fun ByteBuf.writeIntLvPacket(crossinline writer: ByteBuf.() -> Unit): ByteBuf {
+/**
+ * Write a packet with an int32 length prefix(without the length itself)
+ */
+inline fun ByteBuf.writeWithIntLength(crossinline writer: ByteBuf.() -> Unit): ByteBuf {
     val pos = writerIndex()
     writeZero(4)
     writer()
-    setInt(pos, writerIndex() - pos - 4)
+    setInt(pos, writerIndex() - pos)
     return this
+}
+
+fun ByteBuf.writeWithIntLength(data: ByteBuf): ByteBuf {
+    writeInt(data.readableBytes() + 4)
+    writeBytes(data)
+    return this
+}
+
+fun ByteBuf.writeWithIntLength(data: ByteArray): ByteBuf {
+    writeInt(data.size + 4)
+    writeBytes(data)
+    return this
+}
+
+fun ByteBuf.writeWithIntLength(data: UByteArray): ByteBuf {
+    writeInt(data.size + 4)
+    writeUByteArray(data)
+    return this
+}
+
+inline fun <T> ByteBuf.readWithIntLength(crossinline reader: ByteBuf.() -> T): T {
+    val length = readInt()
+    val result = slice(readerIndex(), readerIndex() + length).reader()
+    skipBytes(length)
+    return result
 }
