@@ -31,10 +31,8 @@ import kotlin.random.Random
  */
 class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
 
-    @Suppress("OPT_IN_USAGE")
     constructor(key: UByteArray) : this(TeaCipher(key))
 
-    @Suppress("OPT_IN_USAGE")
     constructor(vararg key: UInt) : this(TeaCipher(key))
 
     fun encrypt(data: ByteBuf, release: Boolean = true): ByteBuf {

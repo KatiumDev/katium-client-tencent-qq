@@ -17,7 +17,6 @@
  */
 package katium.client.qq.network.codec.auth
 
-@Suppress("OPT_IN_USAGE")
 data class LoginSigInfo(
     var loginBitmap: ULong = 0uL,
     var tgt: UByteArray? = null,
