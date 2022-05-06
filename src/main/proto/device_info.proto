@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "ProtoBufDeviceInfo";
+
+message DeviceInfo {
+  string bootloader = 1;
+  string procVersion = 2;
+  string codeName = 3;
+  string incremental = 4;
+  string fingerprint = 5;
+  string bootId = 6;
+  string androidId = 7;
+  string baseBand = 8;
+  string innerVersion = 9;
+}

@@ -18,6 +18,7 @@
 package katium.client.qq.network.codec.auth
 
 import com.google.common.hash.Hashing
+import katium.client.qq.network.pb.ProtoBufDeviceInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
@@ -66,6 +67,18 @@ data class DeviceInfo(
     val tgtgtKey: ByteArray = Hashing.md5().hashBytes(Random.Default.nextBytes(16) + guid).asBytes()
 
     fun computeKsid() = "|${IMEI}|A8.2.7.27f6ea96".toByteArray().toUByteArray()
+
+    fun toProtoBufDeviceInfo(): ProtoBufDeviceInfo.DeviceInfo = ProtoBufDeviceInfo.DeviceInfo.newBuilder()
+        .setBootloader(bootloader)
+        .setProcVersion(procVersion)
+        .setCodeName(version.codeName)
+        .setIncremental(version.incremental)
+        .setFingerprint(fingerprint)
+        .setBootId(bootID)
+        .setAndroidId(androidID)
+        .setBaseBand(baseBand)
+        .setInnerVersion(version.incremental)
+        .build()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
