@@ -26,22 +26,10 @@ import katium.core.util.event.register
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 
-class SsoServerListManager {
+class SsoServerListManagerTest {
 
     @Test
     fun `Fetch SSO Server List`() {
-        /*runBlocking {
-            val bot = BotPlatform.lookup.query("qq").createBot(mapOf("qq.user" to "3195210395"))
-            bot.register(object : EventListener {
-
-                @Subscribe
-                suspend fun online(event: BotOnlineEvent) {
-                    println("online")
-                }
-
-            })
-            bot.startAndJoin()
-        }*/
         runBlocking {
             println("All server records: ${SsoServerListManager.fetchRecords()}")
         }

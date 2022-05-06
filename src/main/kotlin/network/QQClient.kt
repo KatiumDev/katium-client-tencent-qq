@@ -17,9 +17,11 @@
  */
 package katium.client.qq.network
 
+import com.google.common.hash.Hashing
 import io.netty.bootstrap.Bootstrap
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.ByteBufAllocator
 import io.netty.channel.ChannelInitializer
+import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
@@ -27,7 +29,16 @@ import katium.client.qq.QQBot
 import katium.client.qq.network.codec.auth.DeviceInfo
 import katium.client.qq.network.codec.auth.LoginSigInfo
 import katium.client.qq.network.codec.auth.ProtocolType
+import katium.client.qq.network.codec.crypto.ecdh.EcdhKeyProvider
+import katium.client.qq.network.codec.packet.wtlogin.createLoginPacket
+import katium.client.qq.network.codec.pipeline.PacketCodec
+import katium.client.qq.network.codec.struct.oicq.OicqPacketCodec
+import katium.client.qq.network.codec.struct.packet.Packet
+import katium.client.qq.network.codec.struct.packet.writePacket
 import katium.client.qq.network.sso.SsoServerListManager
+import katium.core.util.netty.buffer
+import katium.core.util.netty.toArray
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -36,11 +47,14 @@ import kotlinx.serialization.json.Json
 import okio.IOException
 import java.io.File
 import java.net.InetSocketAddress
+import java.util.*
 import kotlin.coroutines.resume
+import kotlin.random.Random
 
 class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     val logger by bot::logger
+    val uin by bot::uin
 
     val serverAddresses: List<InetSocketAddress> by lazy {
         if ("qq.remote_server_address" in bot.config) {
@@ -63,9 +77,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     var retryTimes = 0
 
     val eventLoopGroup = NioEventLoopGroup()
-    lateinit var connection: SocketChannel
-
-    val sigInfo = LoginSigInfo()
+    lateinit var channel: SocketChannel
 
     val deviceInfo by lazy {
         if ("qq.device_info_file" in bot.config) {
@@ -93,6 +105,15 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
         }
     }
     val protocolType by clientVersion::protocolType
+    val passwordMD5: ByteArray by lazy {
+        @Suppress("DEPRECATION")
+        if ("qq.user.password.md5" in bot.config) HexFormat.of().parseHex(bot.config["qq.user.password.md5"]!!)
+        else Hashing.md5().hashBytes(bot.config["qq.user.password"]!!.toByteArray()).asBytes()
+    }
+
+    val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
+    val sequenceID = atomic(Random.Default.nextInt())
+    val oicqPacketCodec = OicqPacketCodec(EcdhKeyProvider(this))
 
     // @TODO: reconnect on disconnected
     suspend fun connect() {
@@ -108,9 +129,10 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
                     Bootstrap()
                         .channel(NioSocketChannel::class.java)
                         .group(eventLoopGroup)
+                        .option(ChannelOption.TCP_NODELAY, true)
                         .handler(object : ChannelInitializer<SocketChannel>() {
                             override fun initChannel(ch: SocketChannel) {
-                                connection = ch
+                                channel = ch
                                 this@QQClient.initChannel()
                             }
                         })
@@ -125,6 +147,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
                 }
                 retryTimes = 0
                 logger.info("Connected to server")
+                send(createLoginPacket(this, allocSequenceID()))
                 return
             } catch (e: Throwable) {
                 logger.error("Connect to $currentServerAddress failed", e)
@@ -134,10 +157,14 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     }
 
     private fun initChannel() {
+        channel.pipeline()
+            .addLast(PacketCodec(this))
     }
 
-    fun send(data: ByteBuf) {
-        connection.writeAndFlush(data)
+    fun allocSequenceID() = sequenceID.incrementAndGet()
+
+    fun send(data: Packet) {
+        channel.writeAndFlush(data).sync()
     }
 
 }

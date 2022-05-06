@@ -22,14 +22,18 @@ import katium.core.Bot
 import katium.core.chat.LocalChatID
 import katium.core.user.Contact
 import katium.core.user.User
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.swing.GroupLayout
 
-class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user"]!!.toLong()), config) {
+class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user.id"]!!.toLong()), config) {
 
     val client: QQClient = QQClient(this)
+    val uin = selfID.asQQ.uin
 
-    var loopContinuation: CancellableContinuation<Unit>?  = null
+    var loopContinuation: CancellableContinuation<Unit>? = null
     override val loopJob = launch(start = CoroutineStart.LAZY) {
         client.connect()
         suspendCancellableCoroutine {

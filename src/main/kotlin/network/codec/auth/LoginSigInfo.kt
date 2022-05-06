@@ -19,7 +19,7 @@ package katium.client.qq.network.codec.auth
 
 data class LoginSigInfo(
     var loginBitmap: ULong = 0uL,
-    var tgt: UByteArray? = null,
+    var tgt: UByteArray = UByteArray(0),
     var tgtKey: UByteArray = UByteArray(0),
 
     var studyRoomManagerToken: UByteArray = UByteArray(0), // study room manager | 0x16a
@@ -29,7 +29,7 @@ data class LoginSigInfo(
     var userStWebSig: UByteArray = UByteArray(0),
     var sKey: UByteArray = UByteArray(0),
     var sKeyExpiredTime: Long = 0,
-    var d2: UByteArray? = null,
+    var d2: UByteArray = UByteArray(0),
     var d2Key: UIntArray = UIntArray(0), // decode with TeaCipher.decodeByteKey
     var deviceToken: UByteArray = UByteArray(0),
 
