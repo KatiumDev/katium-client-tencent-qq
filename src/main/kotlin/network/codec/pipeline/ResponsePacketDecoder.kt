@@ -45,8 +45,8 @@ class ResponsePacketDecoder(val client: QQClient) : ByteToMessageDecoder() {
             size -= readingSize
             buf.addComponent(`in`.readBytes(readingSize))
             if (size <= 0) {
-                packet = buf.readPacket(client)
                 lastPacket = null
+                packet = buf.readPacket(client)
             } else {
                 lastPacket = buf to size
             }
