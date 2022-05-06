@@ -15,26 +15,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.codec.struct
+package katium.client.qq.network.codec.pipeline
 
 import io.netty.buffer.ByteBuf
+import io.netty.channel.ChannelHandlerContext
+import io.netty.handler.codec.ByteToMessageDecoder
+import io.netty.handler.codec.MessageToByteEncoder
+import katium.client.qq.network.QQClient
+import katium.client.qq.network.codec.struct.packet.RequestPacket
+import katium.client.qq.network.codec.struct.packet.ResponsePacket
+import katium.client.qq.network.codec.struct.packet.writePacket
 
-fun ByteBuf.writeQQIntLengthString(string: String): ByteBuf {
-    val bytes = string.toByteArray()
-    writeInt(bytes.size + 4)
-    writeBytes(bytes)
-    return this
-}
+class RequestPacketEncoder(val client: QQClient) : MessageToByteEncoder<RequestPacket>(RequestPacket::class.java) {
 
-fun ByteBuf.readQQIntLengthString(): String {
-    val buffer = ByteArray(readInt() - 4)
-    readBytes(buffer)
-    return String(buffer)
-}
+    override fun encode(ctx: ChannelHandlerContext, msg: RequestPacket, out: ByteBuf) {
+        out.writePacket(client, msg)
+    }
 
-fun ByteBuf.writeQQShortLengthString(string: String): ByteBuf {
-    val bytes = string.toByteArray()
-    writeShort(bytes.size)
-    writeBytes(bytes)
-    return this
 }

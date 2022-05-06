@@ -15,26 +15,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.codec.struct
+package katium.client.qq.network.codec.struct.packet
 
 import io.netty.buffer.ByteBuf
+import katium.client.qq.network.codec.crypto.EncryptType
 
-fun ByteBuf.writeQQIntLengthString(string: String): ByteBuf {
-    val bytes = string.toByteArray()
-    writeInt(bytes.size + 4)
-    writeBytes(bytes)
-    return this
-}
+data class ResponsePacket(
+    val type: PacketType,
+    val encryptType: EncryptType,
+    val uin: Long,
+    val sequenceID: Int,
+    val command: String,
+    val body: ByteBuf,
+    val message: String
+) : AutoCloseable {
 
-fun ByteBuf.readQQIntLengthString(): String {
-    val buffer = ByteArray(readInt() - 4)
-    readBytes(buffer)
-    return String(buffer)
-}
+    override fun close() {
+        body.release()
+    }
 
-fun ByteBuf.writeQQShortLengthString(string: String): ByteBuf {
-    val bytes = string.toByteArray()
-    writeShort(bytes.size)
-    writeBytes(bytes)
-    return this
 }

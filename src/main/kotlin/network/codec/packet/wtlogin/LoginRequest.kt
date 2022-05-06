@@ -22,14 +22,14 @@ import io.netty.buffer.ByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.crypto.EncryptType
 import katium.client.qq.network.codec.struct.oicq.OicqPacket
-import katium.client.qq.network.codec.struct.packet.Packet
+import katium.client.qq.network.codec.struct.packet.RequestPacket
 import katium.client.qq.network.codec.struct.packet.PacketType
 import katium.client.qq.network.codec.struct.tlv.*
 import katium.core.util.netty.buffer
 import katium.core.util.netty.writeUByteArray
 import java.util.*
 
-fun createLoginPacket(client: QQClient, sequenceID: Int) = Packet(
+fun createLoginRequest(client: QQClient, sequenceID: Int) = RequestPacket(
     type = PacketType.LOGIN,
     encryptType = EncryptType.EMPTY_KEY,
     uin = client.uin,

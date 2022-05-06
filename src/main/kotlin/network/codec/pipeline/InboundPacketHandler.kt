@@ -17,17 +17,18 @@
  */
 package katium.client.qq.network.codec.pipeline
 
-import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.MessageToByteEncoder
+import io.netty.channel.ChannelInboundHandlerAdapter
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.codec.struct.packet.Packet
-import katium.client.qq.network.codec.struct.packet.writePacket
+import katium.client.qq.network.codec.struct.packet.ResponsePacket
+import kotlin.coroutines.resume
 
-class PacketCodec(val client: QQClient) : MessageToByteEncoder<Packet>(Packet::class.java) {
+class InboundPacketHandler(val client: QQClient) : ChannelInboundHandlerAdapter() {
 
-    override fun encode(ctx: ChannelHandlerContext, msg: Packet, out: ByteBuf) {
-        out.writePacket(client, msg)
+    override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
+        super.channelRead(ctx, msg)
+        msg as ResponsePacket
+        client.packetHandlers[msg.sequenceID]?.resume(msg)
     }
 
 }

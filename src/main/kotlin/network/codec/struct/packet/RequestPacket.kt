@@ -20,7 +20,7 @@ package katium.client.qq.network.codec.struct.packet
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.codec.crypto.EncryptType
 
-data class Packet(
+data class RequestPacket(
     val type: PacketType = PacketType.SIMPLE,
     val encryptType: EncryptType,
     val uin: Long,

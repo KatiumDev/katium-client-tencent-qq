@@ -21,16 +21,17 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.crypto.EncryptType
 import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
+import katium.client.qq.network.codec.struct.readQQIntLengthString
 import katium.client.qq.network.codec.struct.writeQQIntLengthString
 import katium.client.qq.network.codec.struct.writeWithIntLength
-import katium.core.util.netty.use
-import katium.core.util.netty.writeUByte
-import katium.core.util.netty.writeUByteArray
-import katium.core.util.netty.writeUInt
+import katium.core.util.netty.*
+import java.io.ByteArrayInputStream
+import java.util.zip.InflaterInputStream
+import kotlin.math.min
 
 private val EMPTY_KEY = UIntArray(4)
 
-fun ByteBuf.writePacket(client: QQClient, packet: Packet, release: Boolean = true): ByteBuf {
+fun ByteBuf.writePacket(client: QQClient, packet: RequestPacket, release: Boolean = true): ByteBuf {
     val encryptType = if (client.sig.d2.isEmpty()) EncryptType.EMPTY_KEY else packet.encryptType
     writeWithIntLength {
         run { // Head
@@ -76,7 +77,7 @@ fun ByteBuf.writePacket(client: QQClient, packet: Packet, release: Boolean = tru
     return this
 }
 
-fun ByteBuf.writePacketBody(client: QQClient, packet: Packet, release: Boolean = true): ByteBuf {
+fun ByteBuf.writePacketBody(client: QQClient, packet: RequestPacket, release: Boolean = true): ByteBuf {
     writeWithIntLength {
         if (packet.type == PacketType.LOGIN) {
             writeInt(packet.sequenceID)
@@ -98,4 +99,70 @@ fun ByteBuf.writePacketBody(client: QQClient, packet: Packet, release: Boolean =
     writeWithIntLength(packet.body)
     if (release) packet.close()
     return this
+}
+
+/**
+ * Read a response packet without header length field
+ *
+ * Return NULL if the packet is a `Heartbeat.Alive` packet
+ */
+fun ByteBuf.readPacket(client: QQClient, release: Boolean = true): ResponsePacket? {
+    val type = PacketType.of(readUInt())
+    val encryptType = EncryptType.of(readUByte())
+    skipBytes(1) // always 0x00
+    val uin = readQQIntLengthString().toLong()
+    val data = when (encryptType) {
+        EncryptType.NONE -> this.retainedDuplicate()
+        EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key).decrypt(this, release = false)
+        EncryptType.EMPTY_KEY -> QQTeaCipher(*EMPTY_KEY).decrypt(this, release = false)
+    }
+    if (release) {
+        this.release()
+    }
+    return data.readSSOFrame(client, type, encryptType, uin)
+}
+
+/**
+ * Read a decrypted response packet body
+ *
+ * Return NULL if the packet is a `Heartbeat.Alive` packet
+ */
+fun ByteBuf.readSSOFrame(
+    client: QQClient,
+    type: PacketType,
+    encryptType: EncryptType,
+    uin: Long,
+    release: Boolean = true
+): ResponsePacket? {
+    val headerLength = readInt() - 4
+    val header = readSlice(headerLength)
+    val sequenceID = header.readInt()
+    when (val returnCode = header.readInt()) {
+        0 -> {}
+        -10008 -> throw IllegalStateException("Session expired")
+        else -> throw IllegalStateException("Unknown return code: $returnCode")
+    }
+    val message = header.readQQIntLengthString()
+    val command = header.readQQIntLengthString()
+    if (command == "Heartbeat.Alive") {
+        return null
+    }
+    header.skipBytes(header.readInt() - 4) // session ID
+    val compressFlag = header.readInt()
+
+    val body = readBytes(min(readInt() - 4, readableBytes()))
+    if (release) {
+        release()
+    }
+    return ResponsePacket(
+        type = type,
+        encryptType = encryptType,
+        uin = uin,
+        sequenceID = sequenceID,
+        command = command,
+        body = if (compressFlag == 1)
+            alloc().buffer(InflaterInputStream(ByteArrayInputStream(body.toArray(true))))
+        else body,
+        message = message
+    )
 }

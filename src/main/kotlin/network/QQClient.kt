@@ -19,7 +19,6 @@ package katium.client.qq.network
 
 import com.google.common.hash.Hashing
 import io.netty.bootstrap.Bootstrap
-import io.netty.buffer.ByteBufAllocator
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
@@ -30,14 +29,16 @@ import katium.client.qq.network.codec.auth.DeviceInfo
 import katium.client.qq.network.codec.auth.LoginSigInfo
 import katium.client.qq.network.codec.auth.ProtocolType
 import katium.client.qq.network.codec.crypto.ecdh.EcdhKeyProvider
-import katium.client.qq.network.codec.packet.wtlogin.createLoginPacket
-import katium.client.qq.network.codec.pipeline.PacketCodec
+import katium.client.qq.network.codec.packet.wtlogin.createLoginRequest
+import katium.client.qq.network.codec.pipeline.InboundPacketHandler
+import katium.client.qq.network.codec.pipeline.RequestPacketEncoder
+import katium.client.qq.network.codec.pipeline.ResponsePacketDecoder
 import katium.client.qq.network.codec.struct.oicq.OicqPacketCodec
-import katium.client.qq.network.codec.struct.packet.Packet
-import katium.client.qq.network.codec.struct.packet.writePacket
+import katium.client.qq.network.codec.struct.packet.RequestPacket
+import katium.client.qq.network.codec.struct.packet.ResponsePacket
+import katium.client.qq.network.event.QQChannelInitializeEvent
 import katium.client.qq.network.sso.SsoServerListManager
-import katium.core.util.netty.buffer
-import katium.core.util.netty.toArray
+import katium.core.util.event.post
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
@@ -48,7 +49,9 @@ import okio.IOException
 import java.io.File
 import java.net.InetSocketAddress
 import java.util.*
+import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
 
 class QQClient(val bot: QQBot) : CoroutineScope by bot {
@@ -78,6 +81,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     val eventLoopGroup = NioEventLoopGroup()
     lateinit var channel: SocketChannel
+    val packetHandlers: MutableMap<Int, Continuation<ResponsePacket>> = mutableMapOf()
 
     val deviceInfo by lazy {
         if ("qq.device_info_file" in bot.config) {
@@ -134,6 +138,9 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
                             override fun initChannel(ch: SocketChannel) {
                                 channel = ch
                                 this@QQClient.initChannel()
+                                runBlocking {
+                                    bot.post(QQChannelInitializeEvent(this@QQClient))
+                                }
                             }
                         })
                         .connect(currentServerAddress)
@@ -147,7 +154,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
                 }
                 retryTimes = 0
                 logger.info("Connected to server")
-                send(createLoginPacket(this, allocSequenceID()))
+                login()
                 return
             } catch (e: Throwable) {
                 logger.error("Connect to $currentServerAddress failed", e)
@@ -158,13 +165,26 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     private fun initChannel() {
         channel.pipeline()
-            .addLast(PacketCodec(this))
+            .addLast("Encoder", RequestPacketEncoder(this))
+            .addLast("Decoder", ResponsePacketDecoder(this))
+            .addLast("InboundPacketHandler", InboundPacketHandler(this))
     }
 
     fun allocSequenceID() = sequenceID.incrementAndGet()
 
-    fun send(data: Packet) {
+    fun send(data: RequestPacket) {
         channel.writeAndFlush(data).sync()
+    }
+
+    suspend fun sendAndWait(data: RequestPacket): ResponsePacket {
+        send(data)
+        return suspendCoroutine {
+            packetHandlers[data.sequenceID] = it
+        }
+    }
+
+    suspend fun login() {
+        sendAndWait(createLoginRequest(this, allocSequenceID()))
     }
 
 }
