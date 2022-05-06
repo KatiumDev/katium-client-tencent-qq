@@ -18,11 +18,6 @@
 package katium.client.qq.test.network.sso
 
 import katium.client.qq.network.sso.SsoServerListManager
-import katium.core.BotPlatform
-import katium.core.event.BotOnlineEvent
-import katium.core.util.event.EventListener
-import katium.core.util.event.Subscribe
-import katium.core.util.event.register
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 
