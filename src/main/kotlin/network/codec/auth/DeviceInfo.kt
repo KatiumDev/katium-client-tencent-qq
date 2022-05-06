@@ -17,8 +17,10 @@
  */
 package katium.client.qq.network.codec.auth
 
+import com.google.common.hash.Hashing
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.random.Random
 
 /**
  * https://github.com/lz1998/rs-qq/blob/master/rq-engine/src/protocol/device.rs
@@ -57,6 +59,12 @@ data class DeviceInfo(
     @SerialName("vendor_os_name") val vendorOSName: String = "gmc",
 ) {
 
+    @Suppress("DEPRECATION")
+    val guid: ByteArray = Hashing.md5().hashBytes((androidID + macAddress).toByteArray()).asBytes()
+
+    @Suppress("DEPRECATION")
+    val tgtgtKey: ByteArray = Hashing.md5().hashBytes(Random.Default.nextBytes(16) + guid).asBytes()
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is DeviceInfo) return false
@@ -66,7 +74,7 @@ data class DeviceInfo(
         if (board != other.board) return false
         if (model != other.model) return false
         if (fingerprint != other.fingerprint) return false
-        if (bootId != other.bootId) return false
+        if (bootID != other.bootID) return false
         if (procVersion != other.procVersion) return false
         if (protocol != other.protocol) return false
         if (IMEI != other.IMEI) return false
@@ -78,10 +86,10 @@ data class DeviceInfo(
         if (osType != other.osType) return false
         if (macAddress != other.macAddress) return false
         if (!ipAddress.contentEquals(other.ipAddress)) return false
-        if (wifiBssid != other.wifiBssid) return false
-        if (wifiSsid != other.wifiSsid) return false
-        if (IMSIMd5 != other.IMSIMd5) return false
-        if (androidId != other.androidId) return false
+        if (wifiBSSID != other.wifiBSSID) return false
+        if (wifiSSID != other.wifiSSID) return false
+        if (IMSIMD5 != other.IMSIMD5) return false
+        if (androidID != other.androidID) return false
         if (apn != other.apn) return false
         if (vendorName != other.vendorName) return false
         if (vendorOSName != other.vendorOSName) return false
@@ -95,7 +103,7 @@ data class DeviceInfo(
         result = 31 * result + board.hashCode()
         result = 31 * result + model.hashCode()
         result = 31 * result + fingerprint.hashCode()
-        result = 31 * result + bootId.hashCode()
+        result = 31 * result + bootID.hashCode()
         result = 31 * result + procVersion.hashCode()
         result = 31 * result + protocol
         result = 31 * result + IMEI.hashCode()
@@ -107,10 +115,10 @@ data class DeviceInfo(
         result = 31 * result + osType.hashCode()
         result = 31 * result + macAddress.hashCode()
         result = 31 * result + ipAddress.contentHashCode()
-        result = 31 * result + wifiBssid.hashCode()
-        result = 31 * result + wifiSsid.hashCode()
-        result = 31 * result + IMSIMd5.hashCode()
-        result = 31 * result + androidId.hashCode()
+        result = 31 * result + wifiBSSID.hashCode()
+        result = 31 * result + wifiSSID.hashCode()
+        result = 31 * result + IMSIMD5.hashCode()
+        result = 31 * result + androidID.hashCode()
         result = 31 * result + apn.hashCode()
         result = 31 * result + vendorName.hashCode()
         result = 31 * result + vendorOSName.hashCode()
