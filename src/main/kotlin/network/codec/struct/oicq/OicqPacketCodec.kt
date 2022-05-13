@@ -21,8 +21,10 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.network.codec.crypto.EncryptionMethod
 import katium.client.qq.network.codec.crypto.ecdh.EcdhKeyProvider
 import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
+import katium.core.util.netty.toArray
 import katium.core.util.netty.use
 import katium.core.util.netty.writeUByteArray
+import java.util.*
 import kotlin.random.Random
 
 class OicqPacketCodec(
@@ -31,7 +33,7 @@ class OicqPacketCodec(
 
     val randomKey = Random.Default.nextBytes(16).toUByteArray()
     val randomKeyCipher = QQTeaCipher(randomKey)
-    val wtSessionTicketKeyCipher: QQTeaCipher get() = TODO("Not yet implemented")
+    var wtSessionTicketKeyCipher: QQTeaCipher? = null
 
     fun encode(output: ByteBuf, packet: OicqPacket, release: Boolean = true) {
         output.run {
@@ -59,9 +61,9 @@ class OicqPacketCodec(
                     writeByte(0x01)
                     writeUByteArray(randomKey)
                     writeShort(0x01_31)
-                    writeShort(ecdh.keyVersion)
-                    writeShort(ecdh.publicKeyEncoded.size)
-                    writeBytes(ecdh.publicKeyEncoded)
+                    writeShort(ecdh.serverKeyVersion)
+                    writeShort(ecdh.clientPublicKeyEncoded.size)
+                    writeBytes(ecdh.clientPublicKeyEncoded)
                     ecdh.shareKeyTeaCipher.encrypt(packet.body, release = false).use {
                         writeBytes(it)
                     }
@@ -89,24 +91,24 @@ class OicqPacketCodec(
         if (readByte().toInt() != 0x02) throw UnsupportedOperationException("Unknown flag")
         skipBytes(4)
         val command = readShort()
-        skipBytes(2)
+        skipBytes(2) // always 1
         val uin = readInt()
+        val encryptionMethod = readShort().toInt()
         skipBytes(1)
-        val encryptionMethod = readByte().toInt()
-        skipBytes(1)
-        val encryptedBody = reader.readSlice(reader.readableBytes())
+        val bodyLength = reader.readableBytes() - 1
         val body = when (encryptionMethod) {
             0 -> {
                 try {
-                    ecdh.shareKeyTeaCipher.decrypt(encryptedBody, release = false)
+                    ecdh.shareKeyTeaCipher.decrypt(reader.duplicate().readBytes(bodyLength))
                 } catch (e: Exception) {
-                    randomKeyCipher.decrypt(encryptedBody, release = false)
+                    randomKeyCipher.decrypt(reader.duplicate().readBytes(bodyLength))
                 }
             }
-            3 -> wtSessionTicketKeyCipher.decrypt(encryptedBody, release = false)
+            3 -> wtSessionTicketKeyCipher!!.decrypt(reader.duplicate().readBytes(bodyLength), release = false)
             // @TODO: https://cs.github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/components/PacketCodec.kt?q=repo%3Amamoe%2Fmirai+WtSessionTicketKey#L260
             else -> throw UnsupportedOperationException("Unknown encryption method $encryptionMethod")
         }
+        reader.skipBytes(bodyLength + 1)
         return OicqPacket(uin, command, EncryptionMethod.ECDH, body)
     }
 

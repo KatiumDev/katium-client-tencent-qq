@@ -21,6 +21,7 @@ import katium.client.qq.network.QQClient
 import katium.core.util.okhttp.GlobalHttpClient
 import katium.core.util.okhttp.await
 import katium.core.util.okhttp.expected
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -54,11 +55,21 @@ class EcdhKeyProvider(val client: QQClient) {
     }
 
     var keyPair: EcdhKeyPair = EcdhKeyPair.Builtin
-    val keyVersion by keyPair::keyVersion
-    val publicKey by keyPair::publicKey
+    val serverKeyVersion by keyPair::serverKeyVersion
+    val clientPublicKey by keyPair::clientPublicKey
     val shareKey by keyPair::shareKey
-    val publicKeyEncoded by keyPair::publicKeyEncoded
+    val clientPublicKeyEncoded by keyPair::clientPublicKeyEncoded
     val shareKeyTeaCipher by keyPair::shareKeyTeaCipher
+
+    init {
+        runBlocking(client.coroutineContext) {
+            updateFromKeyRotate()
+        }
+    }
+
+    suspend fun updateFromKeyRotate() {
+        keyPair = fetchFromKeyRotate()
+    }
 
     suspend fun fetchFromKeyRotate(): EcdhKeyPair {
         client.logger.info("Fetching ECDH key from keyrotate server for ${client.uin}...")
@@ -70,7 +81,7 @@ class EcdhKeyProvider(val client: QQClient) {
                     .build()
             ).await().expected(200).body.byteStream().reader().readText()
         )
-        client.logger.info("Server ECDH response: $response")
+        client.logger.info("Server ECDH public key: ${response.meta.publicKey}")
         if (!verifyKeySignature(response.meta.keyVersion, response.meta.publicKey, response.meta.publicKeySignature)) {
             throw IllegalStateException("Invalid key signature")
         }

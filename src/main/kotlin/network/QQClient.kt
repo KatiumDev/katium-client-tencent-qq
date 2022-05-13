@@ -30,6 +30,7 @@ import katium.client.qq.network.codec.auth.LoginSigInfo
 import katium.client.qq.network.codec.auth.ProtocolType
 import katium.client.qq.network.codec.crypto.ecdh.EcdhKeyProvider
 import katium.client.qq.network.codec.packet.wtlogin.createLoginRequest
+import katium.client.qq.network.codec.packet.wtlogin.readLoginResponse
 import katium.client.qq.network.codec.pipeline.InboundPacketHandler
 import katium.client.qq.network.codec.pipeline.RequestPacketEncoder
 import katium.client.qq.network.codec.pipeline.ResponsePacketDecoder
@@ -117,7 +118,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
     val sequenceID = atomic(Random.Default.nextInt())
-    val oicqPacketCodec = OicqPacketCodec(EcdhKeyProvider(this))
+    val oicqCodec = OicqPacketCodec(EcdhKeyProvider(this))
 
     // @TODO: reconnect on disconnected
     suspend fun connect() {
@@ -184,7 +185,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     }
 
     suspend fun login() {
-        sendAndWait(createLoginRequest(this, allocSequenceID()))
+        oicqCodec.decode(sendAndWait(createLoginRequest(this, allocSequenceID())).body).body.readLoginResponse(this)
     }
 
 }

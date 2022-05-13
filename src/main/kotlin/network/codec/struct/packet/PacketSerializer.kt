@@ -63,7 +63,7 @@ fun ByteBuf.writePacket(client: QQClient, packet: RequestPacket, release: Boolea
                 else -> {
                     QQTeaCipher(
                         *when (encryptType) {
-                            EncryptType.D2_KEY -> client.sig.d2Key
+                            EncryptType.D2_KEY -> client.sig.d2Key!!
                             EncryptType.EMPTY_KEY -> EMPTY_KEY
                             else -> throw IllegalStateException()
                         }
@@ -113,13 +113,13 @@ fun ByteBuf.readPacket(client: QQClient, release: Boolean = true): ResponsePacke
     val uin = readQQIntLengthString().toLong()
     val data = when (encryptType) {
         EncryptType.NONE -> this.retainedDuplicate()
-        EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key).decrypt(this, release = false)
+        EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key!!).decrypt(this, release = false)
         EncryptType.EMPTY_KEY -> QQTeaCipher(*EMPTY_KEY).decrypt(this, release = false)
     }
     if (release) {
         this.release()
     }
-    return data.readSSOFrame(client, type, encryptType, uin)
+    return data.readSSOFrame(type, encryptType, uin)
 }
 
 /**
@@ -128,7 +128,6 @@ fun ByteBuf.readPacket(client: QQClient, release: Boolean = true): ResponsePacke
  * Return NULL if the packet is a `Heartbeat.Alive` packet
  */
 fun ByteBuf.readSSOFrame(
-    client: QQClient,
     type: PacketType,
     encryptType: EncryptType,
     uin: Long,

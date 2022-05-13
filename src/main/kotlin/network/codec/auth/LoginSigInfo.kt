@@ -22,40 +22,48 @@ data class LoginSigInfo(
     var tgt: UByteArray = UByteArray(0),
     var tgtKey: UByteArray = UByteArray(0),
 
-    var studyRoomManagerToken: UByteArray = UByteArray(0), // study room manager | 0x16a
-    var t133: UByteArray = UByteArray(0),
-    var encryptedA1: UByteArray = UByteArray(0),
-    var userStKey: UByteArray = UByteArray(0),
-    var userStWebSig: UByteArray = UByteArray(0),
-    var sKey: UByteArray = UByteArray(0),
+    /**
+     * study room manager | 0x16a
+     */
+    var srmToken: UByteArray? = null,
+    var t133: UByteArray? = null,
+    var encryptedA1: UByteArray? = null,
+    var userStKey: UByteArray? = null,
+    var userStWebSig: UByteArray? = null,
+    var sKey: UByteArray? = null,
     var sKeyExpiredTime: Long = 0,
     var d2: UByteArray = UByteArray(0),
-    var d2Key: UIntArray = UIntArray(0), // decode with TeaCipher.decodeByteKey
-    var deviceToken: UByteArray = UByteArray(0),
+    /**
+     * Decode with TeaCipher.decodeByteKey
+     */
+    var d2Key: UIntArray? = UIntArray(4),
+    var deviceToken: UByteArray? = null,
 
-    var psKeyMap: Map<String, UByteArray> = mapOf(),
-    var pt4TokenMap: Map<String, UByteArray> = mapOf(),
+    var psKeyMap: Map<String, ByteArray>? = null,
+    var pt4TokenMap: Map<String, ByteArray>? = null,
 
     // others
     val outgoingPacketSessionId: UByteArray = ubyteArrayOf(0x02u, 0xB0u, 0x5Bu, 0x8Bu),
-    var dpwd: UByteArray = UByteArray(0),
+    var dpwd: UByteArray? = null,
 
     // TLV cache
-    var t104: UByteArray = UByteArray(0),
-    var t174: UByteArray = UByteArray(0),
-    var g: UByteArray = UByteArray(0),
-    var t402: UByteArray = UByteArray(0),
-    var randomSeed: UByteArray = UByteArray(0), // t403
-    /*var rollbackSig: UByteArray,
-    var t149: UByteArray,
-    var t150: UByteArray,
-    var t528: UByteArray,
-    var t530: UByteArray,*/
+    /*var t104: UByteArray = UByteArray(0),
+    var t174: UByteArray = UByteArray(0),*/
+    var g: UByteArray? = null,
+    var t402: UByteArray? = null,
+    /**
+     * TLV 403
+     */
+    var randomSeed: UByteArray? = null,
+    /*var rollbackSig: UByteArray? = null,
+    var t149: UByteArray? = null,
+    var t150: UByteArray? = null,
+    var t528: UByteArray? = null,
+    var t530: UByteArray? = null,*/
 
     // Sync info
-    var syncCookie: UByteArray = UByteArray(0),
-    var publicAccountCookie: UByteArray = UByteArray(0),
+    /*var syncCookie: UByteArray = UByteArray(0),
+    var publicAccountCookie: UByteArray = UByteArray(0),*/
     var ksid: UByteArray = UByteArray(0),
     //var msgCtrlBuf: UByteArray,
-) {
-}
+)

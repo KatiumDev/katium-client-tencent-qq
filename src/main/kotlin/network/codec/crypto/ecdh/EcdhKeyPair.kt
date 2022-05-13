@@ -31,12 +31,12 @@ import javax.crypto.KeyAgreement
 
 
 data class EcdhKeyPair(
-    val keyVersion: Int,
-    val publicKey: PublicKey,
+    val serverKeyVersion: Int,
+    val clientPublicKey: PublicKey,
     val shareKey: UByteArray
 ) {
 
-    val publicKeyEncoded: ByteArray = publicKey.encoded
+    val clientPublicKeyEncoded: ByteArray = clientPublicKey.encoded
     val shareKeyTeaCipher = QQTeaCipher(shareKey)
 
     companion object {
@@ -46,29 +46,28 @@ data class EcdhKeyPair(
         }
 
         @JvmField
-        val X509_PREFIX: ByteArray = HexFormat.of().parseHex("3059301306072a8648ce3d020106082a8648ce3d030107034200")
+        val X509_PREFIX: ByteArray = HexFormat.of().parseHex("3059301306072A8648CE3D020106082A8648CE3D030107034200")
 
         val Builtin = create(
             1,
             "04EBCA94D733E399B2DB96EACDD3F69A8BB0F74224E2B44E3357812211D2E62EFBC91BB553098E25E33A799ADC7F76FEB208DA7C6522CDB0719A305180CC54A82E"
         )
 
-        fun create(keyVersion: Int, publicKey: String): EcdhKeyPair {
-            val key =
-                KeyFactory.getInstance("EC")
-                    .generatePublic(X509EncodedKeySpec(X509_PREFIX + HexFormat.of().parseHex(publicKey)))
-            val keyPair = KeyPairGenerator.getInstance("ECDH")
+        fun create(serverKeyVersion: Int, serverPublicKey: String): EcdhKeyPair {
+            val serverKey = KeyFactory.getInstance("EC")
+                .generatePublic(X509EncodedKeySpec(X509_PREFIX + HexFormat.of().parseHex(serverPublicKey)))
+            val clientKeyPair = KeyPairGenerator.getInstance("ECDH")
                 .run {
                     initialize(ECGenParameterSpec("prime256v1"))
                     generateKeyPair()
                 }
             val shareKey = KeyAgreement.getInstance("ECDH").run {
-                init(keyPair.private)
-                doPhase(key, true)
+                init(clientKeyPair.private)
+                doPhase(serverKey, true)
                 @Suppress("DEPRECATION")
                 Hashing.md5().hashBytes(generateSecret().copyOf(16)).asBytes().toUByteArray()
             }
-            return EcdhKeyPair(keyVersion, keyPair.public, shareKey)
+            return EcdhKeyPair(serverKeyVersion, clientKeyPair.public, shareKey)
         }
 
     }

@@ -15,32 +15,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.codec.struct
+package katium.client.qq.network.codec.struct.tlv
 
 import io.netty.buffer.ByteBuf
+import katium.core.util.netty.toArray
 
-fun ByteBuf.writeQQIntLengthString(string: String): ByteBuf {
-    val bytes = string.toByteArray()
-    writeInt(bytes.size + 4)
-    writeBytes(bytes)
-    return this
-}
-
-fun ByteBuf.readQQIntLengthString(): String {
-    val buffer = ByteArray(readInt() - 4)
-    readBytes(buffer)
-    return String(buffer)
-}
-
-fun ByteBuf.writeQQShortLengthString(string: String): ByteBuf {
-    val bytes = string.toByteArray()
-    writeShort(bytes.size)
-    writeBytes(bytes)
-    return this
-}
-
-fun ByteBuf.readQQShortLengthString(): String {
-    val buffer = ByteArray(readShort().toInt())
-    readBytes(buffer)
-    return String(buffer)
+/**
+ * @return (age, gender, nick)
+ */
+fun ByteBuf.readT11A(release: Boolean = true) = readTlv(release) {
+    Triple(readByte().toInt(), readByte().toInt(), String(readBytes(readByte().toInt()).toArray(true)))
 }

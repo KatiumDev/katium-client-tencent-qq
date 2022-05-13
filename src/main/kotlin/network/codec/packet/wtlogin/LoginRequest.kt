@@ -36,7 +36,7 @@ fun createLoginRequest(client: QQClient, sequenceID: Int) = RequestPacket(
     sequenceID = sequenceID,
     command = "wtlogin.login",
     body = ByteBufAllocator.DEFAULT.buffer {
-        client.oicqPacketCodec.encode(this, OicqPacket(
+        client.oicqCodec.encode(this, OicqPacket(
             uin = client.uin.toInt(),
             command = 0x0810,
             body = ByteBufAllocator.DEFAULT.buffer {

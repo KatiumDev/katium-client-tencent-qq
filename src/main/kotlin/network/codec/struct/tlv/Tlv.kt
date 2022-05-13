@@ -18,6 +18,7 @@
 package katium.client.qq.network.codec.struct.tlv
 
 import io.netty.buffer.ByteBuf
+import katium.core.util.netty.readUShort
 
 /**
  * https://cs.github.com/Mrs4s/MiraiGo/tree/master/internal/tlv
@@ -34,7 +35,48 @@ inline fun ByteBuf.writeTlv(command: Int, crossinline writer: ByteBuf.() -> Unit
     return this
 }
 
+inline fun <T> ByteBuf.readTlv(release: Boolean, crossinline reader: ByteBuf.() -> T): T {
+    skipBytes(2)
+    val result = reader()
+    if (release) {
+        release()
+    }
+    return result
+}
+
 /**
  * https://github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/protocol/packet/Tlv.kt#L464
  */
 internal const val GUID_FLAG: Long = (1 shl 24 and -0x1000000) or (0 shl 8 and 0xFF00)
+
+typealias TlvMap = Map<Short, ByteBuf>
+
+fun ByteBuf.readTlvMap(tagSize: Int = 2, release: Boolean = true): TlvMap {
+    val map = mutableMapOf<Short, ByteBuf>()
+    while (readableBytes() >= tagSize) {
+        val k = when (tagSize) {
+            1 -> readByte().toInt()
+            2 -> readShort().toInt()
+            4 -> readInt()
+            else -> throw UnsupportedOperationException("Unsupported tag size: $tagSize")
+        }
+        if (k == 255) {
+            break
+        } else {
+            map[k.toShort()] = readBytes(readUShort().toInt())
+        }
+    }
+    if (release) {
+        release()
+    }
+    return map.toMap()
+}
+
+fun TlvMap.release() {
+    values.forEach(ByteBuf::release)
+}
+
+inline fun TlvMap.use(crossinline block: TlvMap.() -> Unit) {
+    block()
+    release()
+}

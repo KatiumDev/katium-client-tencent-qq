@@ -64,7 +64,7 @@ data class DeviceInfo(
     val guid: ByteArray = Hashing.md5().hashBytes((androidID + macAddress).toByteArray()).asBytes()
 
     @Suppress("DEPRECATION")
-    val tgtgtKey: ByteArray = Hashing.md5().hashBytes(Random.Default.nextBytes(16) + guid).asBytes()
+    var tgtgtKey: ByteArray = Hashing.md5().hashBytes(Random.Default.nextBytes(16) + guid).asBytes()
 
     fun computeKsid() = "|${IMEI}|A8.2.7.27f6ea96".toByteArray().toUByteArray()
 

@@ -28,7 +28,11 @@ class InboundPacketHandler(val client: QQClient) : ChannelInboundHandlerAdapter(
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         super.channelRead(ctx, msg)
         msg as ResponsePacket
-        client.packetHandlers[msg.sequenceID]?.resume(msg)
+        val handler = client.packetHandlers[msg.sequenceID]
+        if (handler != null) {
+            handler.resume(msg)
+            client.packetHandlers.remove(msg.sequenceID)
+        }
     }
 
 }

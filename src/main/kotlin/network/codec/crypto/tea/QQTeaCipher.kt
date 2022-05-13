@@ -20,6 +20,7 @@ package katium.client.qq.network.codec.crypto.tea
 import io.netty.buffer.ByteBuf
 import katium.core.util.netty.getULong
 import katium.core.util.netty.setULong
+import java.util.HexFormat
 import kotlin.experimental.and
 import kotlin.random.Random
 
@@ -30,6 +31,13 @@ import kotlin.random.Random
  * https://github.com/takayama-lily/oicq/blob/main/lib/core/tea.ts
  */
 class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
+
+    companion object {
+
+        @JvmField
+        val TAIL_BYTES = ByteArray(7)
+
+    }
 
     constructor(key: UByteArray) : this(TeaCipher(key))
 
@@ -43,12 +51,12 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
             buffer.writeByte(random.nextInt())
         }
         buffer.writeBytes(data)
-            .writeZero(7)
+            .writeBytes(TAIL_BYTES)
 
         var iv1 = 0uL
         var iv2 = 0uL
         var holder: ULong
-        for (index in 0 until buffer.readableBytes() step 8) {
+        for (index in 0 until buffer.writerIndex() step 8) {
             val block = buffer.getULong(index)
             holder = block xor iv1
             iv1 = cipher.encrypt(holder) xor iv2
@@ -69,13 +77,12 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
         if (buffer.readableBytes() < 16 || buffer.readableBytes() % 8 != 0) {
             throw IllegalArgumentException("Size of QQTea encrypted data should greater than 16 and multiplier of 8")
         }
+
         var iv1: ULong
         var iv2 = 0uL
         var holder = 0uL
-
         for (index in buffer.readerIndex() until buffer.writerIndex() step 8) {
-            val block = buffer.getULong(index)
-            iv1 = block
+            iv1 = buffer.getULong(index)
             iv2 = iv2 xor iv1
             iv2 = cipher.decrypt(iv2)
             buffer.setULong(index, iv2 xor holder)
@@ -85,7 +92,16 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
         val fillSize = (buffer.readByte() and 0b00000111) + 2
         val dataLength = buffer.readableBytes() - 7 - fillSize
 
-        val result = buffer.copy(buffer.readerIndex() + fillSize, dataLength)
+        buffer.skipBytes(fillSize)
+        val result = buffer.readBytes(dataLength)
+
+        // Check fill bytes
+        val tailBytes = ByteArray(7)
+        buffer.readBytes(tailBytes)
+        if(!tailBytes.contentEquals(TAIL_BYTES)) {
+            throw IllegalArgumentException("QQTea encrypted data tail bytes are not correct, got ${HexFormat.of().formatHex(tailBytes)}")
+        }
+
         if (release) {
             buffer.release()
         }
