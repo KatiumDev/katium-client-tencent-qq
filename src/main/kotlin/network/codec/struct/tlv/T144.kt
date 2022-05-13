@@ -22,6 +22,7 @@ import katium.client.qq.network.codec.auth.NetworkType
 import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.client.qq.network.pb.ProtoBufDeviceInfo
 import katium.core.util.netty.buffer
+import katium.core.util.netty.use
 
 fun ByteBuf.writeT144(
     imei: ByteArray, // T109
@@ -44,12 +45,14 @@ fun ByteBuf.writeT144(
     // encrypt
     tgtgtKey: ByteArray
 ) = writeTlv(0x144) {
-    writeBytes(QQTeaCipher(tgtgtKey.toUByteArray()).encrypt(alloc().buffer {
+    QQTeaCipher(tgtgtKey.toUByteArray()).encrypt(alloc().buffer {
         writeShort(5) // tlv count
         writeT109(imei)
         writeT52D(deviceInfo)
         writeT124(osType, osVersion, networkType, simInfo, address, apn)
         writeT128(guidFromFileNull, guidAvailable, guidChanged, guidFlag, buildModel, guid, buildBrand)
         writeT16E(buildModel)
-    }))
+    }).use {
+        writeBytes(it)
+    }
 }
