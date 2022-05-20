@@ -15,29 +15,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.event
+package katium.client.qq.network.codec.tlv
 
-import katium.client.qq.network.QQClient
-import katium.core.event.BotEvent
+import io.netty.buffer.ByteBuf
+import katium.client.qq.network.packet.wtlogin.LoginExtraData
+import katium.client.qq.network.packet.wtlogin.writeLoginExtraData
 
-class QQChannelInitializeEvent(val client: QQClient) : BotEvent(client.bot) {
-
-    fun component2() = client
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is QQChannelInitializeEvent) return false
-        if (!super.equals(other)) return false
-        if (client != other.client) return false
-        return true
+fun ByteBuf.writeT536(loginExtraData: Array<LoginExtraData>)  = writeTlv(0x536) {
+    writeByte(1)
+    writeByte(loginExtraData.size)
+    for (extraData in loginExtraData) {
+        writeLoginExtraData(extraData)
     }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + client.hashCode()
-        return result
-    }
-
-    override fun toString() = "QQChannelInitializeEvent(bot=$bot, client$client)"
-
 }

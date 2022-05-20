@@ -43,7 +43,7 @@ object JceConstants {
     const val TAG_LENGTH: UByte = 0u
     const val TAG_STRUCT_END: UByte = 0u
 
-    @JvmStatic
-    val defaultCharset: Charset = Charset.forName("GBK")
+    @JvmField
+    val DEFAULT_CHARSET: Charset = Charset.forName("GBK")
 
 }

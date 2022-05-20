@@ -15,29 +15,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.event
+package katium.client.qq.network.auth
 
-import katium.client.qq.network.QQClient
-import katium.core.event.BotEvent
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-class QQChannelInitializeEvent(val client: QQClient) : BotEvent(client.bot) {
-
-    fun component2() = client
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is QQChannelInitializeEvent) return false
-        if (!super.equals(other)) return false
-        if (client != other.client) return false
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + client.hashCode()
-        return result
-    }
-
-    override fun toString() = "QQChannelInitializeEvent(bot=$bot, client$client)"
-
-}
+/**
+ * https://github.com/lz1998/rs-qq/blob/master/rq-engine/src/protocol/device.rs
+ * https://github.com/Mrs4s/MiraiGo/blob/master/client/internal/auth/device.go
+ */
+@Serializable
+data class OSVersionInfo(
+    val incremental: String = "5891938",
+    val release: String = "10",
+    @SerialName("codename") val codeName: String = "REL",
+    val sdk: UInt = 29u,
+)

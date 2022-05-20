@@ -15,29 +15,32 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.event
+package katium.client.qq.network.codec.base
 
-import katium.client.qq.network.QQClient
-import katium.core.event.BotEvent
+import io.netty.buffer.ByteBuf
 
-class QQChannelInitializeEvent(val client: QQClient) : BotEvent(client.bot) {
+fun ByteBuf.writeQQIntLengthString(string: String): ByteBuf {
+    val bytes = string.toByteArray()
+    writeInt(bytes.size + 4)
+    writeBytes(bytes)
+    return this
+}
 
-    fun component2() = client
+fun ByteBuf.readQQIntLengthString(): String {
+    val buffer = ByteArray(readInt() - 4)
+    readBytes(buffer)
+    return String(buffer)
+}
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is QQChannelInitializeEvent) return false
-        if (!super.equals(other)) return false
-        if (client != other.client) return false
-        return true
-    }
+fun ByteBuf.writeQQShortLengthString(string: String): ByteBuf {
+    val bytes = string.toByteArray()
+    writeShort(bytes.size)
+    writeBytes(bytes)
+    return this
+}
 
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + client.hashCode()
-        return result
-    }
-
-    override fun toString() = "QQChannelInitializeEvent(bot=$bot, client$client)"
-
+fun ByteBuf.readQQShortLengthString(): String {
+    val buffer = ByteArray(readShort().toInt())
+    readBytes(buffer)
+    return String(buffer)
 }

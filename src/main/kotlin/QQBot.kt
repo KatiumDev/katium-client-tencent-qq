@@ -30,8 +30,8 @@ import javax.swing.GroupLayout
 
 class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user.id"]!!.toLong()), config) {
 
-    val client: QQClient = QQClient(this)
     val uin = selfID.asQQ.uin
+    val client: QQClient = QQClient(this)
 
     var loopContinuation: CancellableContinuation<Unit>? = null
     override val loopJob = launch(start = CoroutineStart.LAZY) {
@@ -57,5 +57,7 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
     override fun getUser(id: LocalChatID): User {
         TODO("Not yet implemented")
     }
+
+    val allowSlider = (config["qq.allow_slider"] ?: "false").toBoolean()
 
 }

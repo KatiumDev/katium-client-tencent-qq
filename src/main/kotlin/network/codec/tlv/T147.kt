@@ -15,29 +15,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.event
+package katium.client.qq.network.codec.tlv
 
-import katium.client.qq.network.QQClient
-import katium.core.event.BotEvent
+import io.netty.buffer.ByteBuf
+import kotlin.math.min
 
-class QQChannelInitializeEvent(val client: QQClient) : BotEvent(client.bot) {
-
-    fun component2() = client
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is QQChannelInitializeEvent) return false
-        if (!super.equals(other)) return false
-        if (client != other.client) return false
-        return true
+fun ByteBuf.writeT147(appID: Int = 16, apkVersionName: String, apkSignatureMD5: ByteArray) = writeTlv(0x147) {
+    writeInt(appID)
+    run {
+        val bytes = apkVersionName.toByteArray()
+        val length = min(bytes.size, 32)
+        writeShort(length)
+        writeBytes(bytes, 0, length)
     }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + client.hashCode()
-        return result
+    run {
+        val length = min(apkSignatureMD5.size, 32)
+        writeShort(length)
+        writeBytes(apkSignatureMD5, 0, length)
     }
-
-    override fun toString() = "QQChannelInitializeEvent(bot=$bot, client$client)"
-
 }

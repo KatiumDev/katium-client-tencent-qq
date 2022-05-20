@@ -20,14 +20,14 @@ package katium.client.qq.network.codec.pipeline
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.codec.struct.packet.ResponsePacket
+import katium.client.qq.network.codec.packet.TransportPacket
 import kotlin.coroutines.resume
 
 class InboundPacketHandler(val client: QQClient) : ChannelInboundHandlerAdapter() {
 
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         super.channelRead(ctx, msg)
-        msg as ResponsePacket
+        msg as TransportPacket.Response
         val handler = client.packetHandlers[msg.sequenceID]
         if (handler != null) {
             handler.resume(msg)

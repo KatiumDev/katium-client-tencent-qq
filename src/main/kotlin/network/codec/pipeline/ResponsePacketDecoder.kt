@@ -22,8 +22,8 @@ import io.netty.buffer.CompositeByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.codec.struct.packet.ResponsePacket
-import katium.client.qq.network.codec.struct.packet.readPacket
+import katium.client.qq.network.codec.packet.TransportPacket
+import katium.client.qq.network.codec.packet.readPacket
 import kotlin.math.min
 
 class ResponsePacketDecoder(val client: QQClient) : ByteToMessageDecoder() {
@@ -31,7 +31,7 @@ class ResponsePacketDecoder(val client: QQClient) : ByteToMessageDecoder() {
     var lastPacket: Pair<CompositeByteBuf, Int>? = null
 
     override fun decode(ctx: ChannelHandlerContext, `in`: ByteBuf, out: MutableList<Any>) {
-        var packet: ResponsePacket? = null
+        var packet: TransportPacket.Response? = null
         if (lastPacket == null && `in`.readableBytes() >= 4) { // read new packet
             val size = `in`.readInt() - 4
             if (`in`.readableBytes() >= size) {

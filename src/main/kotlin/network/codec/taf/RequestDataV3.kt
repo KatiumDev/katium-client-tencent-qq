@@ -15,29 +15,30 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.event
+package katium.client.qq.network.codec.taf
 
-import katium.client.qq.network.QQClient
-import katium.core.event.BotEvent
+import io.netty.buffer.ByteBuf
+import katium.client.qq.network.codec.jce.SimpleJceStruct
 
-class QQChannelInitializeEvent(val client: QQClient) : BotEvent(client.bot) {
+class RequestDataV3(other: SimpleJceStruct) : SimpleJceStruct(other) {
 
-    fun component2() = client
+    constructor() : this(SimpleJceStruct())
+    constructor(tags: MutableMap<UByte, Any>) : this(SimpleJceStruct(tags))
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is QQChannelInitializeEvent) return false
-        if (!super.equals(other)) return false
-        if (client != other.client) return false
-        return true
+    var map: MutableMap<String, ByteBuf> by map(0u)
+
+    operator fun get(key: String) = map[key]
+    operator fun set(key: String, value: ByteBuf) = map.put(key, value)
+
+    override fun release() {
+        super.release()
+        map.values.forEach(ByteBuf::release)
     }
 
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + client.hashCode()
-        return result
-    }
+    override fun toString() = "RequestDataV3($map)"
 
-    override fun toString() = "QQChannelInitializeEvent(bot=$bot, client$client)"
+}
 
+fun RequestDataV3(vararg pairs: Pair<String, ByteBuf>) = RequestDataV3().apply {
+    map.putAll(pairs)
 }

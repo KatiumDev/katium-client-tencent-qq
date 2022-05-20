@@ -19,16 +19,14 @@ package katium.client.qq.network.codec.pipeline
 
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.ByteToMessageDecoder
 import io.netty.handler.codec.MessageToByteEncoder
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.codec.struct.packet.RequestPacket
-import katium.client.qq.network.codec.struct.packet.ResponsePacket
-import katium.client.qq.network.codec.struct.packet.writePacket
+import katium.client.qq.network.codec.packet.TransportPacket
+import katium.client.qq.network.codec.packet.writePacket
 
-class RequestPacketEncoder(val client: QQClient) : MessageToByteEncoder<RequestPacket>(RequestPacket::class.java) {
+class RequestPacketEncoder(val client: QQClient) : MessageToByteEncoder<TransportPacket.Request>(TransportPacket.Request::class.java) {
 
-    override fun encode(ctx: ChannelHandlerContext, msg: RequestPacket, out: ByteBuf) {
+    override fun encode(ctx: ChannelHandlerContext, msg: TransportPacket.Request, out: ByteBuf) {
         out.writePacket(client, msg)
     }
 

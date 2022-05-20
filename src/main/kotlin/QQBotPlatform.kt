@@ -15,12 +15,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq;
+package katium.client.qq
 
-import katium.core.Bot
 import katium.core.BotPlatform
 
-object QQBotPlatform: BotPlatform {
+object QQBotPlatform : BotPlatform {
 
     override val id: String
         get() = "qq"

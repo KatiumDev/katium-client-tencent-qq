@@ -19,27 +19,31 @@ package katium.client.qq.network
 
 import com.google.common.hash.Hashing
 import io.netty.bootstrap.Bootstrap
+import io.netty.buffer.ByteBufAllocator
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import katium.client.qq.QQBot
-import katium.client.qq.network.codec.auth.DeviceInfo
-import katium.client.qq.network.codec.auth.LoginSigInfo
-import katium.client.qq.network.codec.auth.ProtocolType
-import katium.client.qq.network.codec.crypto.ecdh.EcdhKeyProvider
-import katium.client.qq.network.codec.packet.wtlogin.createLoginRequest
-import katium.client.qq.network.codec.packet.wtlogin.readLoginResponse
+import katium.client.qq.network.auth.DeviceInfo
+import katium.client.qq.network.auth.LoginSigInfo
+import katium.client.qq.network.auth.ProtocolType
+import katium.client.qq.network.codec.oicq.OicqPacket
+import katium.client.qq.network.codec.oicq.OicqPacketCodec
+import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.pipeline.InboundPacketHandler
 import katium.client.qq.network.codec.pipeline.RequestPacketEncoder
 import katium.client.qq.network.codec.pipeline.ResponsePacketDecoder
-import katium.client.qq.network.codec.struct.oicq.OicqPacketCodec
-import katium.client.qq.network.codec.struct.packet.RequestPacket
-import katium.client.qq.network.codec.struct.packet.ResponsePacket
+import katium.client.qq.network.codec.tlv.*
+import katium.client.qq.network.crypto.ecdh.EcdhKeyProvider
 import katium.client.qq.network.event.QQChannelInitializeEvent
+import katium.client.qq.network.packet.wtlogin.createLoginRequest
+import katium.client.qq.network.packet.wtlogin.readLoginResponse
 import katium.client.qq.network.sso.SsoServerListManager
 import katium.core.util.event.post
+import katium.core.util.netty.buffer
+import katium.core.util.netty.toArray
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
@@ -82,7 +86,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     val eventLoopGroup = NioEventLoopGroup()
     lateinit var channel: SocketChannel
-    val packetHandlers: MutableMap<Int, Continuation<ResponsePacket>> = mutableMapOf()
+    val packetHandlers: MutableMap<Int, Continuation<TransportPacket.Response>> = mutableMapOf()
 
     val deviceInfo by lazy {
         if ("qq.device_info_file" in bot.config) {
@@ -173,19 +177,100 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     fun allocSequenceID() = sequenceID.incrementAndGet()
 
-    fun send(data: RequestPacket) {
-        channel.writeAndFlush(data).sync()
+    fun send(packet: TransportPacket.Request) {
+        channel.writeAndFlush(packet).sync()
     }
 
-    suspend fun sendAndWait(data: RequestPacket): ResponsePacket {
-        send(data)
-        return suspendCoroutine {
-            packetHandlers[data.sequenceID] = it
-        }
+    suspend fun sendAndWait(packet: TransportPacket.Request): TransportPacket.Response = suspendCoroutine {
+        packetHandlers[packet.sequenceID] = it
+        send(packet)
     }
+
+    suspend fun sendAndWaitOicq(packet: TransportPacket.Request) = sendAndWait(packet) as TransportPacket.Response.Oicq
+    suspend fun sendAndWaitBuffered(packet: TransportPacket.Request) =
+        sendAndWait(packet) as TransportPacket.Response.Buffered
 
     suspend fun login() {
-        oicqCodec.decode(sendAndWait(createLoginRequest(this, allocSequenceID())).body).body.readLoginResponse(this)
+        val client = this
+        println(HexFormat.of().formatHex(ByteBufAllocator.DEFAULT.buffer {
+
+            writeT18(uin = client.uin.toInt())
+            writeT1(uin = client.uin.toInt(), ip = client.deviceInfo.ipAddress.map(Int::toByte).toByteArray())
+            writeT106(
+                uin = client.uin,
+                subAppID = client.clientVersion.appID,
+                ssoVersion = client.clientVersion.ssoVersion,
+                passwordMD5 = client.passwordMD5,
+                guidAvailable = true,
+                guid = client.deviceInfo.guid,
+                tgtgtKey = client.deviceInfo.tgtgtKey,
+            )
+            writeT116(miscBitmap = client.clientVersion.miscBitMap, subSigMap = client.clientVersion.subSigMap)
+            writeT100(
+                subAppID = client.clientVersion.subAppID,
+                ssoVersion = client.clientVersion.ssoVersion,
+                mainSigMap = client.clientVersion.mainSigMap
+            )
+            writeT107(0)
+            writeT142(client.clientVersion.apkID.toByteArray())
+            writeT144(
+                imei = client.deviceInfo.IMEI.toByteArray(),
+                deviceInfo = client.deviceInfo.toProtoBufDeviceInfo(),
+                osType = client.deviceInfo.osType.toByteArray(),
+                osVersion = client.deviceInfo.version.release.toByteArray(),
+                simInfo = client.deviceInfo.simInfo.toByteArray(),
+                apn = client.deviceInfo.apn.toByteArray(),
+                buildModel = client.deviceInfo.model.toByteArray(),
+                guid = client.deviceInfo.guid,
+                buildBrand = client.deviceInfo.brand.toByteArray(),
+                tgtgtKey = client.deviceInfo.tgtgtKey
+            )
+            writeT145(guid = client.deviceInfo.guid)
+            writeT147(
+                apkVersionName = client.clientVersion.version,
+                apkSignatureMD5 = HexFormat.of().parseHex(client.clientVersion.signature)
+            )
+            /*if (client.clientVersion.miscBitMap and 0x80 != 0) {
+                writeT166(1)
+            }*/
+            writeT154(sequenceID = allocSequenceID())
+            writeT141(
+                simInfo = client.deviceInfo.simInfo.toByteArray(),
+                apn = client.deviceInfo.apn.toByteArray()
+            )
+            writeT8()
+            writeT511()
+            writeT187(macAddress = client.deviceInfo.macAddress.toByteArray())
+            writeT188(androidID = client.deviceInfo.androidID.toByteArray())
+            if (client.deviceInfo.IMSIMD5.isNotEmpty()) {
+                writeT194(imsiMD5 = HexFormat.of().parseHex(client.deviceInfo.IMSIMD5))
+            }
+            if (client.bot.allowSlider) {
+                writeT191()
+            }
+            if (client.deviceInfo.wifiBSSID.isNotEmpty() && client.deviceInfo.wifiSSID.isNotEmpty()) {
+                @Suppress("DEPRECATION")
+                writeT202(
+                    wifiBSSIDMD5 = Hashing.md5().hashBytes(client.deviceInfo.wifiBSSID.toByteArray()).asBytes(),
+                    wifiSSID = client.deviceInfo.wifiSSID.toByteArray()
+                )
+            }
+            writeT177(
+                buildTime = client.clientVersion.buildTime,
+                sdkVersion = client.clientVersion.sdkVersion.toByteArray()
+            )
+            writeT516()
+            writeT521()
+            writeT525(emptyArray())
+        }.toArray(true)))
+        sendAndWaitOicq(
+            createLoginRequest(
+                this,
+                allocSequenceID()
+            )
+        ).use {
+            (it.packet as OicqPacket.Response.Buffered).body.readLoginResponse(this)
+        }
     }
 
 }

@@ -65,13 +65,13 @@ fun ByteBuf.readJceLong() = readLong()
 fun ByteBuf.readJceFloat() = readFloat()
 fun ByteBuf.readJceDouble() = readDouble()
 
-fun ByteBuf.readJceString1(charset: Charset = JceConstants.defaultCharset): String {
+fun ByteBuf.readJceString1(charset: Charset = JceConstants.DEFAULT_CHARSET): String {
     val buffer = ByteArray(readByte().toInt())
     readBytes(buffer)
     return String(buffer, charset)
 }
 
-fun ByteBuf.readJceString4(charset: Charset = JceConstants.defaultCharset): String {
+fun ByteBuf.readJceString4(charset: Charset = JceConstants.DEFAULT_CHARSET): String {
     val buffer = ByteArray(readInt())
     readBytes(buffer)
     return String(buffer, charset)

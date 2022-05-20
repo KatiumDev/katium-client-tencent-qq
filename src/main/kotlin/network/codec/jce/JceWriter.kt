@@ -107,7 +107,7 @@ fun ByteBuf.writeJceDouble(tag: UByte, value: Double): ByteBuf {
     return this
 }
 
-fun ByteBuf.writeJceString(tag: UByte, value: String, charset: Charset = JceConstants.defaultCharset): ByteBuf {
+fun ByteBuf.writeJceString(tag: UByte, value: String, charset: Charset = JceConstants.DEFAULT_CHARSET): ByteBuf {
     val bytes = value.toByteArray(charset)
     if (bytes.size <= 0xff) {
         // string1

@@ -15,29 +15,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package katium.client.qq.network.event
+package katium.client.qq.network.auth
 
-import katium.client.qq.network.QQClient
-import katium.core.event.BotEvent
+enum class LoginType(val value: Int) {
 
-class QQChannelInitializeEvent(val client: QQClient) : BotEvent(client.bot) {
+    PASSWORD(1), SMS(3), WE_CHAT(4);
 
-    fun component2() = client
+    companion object {
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is QQChannelInitializeEvent) return false
-        if (!super.equals(other)) return false
-        if (client != other.client) return false
-        return true
+        fun of(value: Int) = values().first { it.value == value }
+
     }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + client.hashCode()
-        return result
-    }
-
-    override fun toString() = "QQChannelInitializeEvent(bot=$bot, client$client)"
 
 }
