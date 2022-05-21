@@ -19,15 +19,15 @@ package katium.client.qq.network.codec.base
 
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeQQIntLengthString(string: String): ByteBuf {
+fun ByteBuf.writeQQIntLengthString(string: String, long: Boolean): ByteBuf {
     val bytes = string.toByteArray()
-    writeInt(bytes.size + 4)
+    writeInt(bytes.size + (if(long) 4 else 0))
     writeBytes(bytes)
     return this
 }
 
-fun ByteBuf.readQQIntLengthString(): String {
-    val buffer = ByteArray(readInt() - 4)
+fun ByteBuf.readQQIntLengthString(long: Boolean): String {
+    val buffer = ByteArray(readInt() - (if(long) 4 else 0))
     readBytes(buffer)
     return String(buffer)
 }
