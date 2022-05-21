@@ -58,6 +58,6 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
         TODO("Not yet implemented")
     }
 
-    val allowSlider = (config["qq.allow_slider"] ?: "false").toBoolean()
+    val allowSlider = (config["qq.allow_slider"] ?: "true").toBoolean()
 
 }
