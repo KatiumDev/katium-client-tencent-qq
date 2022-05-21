@@ -33,12 +33,16 @@ import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.pipeline.InboundPacketHandler
 import katium.client.qq.network.codec.pipeline.RequestPacketEncoder
 import katium.client.qq.network.codec.pipeline.ResponsePacketDecoder
+import katium.client.qq.network.codec.pipeline.TransportPacketDecoder
 import katium.client.qq.network.event.QQChannelInitializeEvent
+import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesPacket
+import katium.client.qq.network.packet.profileSvc.PushGroupSystemMessagesPacket
 import katium.client.qq.network.packet.statSvc.ClientRegisterPacket
 import katium.client.qq.network.packet.wtlogin.LoginResponsePacket
 import katium.client.qq.network.packet.wtlogin.PasswordLoginPacket
 import katium.client.qq.network.sso.SsoServerListManager
 import katium.core.event.BotOnlineEvent
+import katium.core.review.ReviewMessage
 import katium.core.util.event.post
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
@@ -122,6 +126,8 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     val sequenceID = atomic(Random.Default.nextInt())
     val oicqCodec = OicqPacketCodec(this)
 
+    lateinit var reviewMessages: Set<ReviewMessage>
+
     // @TODO: reconnect on disconnected
     suspend fun connect() {
         while (retryTimes <= serverAddresses.size) {
@@ -168,8 +174,9 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     private fun initChannel() {
         channel!!.pipeline()
-            .addLast("Encoder", RequestPacketEncoder(this))
-            .addLast("Decoder", ResponsePacketDecoder(this))
+            .addLast("TransportEncoder", RequestPacketEncoder(this))
+            .addLast("TransportDecoder", ResponsePacketDecoder(this))
+            .addLast("TransportResponseDecoder", TransportPacketDecoder(this))
             .addLast("InboundPacketHandler", InboundPacketHandler(this))
     }
 
@@ -193,13 +200,14 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
             val response = it.packet as LoginResponsePacket
             if (response.success) {
                 registerClient()
+                pullSystemMessages()
             } else {
                 throw RuntimeException("Login failed, $response")
             }
         }
     }
 
-    internal suspend fun registerClient() {
+    suspend fun registerClient() {
         runCatching {
             sendAndWait(ClientRegisterPacket.create(this))
             notifyOnline()
@@ -211,6 +219,14 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     internal suspend fun notifyOnline() {
         isClientRegistered = true
         bot.post(BotOnlineEvent(bot))
+    }
+
+    suspend fun pullSystemMessages() {
+        val safeMessages = (sendAndWait(PullGroupSystemMessagesPacket.create(this, suspicious = false))
+                as PushGroupSystemMessagesPacket).messages
+        val suspiciousMessages = (sendAndWait(PullGroupSystemMessagesPacket.create(this, suspicious = true))
+                as PushGroupSystemMessagesPacket).messages
+        reviewMessages = (safeMessages + suspiciousMessages).toSet()
     }
 
 }

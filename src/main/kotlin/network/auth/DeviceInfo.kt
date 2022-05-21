@@ -18,7 +18,7 @@
 package katium.client.qq.network.auth
 
 import com.google.common.hash.Hashing
-import katium.client.qq.network.pb.ProtoBufDeviceInfo
+import katium.client.qq.network.pb.PbDeviceInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
@@ -68,7 +68,7 @@ data class DeviceInfo(
 
     fun computeKsid() = "|${IMEI}|A8.2.7.27f6ea96".toByteArray().toUByteArray()
 
-    fun toProtoBufDeviceInfo(): ProtoBufDeviceInfo.DeviceInfo = ProtoBufDeviceInfo.DeviceInfo.newBuilder()
+    fun toProtoBufDeviceInfo(): PbDeviceInfo.DeviceInfo = PbDeviceInfo.DeviceInfo.newBuilder()
         .setBootloader(bootloader)
         .setProcVersion(procVersion)
         .setCodeName(version.codeName)

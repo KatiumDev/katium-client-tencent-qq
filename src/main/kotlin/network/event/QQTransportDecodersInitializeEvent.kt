@@ -2,35 +2,33 @@ package katium.client.qq.network.event
 
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oicq.OicqPacket
-import katium.client.qq.network.codec.oicq.OicqPacketCodec
+import katium.client.qq.network.codec.packet.TransportPacket
 import katium.core.event.BotEvent
 
-class QQOicqDecodersInitializeEvent(
-    val codec: OicqPacketCodec,
-    val decoders: MutableMap<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple>
-) : BotEvent(codec.client.bot) {
+class QQTransportDecodersInitializeEvent(
+    val client: QQClient,
+    val decoders: MutableMap<String, (QQClient, TransportPacket.Response.Buffered) -> TransportPacket.Response>
+) : BotEvent(client.bot) {
 
-    val client by codec::client
-
-    operator fun component2() = codec
+    operator fun component2() = client
     operator fun component3() = decoders
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is QQOicqDecodersInitializeEvent) return false
+        if (other !is QQTransportDecodersInitializeEvent) return false
         if (!super.equals(other)) return false
-        if (codec != other.codec) return false
+        if (client != other.client) return false
         if (decoders != other.decoders) return false
         return true
     }
 
     override fun hashCode(): Int {
         var result = super.hashCode()
-        result = 31 * result + codec.hashCode()
+        result = 31 * result + client.hashCode()
         result = 31 * result + decoders.hashCode()
         return result
     }
 
-    override fun toString() = "QQOicqDecodersInitializeEvent(bot=$bot, codec=$codec, decoders=$decoders)"
+    override fun toString() = "QQTransportDecodersInitializeEvent(bot=$bot, client=$client, decoders=$decoders)"
 
 }

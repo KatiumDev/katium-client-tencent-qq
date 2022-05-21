@@ -31,7 +31,7 @@ class OicqPacket private constructor() {
         override fun close() {
         }
 
-        fun component1() = command
+        operator fun component1() = command
 
     }
 
@@ -57,7 +57,7 @@ class OicqPacket private constructor() {
         ) :
             Simple(client, uin, command, encryption) {
 
-            fun component2() = body
+            operator fun component2() = body
 
             override fun writeBody(output: ByteBuf) {
                 output.writeBytes(body)
@@ -87,7 +87,7 @@ class OicqPacket private constructor() {
 
             lateinit var body: ByteBuf
 
-            fun component2() = body
+            operator fun component2() = body
 
             override fun readBody(input: ByteBuf) {
                 body = input.readBytes(input.readableBytes())

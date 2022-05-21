@@ -37,9 +37,9 @@ class TransportPacket private constructor() {
         override fun close() {
         }
 
-        fun component1() = type
-        fun component2() = sequenceID
-        fun component3() = command
+        operator fun component1() = type
+        operator fun component2() = sequenceID
+        operator fun component3() = command
 
         abstract class Simple(
             val client: QQClient,
@@ -60,7 +60,7 @@ class TransportPacket private constructor() {
             val body: ByteBuf
         ) : Simple(client, type, encryptType, uin, sequenceID, command) {
 
-            fun component4() = body
+            operator fun component4() = body
 
             override fun writeBody(output: ByteBuf) {
                 output.writeBytes(body)
@@ -84,7 +84,7 @@ class TransportPacket private constructor() {
             val codec: OicqPacketCodec = client.oicqCodec
         ) : Simple(client, type, encryptType, uin, sequenceID, command) {
 
-            fun component4() = packet
+            operator fun component4() = packet
 
             override fun writeBody(output: ByteBuf) {
                 codec.encode(output, packet, release = false)
@@ -108,9 +108,9 @@ class TransportPacket private constructor() {
         val command: String
         val message: String
 
-        fun component1() = type
-        fun component2() = sequenceID
-        fun component3() = command
+        operator fun component1() = type
+        operator fun component2() = sequenceID
+        operator fun component3() = command
 
         fun readBody(input: ByteBuf)
 
@@ -124,7 +124,21 @@ class TransportPacket private constructor() {
             override val sequenceID: Int,
             override val command: String,
             override val message: String
-        ) : Response
+        ) : Response {
+
+            constructor(other: Buffered) : this(
+                type = other.type,
+                encryptType = other.encryptType,
+                uin = other.uin,
+                sequenceID = other.sequenceID,
+                command = other.command,
+                message = other.message
+            ) {
+                @Suppress("LeakingThis")
+                readBody(other.body)
+            }
+
+        }
 
         open class Buffered(
             type: Type,
@@ -137,7 +151,7 @@ class TransportPacket private constructor() {
 
             lateinit var body: ByteBuf
 
-            fun component4() = body
+            operator fun component4() = body
 
             override fun readBody(input: ByteBuf) {
                 body = input.readBytes(input.readableBytes())
@@ -163,7 +177,7 @@ class TransportPacket private constructor() {
 
             lateinit var packet: OicqPacket.Response
 
-            fun component4() = packet
+            operator fun component4() = packet
 
             override fun readBody(input: ByteBuf) {
                 packet = codec.decode(input, transportCommand = command, release = false)

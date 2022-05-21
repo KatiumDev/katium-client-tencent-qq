@@ -22,7 +22,7 @@ import katium.core.event.BotEvent
 
 class QQChannelInitializeEvent(val client: QQClient) : BotEvent(client.bot) {
 
-    fun component2() = client
+    operator fun component2() = client
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

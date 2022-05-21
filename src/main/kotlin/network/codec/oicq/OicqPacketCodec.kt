@@ -108,37 +108,42 @@ class OicqPacketCodec(
         }
     }
 
-    fun decode(reader: ByteBuf, transportCommand: String = "", release: Boolean = true): OicqPacket.Response = reader.run {
-        if (readByte().toInt() != 0x02) throw UnsupportedOperationException("Unknown flag")
-        skipBytes(4)
-        val command = readShort()
-        skipBytes(2) // always 1
-        val uin = readInt()
-        skipBytes(1)
-        val encryptionMethod = readByte().toInt()
-        skipBytes(1)
-        val bodyLength = reader.readableBytes() - 1
-        val body = when (encryptionMethod) {
-            0 -> {
-                try {
-                    ecdh.shareKeyTeaCipher.decrypt(reader.duplicate().readBytes(bodyLength))
-                } catch (e: Exception) {
-                    randomKeyCipher.decrypt(reader.duplicate().readBytes(bodyLength))
+    fun decode(reader: ByteBuf, transportCommand: String = "", release: Boolean = true): OicqPacket.Response =
+        reader.run {
+            if (readByte().toInt() != 0x02) throw UnsupportedOperationException("Unknown flag")
+            skipBytes(4)
+            val command = readShort()
+            skipBytes(2) // always 1
+            val uin = readInt()
+            skipBytes(1)
+            val encryptionMethod = readByte().toInt()
+            skipBytes(1)
+            val bodyLength = reader.readableBytes() - 1
+            val body = when (encryptionMethod) {
+                0 -> {
+                    try {
+                        ecdh.shareKeyTeaCipher.decrypt(reader.duplicate().readBytes(bodyLength))
+                    } catch (e: Exception) {
+                        randomKeyCipher.decrypt(reader.duplicate().readBytes(bodyLength))
+                    }
                 }
+                3 -> wtSessionTicketKeyCipher!!.decrypt(reader.duplicate().readBytes(bodyLength), release = false)
+                // @TODO: https://cs.github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/components/PacketCodec.kt#L260
+                else -> throw UnsupportedOperationException("Unknown encryption method $encryptionMethod")
             }
-            3 -> wtSessionTicketKeyCipher!!.decrypt(reader.duplicate().readBytes(bodyLength), release = false)
-            // @TODO: https://cs.github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/components/PacketCodec.kt#L260
-            else -> throw UnsupportedOperationException("Unknown encryption method $encryptionMethod")
-        }
-        reader.skipBytes(bodyLength + 1)
-        if (release) {
-            reader.release()
-        }
-        return (decoders[transportCommand]?.invoke(client, uin, command) ?: OicqPacket.Response.Buffered(client, uin, command))
-            .apply {
-                readBody(body)
-                body.release()
+            reader.skipBytes(bodyLength + 1)
+            if (release) {
+                reader.release()
             }
-    }
+            return (decoders[transportCommand]?.invoke(client, uin, command) ?: OicqPacket.Response.Buffered(
+                client,
+                uin,
+                command
+            ))
+                .apply {
+                    readBody(body)
+                    body.release()
+                }
+        }
 
 }

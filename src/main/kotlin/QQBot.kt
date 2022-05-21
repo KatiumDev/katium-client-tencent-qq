@@ -17,9 +17,11 @@
  */
 package katium.client.qq
 
+import katium.client.qq.group.QQGroup
 import katium.client.qq.network.QQClient
 import katium.core.Bot
 import katium.core.chat.LocalChatID
+import katium.core.group.Group
 import katium.core.review.ReviewMessage
 import katium.core.user.Contact
 import katium.core.user.User
@@ -27,7 +29,6 @@ import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import javax.swing.GroupLayout
 
 class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user.id"]!!.toLong()), config) {
 
@@ -48,17 +49,16 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
     override val isConnected by client::isConnected
     override val isOnline by client::isOnline
 
-    override fun getGroup(id: LocalChatID): GroupLayout.Group {
-        TODO("Not yet implemented")
+    override fun getGroup(id: LocalChatID): Group {
+        return QQGroup(this, id.asQQ.uin)
     }
 
     override fun getUser(id: LocalChatID): User {
         TODO("Not yet implemented")
     }
 
-    override val reviewMessages: Set<ReviewMessage>
-        get() = TODO("Not yet implemented")
-    
+    override val reviewMessages: Set<ReviewMessage> by client::reviewMessages
+
     val allowSlider = (config["qq.allow_slider"] ?: "true").toBoolean()
 
 }

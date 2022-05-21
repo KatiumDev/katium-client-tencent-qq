@@ -21,6 +21,9 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
+import katium.client.qq.network.event.QQPacketReceivedEvent
+import katium.core.util.event.post
+import kotlinx.coroutines.launch
 import kotlin.coroutines.resume
 
 class InboundPacketHandler(val client: QQClient) : ChannelInboundHandlerAdapter() {
@@ -32,6 +35,10 @@ class InboundPacketHandler(val client: QQClient) : ChannelInboundHandlerAdapter(
         if (handler != null) {
             handler.resume(msg)
             client.packetHandlers.remove(msg.sequenceID)
+        } else {
+            client.bot.launch {
+                client.bot.post(QQPacketReceivedEvent(client, msg))
+            }
         }
     }
 

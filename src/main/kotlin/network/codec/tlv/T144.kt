@@ -20,13 +20,13 @@ package katium.client.qq.network.codec.tlv
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.auth.NetworkType
 import katium.client.qq.network.crypto.tea.QQTeaCipher
-import katium.client.qq.network.pb.ProtoBufDeviceInfo
+import katium.client.qq.network.pb.PbDeviceInfo
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
 
 fun ByteBuf.writeT144(
     imei: ByteArray, // T109
-    deviceInfo: ProtoBufDeviceInfo.DeviceInfo, // T52D
+    deviceInfo: PbDeviceInfo.DeviceInfo, // T52D
     // T124
     osType: ByteArray,
     osVersion: ByteArray,
