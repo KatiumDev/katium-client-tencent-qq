@@ -18,15 +18,16 @@
 package katium.client.qq.network.codec.oicq
 
 import io.netty.buffer.ByteBuf
+import katium.client.qq.network.QQClient
 import katium.client.qq.network.crypto.EncryptionMethod
 
 class OicqPacket private constructor() {
 
     interface Packet : AutoCloseable {
 
+        val client: QQClient
         val uin: Int
         val command: Short
-        val encryptionMethod: EncryptionMethod
 
         override fun close() {
         }
@@ -37,16 +38,25 @@ class OicqPacket private constructor() {
 
     interface Request : Packet {
 
+        val encryption: EncryptionMethod
+
         fun writeBody(output: ByteBuf)
 
         abstract class Simple(
-            override val uin: Int,
+            override val client: QQClient,
+            override val uin: Int = client.uin.toInt(),
             override val command: Short,
-            override val encryptionMethod: EncryptionMethod
+            override val encryption: EncryptionMethod
         ) : Request
 
-        open class Buffered(uin: Int, command: Short, encryptionMethod: EncryptionMethod, val body: ByteBuf) :
-            Simple(uin, command, encryptionMethod) {
+        open class Buffered(
+            client: QQClient,
+            uin: Int = client.uin.toInt(),
+            command: Short,
+            encryption: EncryptionMethod,
+            val body: ByteBuf
+        ) :
+            Simple(client, uin, command, encryption) {
 
             fun component2() = body
 
@@ -68,13 +78,13 @@ class OicqPacket private constructor() {
         fun readBody(input: ByteBuf)
 
         abstract class Simple(
+            override val client: QQClient,
             override val uin: Int,
-            override val command: Short,
-            override val encryptionMethod: EncryptionMethod
+            override val command: Short
         ) : Response
 
-        open class Buffered(uin: Int, command: Short, encryptionMethod: EncryptionMethod) :
-            Simple(uin, command, encryptionMethod) {
+        open class Buffered(client: QQClient, uin: Int, command: Short) :
+            Simple(client, uin, command) {
 
             lateinit var body: ByteBuf
 

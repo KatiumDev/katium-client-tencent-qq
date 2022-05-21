@@ -18,21 +18,40 @@
 package katium.client.qq.network.codec.oicq
 
 import io.netty.buffer.ByteBuf
+import katium.client.qq.network.QQClient
 import katium.client.qq.network.crypto.EncryptionMethod
 import katium.client.qq.network.crypto.ecdh.EcdhKeyProvider
 import katium.client.qq.network.crypto.tea.QQTeaCipher
+import katium.client.qq.network.event.QQOicqDecodersInitializeEvent
+import katium.client.qq.network.packet.wtlogin.LoginResponse
+import katium.core.util.event.post
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
 import katium.core.util.netty.writeUByteArray
+import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
 class OicqPacketCodec(
-    val ecdh: EcdhKeyProvider
+    val client: QQClient,
+    val ecdh: EcdhKeyProvider = EcdhKeyProvider(client)
 ) {
 
     val randomKey = Random.Default.nextBytes(16).toUByteArray()
     val randomKeyCipher = QQTeaCipher(randomKey)
     var wtSessionTicketKeyCipher: QQTeaCipher? = null
+
+    val decoders: Map<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple> by lazy {
+        val decoders = mutableMapOf<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple>()
+        registerBuiltinDecoders(decoders)
+        runBlocking {
+            client.bot.post(QQOicqDecodersInitializeEvent(this@OicqPacketCodec, decoders))
+        }
+        decoders.toMap()
+    }
+
+    private fun registerBuiltinDecoders(decoders: MutableMap<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple>) {
+        decoders["wtlogin.login"] = ::LoginResponse
+    }
 
     fun encode(output: ByteBuf, packet: OicqPacket.Request, release: Boolean = true) {
         output.run {
@@ -45,7 +64,7 @@ class OicqPacketCodec(
             writeInt(packet.uin)
             writeByte(0x03)
             writeByte(
-                when (packet.encryptionMethod) {
+                when (packet.encryption) {
                     EncryptionMethod.ECDH -> 0x87
                     EncryptionMethod.ST -> 0x45
                 }
@@ -54,7 +73,7 @@ class OicqPacketCodec(
             writeInt(2)
             writeInt(0)
             writeInt(0)
-            when (packet.encryptionMethod) {
+            when (packet.encryption) {
                 EncryptionMethod.ECDH -> {
                     writeByte(0x02)
                     writeByte(0x01)
@@ -90,7 +109,7 @@ class OicqPacketCodec(
         }
     }
 
-    fun decode(reader: ByteBuf, release: Boolean = true): OicqPacket.Response = reader.run {
+    fun decode(reader: ByteBuf, transportCommand: String = "", release: Boolean = true): OicqPacket.Response = reader.run {
         if (readByte().toInt() != 0x02) throw UnsupportedOperationException("Unknown flag")
         skipBytes(4)
         val command = readShort()
@@ -116,11 +135,11 @@ class OicqPacketCodec(
         if (release) {
             reader.release()
         }
-        // @TODO: Serializers
-        return OicqPacket.Response.Buffered(uin, command, EncryptionMethod.ECDH).apply {
-            readBody(body)
-            body.release()
-        }
+        return (decoders[transportCommand]?.invoke(client, uin, command) ?: OicqPacket.Response.Buffered(client, uin, command))
+            .apply {
+                readBody(body)
+                body.release()
+            }
     }
 
 }
