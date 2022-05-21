@@ -17,15 +17,22 @@
  */
 package katium.client.qq.network.packet.wtlogin
 
-import katium.client.qq.network.QQClient
-import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.crypto.EncryptType
+import io.netty.buffer.ByteBuf
+import katium.core.util.netty.writeUByteArray
 
-fun createLoginRequest(client: QQClient, sequenceID: Int = client.allocSequenceID()) = TransportPacket.Request.Oicq(
-    client = client,
-    type = TransportPacket.Type.LOGIN,
-    encryptType = EncryptType.EMPTY_KEY,
-    sequenceID = sequenceID,
-    command = "wtlogin.login",
-    packet = PasswordLoginPacket(client, sequenceID)
+data class LoginExtraData(
+    val uin: Long,
+    val ip: UByteArray,
+    val time: Int,
+    val version: Int
 )
+
+fun ByteBuf.writeLoginExtraData(data: LoginExtraData): ByteBuf {
+    writeLong(data.uin)
+    writeByte(data.ip.size)
+    writeUByteArray(data.ip)
+    writeInt(data.time)
+    writeInt(data.version)
+    return this
+}
+
