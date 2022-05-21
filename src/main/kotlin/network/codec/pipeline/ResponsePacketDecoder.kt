@@ -35,15 +35,15 @@ class ResponsePacketDecoder(val client: QQClient) : ByteToMessageDecoder() {
         if (lastPacket == null && `in`.readableBytes() >= 4) { // read new packet
             val size = `in`.readInt() - 4
             if (`in`.readableBytes() >= size) {
-                packet = `in`.readRetainedSlice(size).readPacket(client)
+                packet = `in`.readSlice(size).readPacket(client, release = false)
             } else {
-                lastPacket = `in`.alloc().compositeBuffer().addComponent(`in`.readBytes(`in`.readableBytes())) to size
+                lastPacket = `in`.alloc().compositeBuffer() to size
             }
         } else if (lastPacket != null) { // continue reading
             var (buf, size) = lastPacket!!
             val readingSize = min(`in`.readableBytes(), size)
             size -= readingSize
-            buf.addComponent(`in`.readBytes(readingSize))
+            buf.addComponent(true, `in`.readBytes(readingSize))
             if (size <= 0) {
                 lastPacket = null
                 packet = buf.readPacket(client)
