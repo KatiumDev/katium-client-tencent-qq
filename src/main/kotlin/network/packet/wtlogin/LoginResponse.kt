@@ -76,6 +76,20 @@ class LoginResponse(client: QQClient, uin: Int, command: Short) : OicqPacket.Res
                         client.sig.randomSeed = tlv[0x403]!!.toArray(release = false).toUByteArray()
                     }
                     client.applyT119(tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false))
+                    if (0x149 in tlv) {
+                        success = false
+                        tlv[0x149]!!.apply {
+                            skipBytes(2)
+                            errorMessage = "Other device login(0 with T149), ${readQQShortLengthString()}"
+                        }
+                    }
+                    if (0x146 in tlv) {
+                        success = false
+                        tlv[0x146]!!.apply {
+                            skipBytes(4)
+                            errorMessage = "Other device login(0 with T146), ${readQQShortLengthString()}"
+                        }
+                    }
                 }
                 0x01u -> errorMessage = "Wrong password"
                 0x02u -> TODO("Need captcha")
