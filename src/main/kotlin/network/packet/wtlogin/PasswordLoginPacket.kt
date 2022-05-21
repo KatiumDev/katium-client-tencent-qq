@@ -21,11 +21,31 @@ import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oicq.OicqPacket
+import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.tlv.*
 import java.util.*
 
 class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
-    OicqPacket.Request.Simple(client = client, uin = client.uin.toInt(), command = 0x0810, encryption = OicqPacket.EncryptType.ECDH) {
+    OicqPacket.Request.Simple(
+        client = client,
+        uin = client.uin.toInt(),
+        command = 0x0810,
+        encryption = OicqPacket.EncryptType.ECDH
+    ) {
+
+    companion object {
+
+        fun create(client: QQClient, sequenceID: Int = client.allocSequenceID()) =
+            TransportPacket.Request.Oicq(
+                client = client,
+                type = TransportPacket.Type.LOGIN,
+                encryptType = TransportPacket.EncryptType.EMPTY_KEY,
+                sequenceID = sequenceID,
+                command = "wtlogin.login",
+                packet = PasswordLoginPacket(client, sequenceID)
+            )
+
+    }
 
     override fun writeBody(output: ByteBuf) {
         output.apply {

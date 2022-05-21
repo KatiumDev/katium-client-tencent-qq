@@ -24,10 +24,11 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.packet.writePacket
 
-class RequestPacketEncoder(val client: QQClient) : MessageToByteEncoder<TransportPacket.Request>(TransportPacket.Request::class.java) {
+class RequestPacketEncoder(val client: QQClient) :
+    MessageToByteEncoder<TransportPacket.Request>(TransportPacket.Request::class.java) {
 
     override fun encode(ctx: ChannelHandlerContext, msg: TransportPacket.Request, out: ByteBuf) {
-        out.writePacket(client, msg)
+        out.writePacket(client, msg, release = true)
     }
 
 }
