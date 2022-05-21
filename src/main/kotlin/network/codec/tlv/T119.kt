@@ -75,8 +75,8 @@ fun QQClient.applyT119(tlv: TlvMap) {
         oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(tlv[0x134]!!.toArray(false).toUByteArray())
     }
     sig.loginBitmap = 0uL
-    if (0x106 in tlv) {
-        sig.srmToken = tlv[0x106]!!.toArray(false).toUByteArray()
+    if (0x16A in tlv) {
+        sig.srmToken = tlv[0x16A]!!.toArray(false).toUByteArray()
     }
     if (0x133 in tlv) {
         sig.t133 = tlv[0x133]!!.toArray(false).toUByteArray()
