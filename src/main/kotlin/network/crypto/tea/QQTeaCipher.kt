@@ -20,7 +20,7 @@ package katium.client.qq.network.crypto.tea
 import io.netty.buffer.ByteBuf
 import katium.core.util.netty.getULong
 import katium.core.util.netty.setULong
-import java.util.HexFormat
+import java.util.*
 import kotlin.experimental.and
 import kotlin.random.Random
 
@@ -75,7 +75,7 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
 
     fun decrypt(buffer: ByteBuf, release: Boolean = true): ByteBuf {
         if (buffer.readableBytes() < 16 || buffer.readableBytes() % 8 != 0) {
-            throw IllegalArgumentException("Size of QQTea encrypted data should greater than 16 and multiplier of 8")
+            throw IllegalArgumentException("Size of QQTea encrypted data should greater than 16 and multiplier of 8 but got ${buffer.readableBytes()}")
         }
 
         var iv1: ULong
@@ -98,8 +98,12 @@ class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
         // Check fill bytes
         val tailBytes = ByteArray(7)
         buffer.readBytes(tailBytes)
-        if(!tailBytes.contentEquals(TAIL_BYTES)) {
-            throw IllegalArgumentException("QQTea encrypted data tail bytes are not correct, got ${HexFormat.of().formatHex(tailBytes)}")
+        if (!tailBytes.contentEquals(TAIL_BYTES)) {
+            throw IllegalArgumentException(
+                "QQTea encrypted data tail bytes are not correct, got ${
+                    HexFormat.of().formatHex(tailBytes)
+                }"
+            )
         }
 
         if (release) {
