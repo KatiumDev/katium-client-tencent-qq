@@ -30,22 +30,23 @@ import katium.client.qq.network.auth.LoginSigInfo
 import katium.client.qq.network.auth.ProtocolType
 import katium.client.qq.network.codec.oicq.OicqPacketCodec
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.codec.pipeline.InboundPacketHandler
-import katium.client.qq.network.codec.pipeline.RequestPacketEncoder
-import katium.client.qq.network.codec.pipeline.ResponsePacketDecoder
-import katium.client.qq.network.codec.pipeline.TransportPacketDecoder
+import katium.client.qq.network.codec.pipeline.*
 import katium.client.qq.network.event.QQChannelInitializeEvent
+import katium.client.qq.network.handler.HeartbeatHandler
 import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesPacket
 import katium.client.qq.network.packet.profileSvc.PushGroupSystemMessagesPacket
 import katium.client.qq.network.packet.statSvc.ClientRegisterPacket
 import katium.client.qq.network.packet.wtlogin.LoginResponsePacket
 import katium.client.qq.network.packet.wtlogin.PasswordLoginPacket
 import katium.client.qq.network.sso.SsoServerListManager
+import katium.core.event.BotOfflineEvent
 import katium.core.event.BotOnlineEvent
 import katium.core.review.ReviewMessage
 import katium.core.util.event.post
+import katium.core.util.event.register
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.decodeFromString
@@ -63,6 +64,10 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     val logger by bot::logger
     val uin by bot::uin
+
+    init {
+        bot.register(HeartbeatHandler)
+    }
 
     val serverAddresses: List<InetSocketAddress> by lazy {
         if ("qq.remote_server_address" in bot.config) {
@@ -125,6 +130,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
     val sequenceID = atomic(Random.Default.nextInt())
     val oicqCodec = OicqPacketCodec(this)
+    var heartbeatJob: Job? = null
 
     lateinit var reviewMessages: Set<ReviewMessage>
 
@@ -174,10 +180,11 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     private fun initChannel() {
         channel!!.pipeline()
-            .addLast("TransportEncoder", RequestPacketEncoder(this))
-            .addLast("TransportDecoder", ResponsePacketDecoder(this))
-            .addLast("TransportResponseDecoder", TransportPacketDecoder(this))
+            .addLast("RequestPacketEncoder", RequestPacketEncoder(this))
+            .addLast("ResponsePacketDecoder", ResponsePacketDecoder(this))
+            .addLast("TransportPacketDecoder", TransportPacketDecoder(this))
             .addLast("InboundPacketHandler", InboundPacketHandler(this))
+            .addLast("InactiveHandler", InactiveHandler(this))
     }
 
     fun allocSequenceID() = sequenceID.incrementAndGet()
@@ -219,6 +226,11 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     internal suspend fun notifyOnline() {
         isClientRegistered = true
         bot.post(BotOnlineEvent(bot))
+    }
+
+    internal suspend fun notifyOffline() {
+        isClientRegistered = false
+        bot.post(BotOfflineEvent(bot))
     }
 
     suspend fun pullSystemMessages() {
