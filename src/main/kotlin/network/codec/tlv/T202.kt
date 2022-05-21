@@ -21,8 +21,11 @@ import io.netty.buffer.ByteBuf
 import kotlin.math.min
 
 fun ByteBuf.writeT202(wifiBSSIDMD5: ByteArray, wifiSSID: ByteArray) = writeTlv(0x202) {
-    assert(wifiBSSIDMD5.size == 16)
-    writeBytes(wifiBSSIDMD5)
+    run {
+        val length = min(wifiBSSIDMD5.size, 16)
+        writeShort(length)
+        writeBytes(wifiBSSIDMD5, 0, length)
+    }
     run {
         val length = min(wifiSSID.size, 32)
         writeShort(length)
