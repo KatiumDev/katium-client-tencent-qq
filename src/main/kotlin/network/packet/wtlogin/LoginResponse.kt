@@ -47,13 +47,10 @@ class LoginResponse(client: QQClient, uin: Int, command: Short) : OicqPacket.Res
 
     override fun readBody(input: ByteBuf) {
         input.run {
-            println(HexFormat.of().formatHex(duplicate().toArray(false)).uppercase())
             skipBytes(2) // sub command
             val type = readUByte().toUInt()
             skipBytes(2)
-            val tlv = readTlvMap(2)
-            println(tlv)
-            println(type)
+            val tlv = readTlvMap(2, release = false)
             if (0x402 in tlv) {
                 client.sig.dpwd = Random.Default.nextBytes(16).toUByteArray()
                 client.sig.t402 = tlv[0x402]!!.toArray(release = false).toUByteArray()

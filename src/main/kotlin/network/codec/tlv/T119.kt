@@ -93,17 +93,18 @@ fun QQClient.applyT119(tlv: TlvMap) {
     sig.d2 = tlv[0x143]!!.toArray(false).toUByteArray()
     sig.d2Key = TeaCipher.decodeByteKey(tlv[0x305]!!.toArray(false).toUByteArray())
     sig.deviceToken = tlv[0x322]!!.toArray(false).toUByteArray()
-    ByteBufAllocator.DEFAULT.buffer {
+
+    @Suppress("DEPRECATION")
+    val key = Hashing.md5().hashBytes(ByteBufAllocator.DEFAULT.buffer {
         writeBytes(passwordMD5)
         writeInt(0) // ByteArray(4)
         writeInt(uin.toInt())
-    }.use {
-        @Suppress("DEPRECATION")
-        val decrypted = QQTeaCipher(Hashing.md5().hashBytes(it.toArray(false)).asBytes().toUByteArray()).decrypt(
-            it.alloc().buffer(sig.encryptedA1!!.toByteArray())
-        ).toArray(true)
-        if (decrypted.size > 51 + 16) {
-            deviceInfo.tgtgtKey = decrypted.drop(51).take(16).toTypedArray().toByteArray()
+    }.toArray(true)).asBytes().toUByteArray()
+    QQTeaCipher(key).decrypt(ByteBufAllocator.DEFAULT.buffer(sig.encryptedA1!!.toByteArray())).use {
+        if (it.readableBytes() > 51 + 16) {
+            it.skipBytes(51)
+            deviceInfo.tgtgtKey = ByteArray(16)
+            it.readBytes(deviceInfo.tgtgtKey)
         }
     }
 }
