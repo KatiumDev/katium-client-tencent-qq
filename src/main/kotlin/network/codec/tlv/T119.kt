@@ -47,7 +47,7 @@ fun QQClient.applyT119(tlv: TlvMap) {
         sig.ksid = tlv[0x108]!!.toArray(false).toUByteArray()
     }
     val (age, gender, nick) = tlv[0x11A]!!.readT11A(false)
-    println("Age $age, gender $gender, nick $nick")
+    // @TODO: handle self summary card info
     /*if (0x125 in tlv) {
         val (openID, openKey) = tlv[0x125]!!.readT125(false)
     }*/
