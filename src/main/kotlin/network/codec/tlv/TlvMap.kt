@@ -2,6 +2,8 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 import katium.core.util.netty.readUShort
+import katium.core.util.netty.toArray
+import java.util.*
 
 class TlvMap : HashMap<Short, ByteBuf>, AutoCloseable {
 
@@ -15,6 +17,11 @@ class TlvMap : HashMap<Short, ByteBuf>, AutoCloseable {
     }
 
     override fun close() = release()
+
+    override fun toString() = "{${
+        entries.map { it.key to HexFormat.of().formatHex(it.value.duplicate().toArray(false)).uppercase() }
+            .joinToString(", ") { (key, value) -> "$key: $value" }
+    }}"
 
 }
 
