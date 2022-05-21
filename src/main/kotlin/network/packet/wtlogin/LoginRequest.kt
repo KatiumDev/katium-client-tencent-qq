@@ -19,12 +19,11 @@ package katium.client.qq.network.packet.wtlogin
 
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.crypto.EncryptType
 
 fun createLoginRequest(client: QQClient, sequenceID: Int = client.allocSequenceID()) = TransportPacket.Request.Oicq(
     client = client,
     type = TransportPacket.Type.LOGIN,
-    encryptType = EncryptType.EMPTY_KEY,
+    encryptType = TransportPacket.EncryptType.EMPTY_KEY,
     sequenceID = sequenceID,
     command = "wtlogin.login",
     packet = PasswordLoginPacket(client, sequenceID)

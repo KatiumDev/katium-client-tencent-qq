@@ -21,7 +21,6 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oicq.OicqPacket
 import katium.client.qq.network.codec.oicq.OicqPacketCodec
-import katium.client.qq.network.crypto.EncryptType
 
 class TransportPacket private constructor() {
 
@@ -186,6 +185,18 @@ class TransportPacket private constructor() {
         companion object {
 
             fun of(value: UInt) = values().first { it.value == value }
+
+        }
+
+    }
+
+    enum class EncryptType(val value: UByte) {
+
+        NONE(0x00u), D2_KEY(0x01u), EMPTY_KEY(0x02u);
+
+        companion object {
+
+            fun of(value: UByte) = values().first { it.value == value }
 
         }
 

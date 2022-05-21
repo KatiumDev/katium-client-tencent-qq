@@ -19,7 +19,6 @@ package katium.client.qq.network.codec.oicq
 
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.crypto.EncryptionMethod
 import katium.client.qq.network.crypto.ecdh.EcdhKeyProvider
 import katium.client.qq.network.crypto.tea.QQTeaCipher
 import katium.client.qq.network.event.QQOicqDecodersInitializeEvent
@@ -65,8 +64,8 @@ class OicqPacketCodec(
             writeByte(0x03)
             writeByte(
                 when (packet.encryption) {
-                    EncryptionMethod.ECDH -> 0x87
-                    EncryptionMethod.ST -> 0x45
+                    OicqPacket.EncryptType.ECDH -> 0x87
+                    OicqPacket.EncryptType.ST -> 0x45
                 }
             )
             writeByte(0)
@@ -74,7 +73,7 @@ class OicqPacketCodec(
             writeInt(0)
             writeInt(0)
             when (packet.encryption) {
-                EncryptionMethod.ECDH -> {
+                OicqPacket.EncryptType.ECDH -> {
                     writeByte(0x02)
                     writeByte(0x01)
                     writeUByteArray(randomKey)
@@ -88,7 +87,7 @@ class OicqPacketCodec(
                         writeBytes(it)
                     }
                 }
-                EncryptionMethod.ST -> {
+                OicqPacket.EncryptType.ST -> {
                     writeByte(0x01)
                     writeByte(0x03)
                     writeUByteArray(randomKey)

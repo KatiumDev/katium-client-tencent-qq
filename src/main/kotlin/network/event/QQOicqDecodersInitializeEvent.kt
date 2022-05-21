@@ -3,7 +3,6 @@ package katium.client.qq.network.event
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oicq.OicqPacket
 import katium.client.qq.network.codec.oicq.OicqPacketCodec
-import katium.client.qq.network.crypto.EncryptionMethod
 import katium.core.event.BotEvent
 
 class QQOicqDecodersInitializeEvent(

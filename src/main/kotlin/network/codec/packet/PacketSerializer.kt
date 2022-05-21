@@ -22,7 +22,6 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.base.readQQIntLengthString
 import katium.client.qq.network.codec.base.writeQQIntLengthString
 import katium.client.qq.network.codec.base.writeWithIntLength
-import katium.client.qq.network.crypto.EncryptType
 import katium.client.qq.network.crypto.tea.QQTeaCipher
 import katium.core.util.netty.*
 import java.io.ByteArrayInputStream
@@ -32,7 +31,7 @@ import kotlin.math.min
 private val EMPTY_KEY = UIntArray(4)
 
 fun ByteBuf.writePacket(client: QQClient, packet: TransportPacket.Request, release: Boolean = true): ByteBuf {
-    val encryptType = if (client.sig.d2.isEmpty()) EncryptType.EMPTY_KEY else packet.encryptType
+    val encryptType = if (client.sig.d2.isEmpty()) TransportPacket.EncryptType.EMPTY_KEY else packet.encryptType
     writeWithIntLength {
         run { // Head
             writeUInt(packet.type.value)
@@ -40,7 +39,7 @@ fun ByteBuf.writePacket(client: QQClient, packet: TransportPacket.Request, relea
             when (packet.type) {
                 TransportPacket.Type.LOGIN -> {
                     when (encryptType) {
-                        EncryptType.D2_KEY -> {
+                        TransportPacket.EncryptType.D2_KEY -> {
                             writeInt(client.sig.d2.size + 4)
                             writeUByteArray(client.sig.d2)
                         }
@@ -59,12 +58,12 @@ fun ByteBuf.writePacket(client: QQClient, packet: TransportPacket.Request, relea
         run { // Body
             val body = alloc().buffer().writePacketBody(client, packet, release)
             when (encryptType) {
-                EncryptType.NONE -> body
+                TransportPacket.EncryptType.NONE -> body
                 else -> {
                     QQTeaCipher(
                         *when (encryptType) {
-                            EncryptType.D2_KEY -> client.sig.d2Key!!
-                            EncryptType.EMPTY_KEY -> EMPTY_KEY
+                            TransportPacket.EncryptType.D2_KEY -> client.sig.d2Key!!
+                            TransportPacket.EncryptType.EMPTY_KEY -> EMPTY_KEY
                             else -> throw IllegalStateException()
                         }
                     ).encrypt(body)
@@ -110,13 +109,13 @@ fun ByteBuf.writePacketBody(client: QQClient, packet: TransportPacket.Request, r
  */
 fun ByteBuf.readPacket(client: QQClient, release: Boolean = true): TransportPacket.Response? {
     val type = TransportPacket.Type.of(readUInt())
-    val encryptType = EncryptType.of(readUByte())
+    val encryptType = TransportPacket.EncryptType.of(readUByte())
     skipBytes(1) // always 0x00
     val uin = readQQIntLengthString().toLong()
     val data = when (encryptType) {
-        EncryptType.NONE -> this.retainedDuplicate()
-        EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key!!).decrypt(this, release = false)
-        EncryptType.EMPTY_KEY -> QQTeaCipher(*EMPTY_KEY).decrypt(this, release = false)
+        TransportPacket.EncryptType.NONE -> this.retainedDuplicate()
+        TransportPacket.EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key!!).decrypt(this, release = false)
+        TransportPacket.EncryptType.EMPTY_KEY -> QQTeaCipher(*EMPTY_KEY).decrypt(this, release = false)
     }
     if (release) {
         this.release()
@@ -132,7 +131,7 @@ fun ByteBuf.readPacket(client: QQClient, release: Boolean = true): TransportPack
 fun ByteBuf.readSSOFrame(
     client: QQClient,
     type: TransportPacket.Type,
-    encryptType: EncryptType,
+    encryptType: TransportPacket.EncryptType,
     uin: Long,
     release: Boolean = true
 ): TransportPacket.Response? {
@@ -159,7 +158,7 @@ fun ByteBuf.readSSOFrame(
     val uncompressedBody = if (compressFlag == 1)
         alloc().buffer(InflaterInputStream(ByteArrayInputStream(body.toArray(true))))
     else body
-    return if (encryptType == EncryptType.EMPTY_KEY) {
+    return if (encryptType == TransportPacket.EncryptType.EMPTY_KEY) {
         TransportPacket.Response.Oicq(client, type, encryptType, uin, sequenceID, command, message)
     } else {
         TransportPacket.Response.Buffered(type, encryptType, uin, sequenceID, command, message)

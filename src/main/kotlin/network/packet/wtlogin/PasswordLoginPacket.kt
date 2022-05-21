@@ -22,11 +22,10 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oicq.OicqPacket
 import katium.client.qq.network.codec.tlv.*
-import katium.client.qq.network.crypto.EncryptionMethod
 import java.util.*
 
 class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
-    OicqPacket.Request.Simple(client = client, uin = client.uin.toInt(), command = 0x0810, encryption = EncryptionMethod.ECDH) {
+    OicqPacket.Request.Simple(client = client, uin = client.uin.toInt(), command = 0x0810, encryption = OicqPacket.EncryptType.ECDH) {
 
     override fun writeBody(output: ByteBuf) {
         output.apply {

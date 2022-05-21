@@ -19,7 +19,6 @@ package katium.client.qq.network.codec.oicq
 
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.crypto.EncryptionMethod
 
 class OicqPacket private constructor() {
 
@@ -38,7 +37,7 @@ class OicqPacket private constructor() {
 
     interface Request : Packet {
 
-        val encryption: EncryptionMethod
+        val encryption: EncryptType
 
         fun writeBody(output: ByteBuf)
 
@@ -46,14 +45,14 @@ class OicqPacket private constructor() {
             override val client: QQClient,
             override val uin: Int = client.uin.toInt(),
             override val command: Short,
-            override val encryption: EncryptionMethod
+            override val encryption: EncryptType
         ) : Request
 
         open class Buffered(
             client: QQClient,
             uin: Int = client.uin.toInt(),
             command: Short,
-            encryption: EncryptionMethod,
+            encryption: EncryptType,
             val body: ByteBuf
         ) :
             Simple(client, uin, command, encryption) {
@@ -100,6 +99,12 @@ class OicqPacket private constructor() {
             }
 
         }
+
+    }
+
+    enum class EncryptType {
+
+        ECDH, ST
 
     }
 
