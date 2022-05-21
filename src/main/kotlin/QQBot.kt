@@ -20,6 +20,7 @@ package katium.client.qq
 import katium.client.qq.network.QQClient
 import katium.core.Bot
 import katium.core.chat.LocalChatID
+import katium.core.review.ReviewMessage
 import katium.core.user.Contact
 import katium.core.user.User
 import kotlinx.coroutines.CancellableContinuation
@@ -44,11 +45,8 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
     override val allContacts: Set<Contact>
         get() = TODO("Not yet implemented")
 
-    override val isConnected: Boolean
-        get() = TODO("Not yet implemented")
-
-    override val isOnline: Boolean
-        get() = TODO("Not yet implemented")
+    override val isConnected by client::isConnected
+    override val isOnline by client::isOnline
 
     override fun getGroup(id: LocalChatID): GroupLayout.Group {
         TODO("Not yet implemented")
@@ -58,6 +56,9 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
         TODO("Not yet implemented")
     }
 
+    override val reviewMessages: Set<ReviewMessage>
+        get() = TODO("Not yet implemented")
+    
     val allowSlider = (config["qq.allow_slider"] ?: "true").toBoolean()
 
 }

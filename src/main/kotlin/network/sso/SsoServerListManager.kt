@@ -34,6 +34,7 @@ import katium.client.qq.network.codec.taf.RequestPacket
 import katium.client.qq.network.codec.taf.decodeUniRequestData
 import katium.client.qq.network.codec.taf.wrapUniRequestData
 import katium.core.util.netty.buffer
+import katium.core.util.netty.use
 import katium.core.util.okhttp.GlobalHttpClient
 import katium.core.util.okhttp.await
 import katium.core.util.okhttp.expected
@@ -67,25 +68,10 @@ object SsoServerListManager {
 
     suspend fun fetchRecords(): List<SsoServerRecord> {
         LOGGER.info("Fetching SSO server list...")
-        // @TODO: `buildRequestPacket`
-        val payload = CIPHER.encrypt(ByteBufAllocator.DEFAULT.buffer {
-            writeWithIntLength {
-                writeBytes(
-                    RequestPacket(
-                        version = 3,
-                        servantName = "ConfigHttp",
-                        functionName = "HttpServerListReq",
-                        buffer = RequestDataV3(
-                            "HttpServerListReq" to SsoListRequestData().dump().wrapUniRequestData()
-                        ).dump()
-                    ).dump()
-                )
-            }
-        }).toRequestBody(true)
         val response = GlobalHttpClient.newCall(
             Request.Builder()
                 .url(SERVER_URL)
-                .post(payload)
+                .post(buildRequestPayload().toRequestBody(true))
                 .build()
         ).await().expected(200)
         RequestPacket(
@@ -103,6 +89,21 @@ object SsoServerListManager {
             }
         }
     }
+
+    fun buildRequestPacket() = RequestPacket(
+        version = 3,
+        servantName = "ConfigHttp",
+        functionName = "HttpServerListReq",
+        buffer = RequestDataV3(
+            "HttpServerListReq" to SsoListRequestData().dump().wrapUniRequestData()
+        ).dump()
+    )
+
+    fun buildRequestPayload() = CIPHER.encrypt(ByteBufAllocator.DEFAULT.buffer {
+        buildRequestPacket().dump().use {
+            writeWithIntLength(it)
+        }
+    })
 
     suspend fun fetchAddresses(): Set<InetSocketAddress> {
         val records = fetchRecords()

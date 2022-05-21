@@ -19,7 +19,6 @@ package katium.client.qq.network
 
 import com.google.common.hash.Hashing
 import io.netty.bootstrap.Bootstrap
-import io.netty.buffer.ByteBufAllocator
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
@@ -34,14 +33,13 @@ import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.pipeline.InboundPacketHandler
 import katium.client.qq.network.codec.pipeline.RequestPacketEncoder
 import katium.client.qq.network.codec.pipeline.ResponsePacketDecoder
-import katium.client.qq.network.codec.tlv.*
 import katium.client.qq.network.event.QQChannelInitializeEvent
-import katium.client.qq.network.packet.wtlogin.LoginResponse
-import katium.client.qq.network.packet.wtlogin.createLoginRequest
+import katium.client.qq.network.packet.statSvc.ClientRegisterPacket
+import katium.client.qq.network.packet.wtlogin.LoginResponsePacket
+import katium.client.qq.network.packet.wtlogin.PasswordLoginPacket
 import katium.client.qq.network.sso.SsoServerListManager
+import katium.core.event.BotOnlineEvent
 import katium.core.util.event.post
-import katium.core.util.netty.buffer
-import katium.core.util.netty.toArray
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
@@ -66,10 +64,8 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
         if ("qq.remote_server_address" in bot.config) {
             listOf(
                 InetSocketAddress(
-                    bot.config["qq.remote_server_address"]!!,
-                    (bot.config["qq.remote_server_port"]
-                        ?: throw IllegalArgumentException("qq.remote_server_port not found but qq.remote_server_address set"))
-                        .toInt()
+                    bot.config["qq.remote_server_address"]!!, (bot.config["qq.remote_server_port"]
+                        ?: throw IllegalArgumentException("qq.remote_server_port not found but qq.remote_server_address set")).toInt()
                 )
             )
         } else {
@@ -83,8 +79,12 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     var retryTimes = 0
 
     val eventLoopGroup = NioEventLoopGroup()
-    lateinit var channel: SocketChannel
+    var channel: SocketChannel? = null
     val packetHandlers: MutableMap<Int, Continuation<TransportPacket.Response>> = mutableMapOf()
+
+    val isConnected get() = channel?.isActive ?: false
+    val isOnline get() = isConnected && isClientRegistered
+    var isClientRegistered: Boolean = false
 
     val deviceInfo by lazy {
         if ("qq.device_info_file" in bot.config) {
@@ -167,7 +167,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     }
 
     private fun initChannel() {
-        channel.pipeline()
+        channel!!.pipeline()
             .addLast("Encoder", RequestPacketEncoder(this))
             .addLast("Decoder", ResponsePacketDecoder(this))
             .addLast("InboundPacketHandler", InboundPacketHandler(this))
@@ -176,7 +176,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     fun allocSequenceID() = sequenceID.incrementAndGet()
 
     fun send(packet: TransportPacket.Request) {
-        channel.writeAndFlush(packet).sync()
+        channel!!.writeAndFlush(packet).sync()
     }
 
     suspend fun sendAndWait(packet: TransportPacket.Request): TransportPacket.Response = suspendCoroutine {
@@ -189,9 +189,28 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
         sendAndWait(packet) as TransportPacket.Response.Buffered
 
     suspend fun login() {
-        sendAndWaitOicq(createLoginRequest(this)).use {
-            println(it.packet as LoginResponse)
+        sendAndWaitOicq(PasswordLoginPacket.create(this)).use {
+            val response = it.packet as LoginResponsePacket
+            if (response.success) {
+                registerClient()
+            } else {
+                throw RuntimeException("Login failed, $response")
+            }
         }
+    }
+
+    internal suspend fun registerClient() {
+        runCatching {
+            sendAndWait(ClientRegisterPacket.create(this))
+            notifyOnline()
+        }.onFailure {
+            isClientRegistered = false
+        }.getOrThrow()
+    }
+
+    internal suspend fun notifyOnline() {
+        isClientRegistered = true
+        bot.post(BotOnlineEvent(bot))
     }
 
 }
