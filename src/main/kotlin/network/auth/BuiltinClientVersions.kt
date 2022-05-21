@@ -22,48 +22,32 @@ object BuiltinClientVersions {
     @JvmField
     val ANDROID_PHONE = ClientVersionInfo(
         apkID = "com.tencent.mobileqq",
-        appID = 537066978,
-        subAppID = 537066978,
-        version = "8.5.5",
-        sdkVersion = "6.0.0.2463",
-        miscBitMap = 150470524,
+        appID = 537100432,
+        subAppID = 537100432,
+        version = "8.8.38",
+        sdkVersion = "6.0.0.2487",
+        miscBitMap = 184024956,
         subSigMap = 0x10400,
-        mainSigMap = 16724722,
+        mainSigMap = 34869472,
         signature = "A6B745BF24A2C277527716F6F36EB68D",
-        buildTime = 1609322643L,
-        ssoVersion = 15,
+        buildTime = 1634310940,
+        ssoVersion = 16,
         protocolType = ProtocolType.ANDROID_PHONE,
     )
 
     @JvmField
-    val ANDROID_PAD = ClientVersionInfo(
-        apkID = "com.tencent.mobileqq",
-        appID = 537062409,
-        subAppID = 537062409,
-        version = "8.4.18",
-        sdkVersion = "6.0.0.2454",
-        miscBitMap = 184024956,
-        subSigMap = 0x10400,
-        mainSigMap = 34869472,
-        signature = "A6B745BF24A2C277527716F6F36EB68D",
-        buildTime = 1604580615L,
-        ssoVersion = 15,
-        protocolType = ProtocolType.ANDROID_PAD,
-    )
-
-    @JvmField
     val ANDROID_WATCH = ClientVersionInfo(
-        apkID = "com.tencent.mobileqq",
-        appID = 537061176,
-        subAppID = 537061176,
-        version = "8.2.7",
-        sdkVersion = "6.0.0.2413",
-        miscBitMap = 184024956,
+        apkID = "com.tencent.qqlite",
+        appID = 537064446,
+        subAppID = 537064446,
+        version = "2.0.5",
+        sdkVersion = "6.0.0.236",
+        miscBitMap = 16252796,
         subSigMap = 0x10400,
         mainSigMap = 34869472,
         signature = "A6B745BF24A2C277527716F6F36EB68D",
-        buildTime = 1571193922L,
-        ssoVersion = 15,
+        buildTime = 1559564731,
+        ssoVersion = 5,
         protocolType = ProtocolType.ANDROID_WATCH,
     )
 
@@ -78,7 +62,7 @@ object BuiltinClientVersions {
         subSigMap = 66560,
         mainSigMap = 1970400,
         signature = "AA3978F41FD96FF9914A669E186474C7",
-        buildTime = 1595836208L,
+        buildTime = 1595836208,
         ssoVersion = 12,
         protocolType = ProtocolType.MAC_OS,
     )
@@ -86,22 +70,21 @@ object BuiltinClientVersions {
     @JvmField
     val I_PAD = ClientVersionInfo(
         apkID = "com.tencent.minihd.qq",
-        appID = 537065739,
-        subAppID = 537065739,
-        version = "5.8.9",
+        appID = 537097188,
+        subAppID = 537097188,
+        version = "8.8.35",
         sdkVersion = "6.0.0.2433",
         miscBitMap = 150470524,
         subSigMap = 66560,
         mainSigMap = 1970400,
         signature = "AA3978F41FD96FF9914A669E186474C7",
-        buildTime = 1595836208L,
+        buildTime = 1595836208,
         ssoVersion = 12,
         protocolType = ProtocolType.I_PAD,
     )
 
     val versions = mapOf(
         ProtocolType.ANDROID_PHONE to ANDROID_PHONE,
-        ProtocolType.ANDROID_PAD to ANDROID_PAD,
         ProtocolType.ANDROID_WATCH to ANDROID_WATCH,
         ProtocolType.MAC_OS to MAC_OS,
         ProtocolType.I_PAD to I_PAD,

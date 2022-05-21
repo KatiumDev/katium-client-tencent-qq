@@ -20,7 +20,6 @@ package katium.client.qq.network.auth
 enum class ProtocolType {
 
     ANDROID_PHONE,
-    ANDROID_PAD,
     ANDROID_WATCH,
     MAC_OS,
     I_PAD;
