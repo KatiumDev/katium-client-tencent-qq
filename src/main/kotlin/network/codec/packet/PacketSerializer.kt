@@ -53,7 +53,7 @@ fun ByteBuf.writePacket(client: QQClient, packet: TransportPacket.Request, relea
                 }
             }
             writeByte(0)
-            writeQQIntLengthString(packet.uin.toString())
+            writeQQIntLengthString(packet.uin.toString(), true)
         }
         run { // Body
             val body = alloc().buffer().writePacketBody(client, packet, release)
@@ -85,10 +85,10 @@ fun ByteBuf.writePacketBody(client: QQClient, packet: TransportPacket.Request, r
             writeBytes(byteArrayOf(0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00))
             writeWithIntLength(client.sig.tgt)
         }
-        writeQQIntLengthString(packet.command)
+        writeQQIntLengthString(packet.command, true)
         writeWithIntLength(client.sig.outgoingPacketSessionId)
         if (packet.type == TransportPacket.Type.LOGIN) {
-            writeQQIntLengthString(client.deviceInfo.IMEI)
+            writeQQIntLengthString(client.deviceInfo.IMEI, true)
             writeInt(0x04)
             writeShort(client.sig.ksid.size + 2)
             writeUByteArray(client.sig.ksid)
@@ -111,7 +111,7 @@ fun ByteBuf.readPacket(client: QQClient, release: Boolean = true): TransportPack
     val type = TransportPacket.Type.of(readUInt())
     val encryptType = TransportPacket.EncryptType.of(readUByte())
     skipBytes(1) // always 0x00
-    val uin = readQQIntLengthString().toLong()
+    val uin = readQQIntLengthString(true).toLong()
     val data = when (encryptType) {
         TransportPacket.EncryptType.NONE -> this.retainedDuplicate()
         TransportPacket.EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key!!).decrypt(this, release = false)
@@ -143,8 +143,8 @@ fun ByteBuf.readSSOFrame(
         -10008 -> throw IllegalStateException("Session expired")
         else -> throw IllegalStateException("Unknown return code: $returnCode")
     }
-    val message = header.readQQIntLengthString()
-    val command = header.readQQIntLengthString()
+    val message = header.readQQIntLengthString(true)
+    val command = header.readQQIntLengthString(true)
     if (command == "Heartbeat.Alive") {
         return null
     }

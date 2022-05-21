@@ -48,35 +48,3 @@ inline fun <T> ByteBuf.readTlv(release: Boolean, crossinline reader: ByteBuf.() 
  * https://github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/protocol/packet/Tlv.kt#L464
  */
 internal const val GUID_FLAG: Long = (1L shl 24 and 0xFF000000) or (0L shl 8 and 0xFF00)
-
-typealias TlvMap = Map<Short, ByteBuf>
-
-fun ByteBuf.readTlvMap(tagSize: Int = 2, release: Boolean = true): TlvMap {
-    val map = mutableMapOf<Short, ByteBuf>()
-    while (readableBytes() >= tagSize) {
-        val k = when (tagSize) {
-            1 -> readByte().toInt()
-            2 -> readShort().toInt()
-            4 -> readInt()
-            else -> throw UnsupportedOperationException("Unsupported tag size: $tagSize")
-        }
-        if (k == 255) {
-            break
-        } else {
-            map[k.toShort()] = readBytes(readUShort().toInt())
-        }
-    }
-    if (release) {
-        release()
-    }
-    return map.toMap()
-}
-
-fun TlvMap.release() {
-    values.forEach(ByteBuf::release)
-}
-
-inline fun TlvMap.use(crossinline block: TlvMap.() -> Unit) {
-    block()
-    release()
-}

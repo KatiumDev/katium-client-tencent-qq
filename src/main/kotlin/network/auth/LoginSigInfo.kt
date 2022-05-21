@@ -47,8 +47,8 @@ data class LoginSigInfo(
     var dpwd: UByteArray? = null,
 
     // TLV cache
-    /*var t104: UByteArray = UByteArray(0),
-    var t174: UByteArray = UByteArray(0),*/
+    var t104: UByteArray = UByteArray(0), // SMS verify
+    var t174: UByteArray = UByteArray(0), // SMS verify
     var g: UByteArray? = null,
     var t402: UByteArray? = null,
     /**
