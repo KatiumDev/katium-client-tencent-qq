@@ -1,19 +1,17 @@
 /*
- * Katium Client Tencent QQ: Tencent QQ protocol implementation for Katium
- * Copyright (C) 2022  Katium Project
+ * Copyright 2022 Katium Project
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package katium.client.qq.network.sso
 
@@ -26,13 +24,13 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import katium.client.qq.network.codec.base.writeWithIntLength
-import katium.client.qq.network.crypto.tea.QQTeaCipher
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 import katium.client.qq.network.codec.jce.readJceStruct
 import katium.client.qq.network.codec.taf.RequestDataV3
 import katium.client.qq.network.codec.taf.RequestPacket
-import katium.client.qq.network.codec.taf.decodeUniRequestData
+import katium.client.qq.network.codec.taf.unwrapUniRequestData
 import katium.client.qq.network.codec.taf.wrapUniRequestData
+import katium.client.qq.network.crypto.tea.QQTeaCipher
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
 import katium.core.util.okhttp.GlobalHttpClient
@@ -74,20 +72,23 @@ object SsoServerListManager {
                 .post(buildRequestPayload().toRequestBody(true))
                 .build()
         ).await().expected(200)
-        RequestPacket(
-            CIPHER.decrypt(ByteBufAllocator.DEFAULT.buffer(response.body.bytes()))
-                .skipBytes(4)
-                .readJceStruct()
-        ).run {
-            RequestDataV3(this.buffer.readJceStruct()).run {
-                @Suppress("UNCHECKED_CAST")
-                val records = (this["HttpServerListRes"]!!.decodeUniRequestData()
-                    .readJceStruct()[2u] as Collection<SimpleJceStruct>)
-                    .map(::SsoServerRecord)
-                LOGGER.info("Got ${records.size} SSO server records")
-                return records
+        lateinit var records: List<SsoServerRecord>
+        CIPHER.decrypt(ByteBufAllocator.DEFAULT.buffer(response.body.bytes()))
+            .skipBytes(4)
+            .use {
+                RequestPacket(
+                    it.readJceStruct()
+                ).use { packet ->
+                    RequestDataV3(packet.buffer.readJceStruct()).use { data ->
+                        @Suppress("UNCHECKED_CAST")
+                        records = (data["HttpServerListRes"]!!.unwrapUniRequestData()
+                            .readJceStruct()[2u] as Collection<SimpleJceStruct>)
+                            .map(::SsoServerRecord)
+                        LOGGER.info("Got ${records.size} SSO server records")
+                    }
+                }
             }
-        }
+        return records
     }
 
     fun buildRequestPacket() = RequestPacket(
@@ -105,8 +106,7 @@ object SsoServerListManager {
         }
     })
 
-    suspend fun fetchAddresses(): Set<InetSocketAddress> {
-        val records = fetchRecords()
+    suspend fun resolveRecords(records: Collection<SsoServerRecord>): Set<InetSocketAddress> {
         LOGGER.info("Resolving SSO server addresses...")
         val addresses = mutableSetOf<InetSocketAddress>()
         // IP addresses
@@ -124,6 +124,8 @@ object SsoServerListManager {
         LOGGER.info("Resolved ${addresses.size} server addresses")
         return addresses
     }
+
+    suspend fun fetchAddresses() = resolveRecords(fetchRecords())
 
     suspend fun fetchSortedAddresses(): Set<InetSocketAddress> {
         val addresses = fetchAddresses()

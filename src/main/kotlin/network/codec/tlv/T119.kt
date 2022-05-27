@@ -1,19 +1,17 @@
 /*
- * Katium Client Tencent QQ: Tencent QQ protocol implementation for Katium
- * Copyright (C) 2022  Katium Project
+ * Copyright 2022 Katium Project
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package katium.client.qq.network.codec.tlv
 
@@ -30,81 +28,81 @@ import katium.core.util.netty.use
 fun ByteBuf.readT119(key: ByteArray, release: Boolean = true): TlvMap =
     QQTeaCipher(key.toUByteArray()).decrypt(this, release = release).skipBytes(2).readTlvMap()
 
-fun QQClient.applyT119(tlv: TlvMap) {
-    /*if(0x130 in tlv) {
+fun TlvMap.applyT119(client: QQClient) {
+    /*if(0x130 in this) {
         applyT130(t130)
     }*/
-    /*if(0x113 in tlv) {
+    /*if(0x113 in this) {
         applyT130(0x113)
     }*/
-    /*if(0x528 in tlv) {
-        sig.t528 = tlv[0x528]!!.toArray(false).toUByteArray()
+    /*if(0x528 in this) {
+        client.sig.t528 = this[0x528]!!.toArray(false).toUByteArray()
     }*/
-    /*if(0x530 in tlv) {
-        sig.t530 = tlv[0x530]!!.toArray(false).toUByteArray()
+    /*if(0x530 in this) {
+        client.sig.t530 = this[0x530]!!.toArray(false).toUByteArray()
     }*/
-    if (0x108 in tlv) {
-        sig.ksid = tlv[0x108]!!.toArray(false).toUByteArray()
+    if (0x108 in this) {
+        client.sig.ksid = this[0x108]!!.toArray(false).toUByteArray()
     }
-    val (age, gender, nick) = tlv[0x11A]!!.readT11A(false)
+    val (age, gender, nick) = this[0x11A]!!.readT11A(false)
     // @TODO: handle self summary card info
-    /*if (0x125 in tlv) {
-        val (openID, openKey) = tlv[0x125]!!.readT125(false)
+    /*if (0x125 in this {
+        val (openID, openKey) = this[0x125]!!.readT125(false)
     }*/
-    /*if(0x186 in tlv) {
+    /*if(0x186 in this) {
         applyT186(0x186)
     }*/
-    /*if (0x199 in tlv) {
-        val (openID, payToken) = tlv[0x199]!!.readT199(false)
+    /*if (0x199 in this) {
+        val (openID, payToken) = this[0x199]!!.readT199(false)
     }*/
-    /*if (0x200 in tlv) {
-        val (pf, pfKey) = tlv[0x200]!!.readT200(false)
+    /*if (0x200 in this) {
+        val (pf, pfKey) = this[0x200]!!.readT200(false)
     }*/
-    /*if (0x531 in tlv) {
-        val (a1, noPicSig) = tlv[0x531]!!.readT531(false)
+    /*if (0x531 in this) {
+        val (a1, noPicSig) = this[0x531]!!.readT531(false)
     }*/
-    /*if (0x138 in tlv) {
-        tlv[0x200]!!.readT138(false)
+    /*if (0x138 in this) {
+        this[0x200]!!.readT138(false)
     }*/
-    if (0x512 in tlv) {
-        val (psKeyMap, pt4TokenMap) = tlv[0x512]!!.readT512(false)
-        sig.psKeyMap = psKeyMap
-        sig.pt4TokenMap = pt4TokenMap
+    if (0x512 in this) {
+        val (psKeyMap, pt4TokenMap) = this[0x512]!!.readT512(false)
+        client.sig.psKeyMap = psKeyMap
+        client.sig.pt4TokenMap = pt4TokenMap
     }
-    if (0x134 in tlv) {
-        oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(tlv[0x134]!!.toArray(false).toUByteArray())
+    if (0x134 in this) {
+        client.oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(this[0x134]!!.toArray(false).toUByteArray())
     }
-    sig.loginBitmap = 0uL
-    if (0x16A in tlv) {
-        sig.srmToken = tlv[0x16A]!!.toArray(false).toUByteArray()
+    client.sig.loginBitmap = 0uL
+    if (0x16A in this) {
+        client.sig.srmToken = this[0x16A]!!.toArray(false).toUByteArray()
     }
-    if (0x133 in tlv) {
-        sig.t133 = tlv[0x133]!!.toArray(false).toUByteArray()
+    if (0x133 in this) {
+        client.sig.t133 = this[0x133]!!.toArray(false).toUByteArray()
     }
-    if (0x106 in tlv) {
-        sig.encryptedA1 = tlv[0x106]!!.toArray(false).toUByteArray()
+    if (0x106 in this) {
+        client.sig.encryptedA1 = this[0x106]!!.toArray(false).toUByteArray()
     }
-    sig.tgt = tlv[0x10A]!!.toArray(false).toUByteArray()
-    sig.tgtKey = tlv[0x10D]!!.toArray(false).toUByteArray()
-    sig.userStKey = tlv[0x10E]!!.toArray(false).toUByteArray()
-    sig.userStWebSig = tlv[0x103]!!.toArray(false).toUByteArray()
-    sig.sKey = tlv[0x120]!!.toArray(false).toUByteArray()
-    sig.sKeyExpiredTime = System.currentTimeMillis() + 21600
-    sig.d2 = tlv[0x143]!!.toArray(false).toUByteArray()
-    sig.d2Key = TeaCipher.decodeByteKey(tlv[0x305]!!.toArray(false).toUByteArray())
-    sig.deviceToken = tlv[0x322]!!.toArray(false).toUByteArray()
+    client.sig.tgt = this[0x10A]!!.toArray(false).toUByteArray()
+    client.sig.tgtKey = this[0x10D]!!.toArray(false).toUByteArray()
+    client.sig.userStKey = this[0x10E]!!.toArray(false).toUByteArray()
+    client.sig.userStWebSig = this[0x103]!!.toArray(false).toUByteArray()
+    client.sig.sKey = this[0x120]!!.toArray(false).toUByteArray()
+    client.sig.sKeyExpiredTime = System.currentTimeMillis() + 21600
+    client.sig.d2 = this[0x143]!!.toArray(false).toUByteArray()
+    client.sig.d2Key = TeaCipher.decodeByteKey(this[0x305]!!.toArray(false).toUByteArray())
+    client.sig.deviceToken = this[0x322]!!.toArray(false).toUByteArray()
 
     @Suppress("DEPRECATION")
     val key = Hashing.md5().hashBytes(ByteBufAllocator.DEFAULT.buffer {
-        writeBytes(passwordMD5)
+        writeBytes(client.passwordMD5)
         writeInt(0) // ByteArray(4)
-        writeInt(uin.toInt())
+        writeInt(client.uin.toInt())
     }.toArray(true)).asBytes().toUByteArray()
-    QQTeaCipher(key).decrypt(ByteBufAllocator.DEFAULT.buffer(sig.encryptedA1!!.toByteArray())).use {
+    QQTeaCipher(key).decrypt(ByteBufAllocator.DEFAULT.buffer(client.sig.encryptedA1!!.toByteArray())).use {
         if (it.readableBytes() > 51 + 16) {
             it.skipBytes(51)
-            deviceInfo.tgtgtKey = ByteArray(16)
-            it.readBytes(deviceInfo.tgtgtKey)
+            client.deviceInfo.tgtgtKey = ByteArray(16)
+            it.readBytes(client.deviceInfo.tgtgtKey)
         }
     }
 }

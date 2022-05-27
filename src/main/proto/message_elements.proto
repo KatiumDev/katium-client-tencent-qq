@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "PbMessageElements";
+
+message PlainText {
+  string string = 1;
+  optional string link = 2;
+  optional bytes attribute6Buf = 3;
+  optional bytes attribute7Buf = 4;
+  optional bytes buffer = 11;
+  optional bytes pbReserve = 12;
+}

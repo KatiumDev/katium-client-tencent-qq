@@ -1,9 +1,9 @@
 syntax = "proto3";
 
 option java_package = "katium.client.qq.network.pb";
-option java_outer_classname = "PbSystemMessage";
+option java_outer_classname = "PbSystemMessages";
 
-message PullSystemMessages {
+message PullSystemMessagesRequest {
   int32 messageNumber = 1;
   int64 latestFriendSequence = 2;
   int64 latestGroupSequence = 3;
@@ -37,7 +37,7 @@ message FlagInfo {
   int32 groupGetC2cInviteJoinGroup = 17;
 }
 
-message PushSystemMessages {
+message PullSystemMessagesResponse {
   PushHeader head = 1;
   int32 unreadFriendsCount = 2;
   int32 unreadGroupsCount = 3;

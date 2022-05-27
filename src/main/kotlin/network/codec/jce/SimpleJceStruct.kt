@@ -1,19 +1,17 @@
 /*
- * Katium Client Tencent QQ: Tencent QQ protocol implementation for Katium
- * Copyright (C) 2022  Katium Project
+ * Copyright 2022 Katium Project
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package katium.client.qq.network.codec.jce
 
@@ -21,6 +19,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.jvm.jvmErasure
 
 open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruct, AutoCloseable {
 
@@ -44,6 +43,13 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
     protected fun <E> list(tag: UByte): Delegation<MutableList<E>> = field(tag) { mutableListOf() }
     protected fun <E> set(tag: UByte): Delegation<MutableSet<E>> = field(tag) { mutableSetOf() }
     protected fun byteBuf(tag: UByte): Delegation<ByteBuf> = field(tag) { ByteBufAllocator.DEFAULT.heapBuffer() }
+    protected fun <T : SimpleJceStruct> struct(tag: UByte, type: KClass<T>): StructDelegation<T> {
+        tags.computeIfAbsent(tag) { type.constructors.find { it.parameters.isEmpty() }!!.call() }
+        return StructDelegation(
+            tag, type, type.constructors
+                .find { it.parameters.size == 1 && it.parameters[0].type.jvmErasure == SimpleJceStruct::class }!!::call
+        )
+    }
 
     protected fun <T : Number> number(tag: UByte, type: KClass<T>, defaultValue: Number = 0): NumberDelegation<T> {
         tags.putIfAbsent(tag, defaultValue)
@@ -85,7 +91,7 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
 
     }
 
-    inner class NumberDelegation<T : Number>(tag: UByte, type: KClass<out Number>) :
+    inner class NumberDelegation<T : Number>(tag: UByte, type: KClass<T>) :
         Delegation<T>(tag) {
 
         @Suppress("UNCHECKED_CAST")
@@ -104,6 +110,25 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
         @Suppress("UNCHECKED_CAST")
         override operator fun getValue(thisRef: SimpleJceStruct?, property: KProperty<*>?): T =
             castFunction(super.getValue(thisRef, property) as Number)
+
+    }
+
+    inner class StructDelegation<T : SimpleJceStruct>(
+        tag: UByte,
+        val type: KClass<T>,
+        val castFunction: (SimpleJceStruct) -> T
+    ) : Delegation<T>(tag) {
+
+        override operator fun getValue(thisRef: SimpleJceStruct?, property: KProperty<*>?): T {
+            val value = super.getValue(thisRef, property)
+            return if (type.isInstance(value)) {
+                value
+            } else {
+                val castedValue = castFunction(value)
+                super.setValue(thisRef, property, castedValue)
+                castedValue
+            }
+        }
 
     }
 

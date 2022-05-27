@@ -1,19 +1,17 @@
 /*
- * Katium Client Tencent QQ: Tencent QQ protocol implementation for Katium
- * Copyright (C) 2022  Katium Project
+ * Copyright 2022 Katium Project
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package katium.client.qq.network
 
@@ -32,13 +30,19 @@ import katium.client.qq.network.codec.oicq.OicqPacketCodec
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.pipeline.*
 import katium.client.qq.network.event.QQChannelInitializeEvent
+import katium.client.qq.network.handler.ConfigPushHandler
 import katium.client.qq.network.handler.HeartbeatHandler
-import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesPacket
-import katium.client.qq.network.packet.profileSvc.PushGroupSystemMessagesPacket
+import katium.client.qq.network.handler.MessagesHandler
+import katium.client.qq.network.message.decoder.MessageDecoders
+import katium.client.qq.network.message.parser.MessageParsers
+import katium.client.qq.network.packet.messageSvc.PullMessagesRequest
+import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesRequest
+import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesResponse
 import katium.client.qq.network.packet.statSvc.ClientRegisterPacket
 import katium.client.qq.network.packet.wtlogin.LoginResponsePacket
 import katium.client.qq.network.packet.wtlogin.PasswordLoginPacket
 import katium.client.qq.network.sso.SsoServerListManager
+import katium.client.qq.network.sync.Synchronizer
 import katium.core.event.BotOfflineEvent
 import katium.core.event.BotOnlineEvent
 import katium.core.review.ReviewMessage
@@ -67,11 +71,13 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     init {
         bot.register(HeartbeatHandler)
+        bot.register(ConfigPushHandler)
+        bot.register(MessagesHandler)
     }
 
-    val serverAddresses: List<InetSocketAddress> by lazy {
+    val serverAddresses: MutableList<InetSocketAddress> by lazy {
         if ("qq.remote_server_address" in bot.config) {
-            listOf(
+            mutableListOf(
                 InetSocketAddress(
                     bot.config["qq.remote_server_address"]!!, (bot.config["qq.remote_server_port"]
                         ?: throw IllegalArgumentException("qq.remote_server_port not found but qq.remote_server_address set")).toInt()
@@ -79,7 +85,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
             )
         } else {
             runBlocking(coroutineContext) {
-                SsoServerListManager.fetchAddressesForConnection().toList()
+                SsoServerListManager.fetchAddressesForConnection().toMutableList()
             }
         }
     }
@@ -131,6 +137,10 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     val sequenceID = atomic(Random.Default.nextInt())
     val oicqCodec = OicqPacketCodec(this)
     var heartbeatJob: Job? = null
+    var lastMessageTime = 0L
+    val synchronzier = Synchronizer()
+    val messageDecoders = MessageDecoders(this)
+    val messageParsers = MessageParsers(this)
 
     lateinit var reviewMessages: Set<ReviewMessage>
 
@@ -190,6 +200,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     fun allocSequenceID() = sequenceID.incrementAndGet()
 
     fun send(packet: TransportPacket.Request) {
+        println("sent ${packet.command}, ${packet.sequenceID}")
         channel!!.writeAndFlush(packet).sync()
     }
 
@@ -207,7 +218,10 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
             val response = it.packet as LoginResponsePacket
             if (response.success) {
                 registerClient()
+                notifyOnline()
                 pullSystemMessages()
+                startSyncMessages()
+                logger.info("Login succeeded")
             } else {
                 throw RuntimeException("Login failed, $response")
             }
@@ -217,7 +231,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     suspend fun registerClient() {
         runCatching {
             sendAndWait(ClientRegisterPacket.create(this))
-            notifyOnline()
+            isClientRegistered = true
         }.onFailure {
             isClientRegistered = false
         }.getOrThrow()
@@ -234,11 +248,14 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     }
 
     suspend fun pullSystemMessages() {
-        val safeMessages = (sendAndWait(PullGroupSystemMessagesPacket.create(this, suspicious = false))
-                as PushGroupSystemMessagesPacket).messages
-        val suspiciousMessages = (sendAndWait(PullGroupSystemMessagesPacket.create(this, suspicious = true))
-                as PushGroupSystemMessagesPacket).messages
+        val safeMessages = (sendAndWait(PullGroupSystemMessagesRequest.create(this, suspicious = false))
+                as PullGroupSystemMessagesResponse).messages
+        val suspiciousMessages = (sendAndWait(PullGroupSystemMessagesRequest.create(this, suspicious = true))
+                as PullGroupSystemMessagesResponse).messages
         reviewMessages = (safeMessages + suspiciousMessages).toSet()
     }
+
+    fun startSyncMessages() =
+        send(PullMessagesRequest.create(this))
 
 }

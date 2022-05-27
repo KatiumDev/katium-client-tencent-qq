@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "PbDeleteMessages";
+
+message DeleteMessagesRequest {
+  repeated MessageItem items = 1;
+}
+
+message MessageItem {
+  int64 fromUin = 1;
+  int64 toUin = 2;
+  int32 type = 3;
+  int32 sequence = 4;
+  int64 uid = 5;
+  bytes sig = 7;
+}
