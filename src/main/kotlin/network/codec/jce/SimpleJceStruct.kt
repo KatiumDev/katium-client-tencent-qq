@@ -17,6 +17,7 @@ package katium.client.qq.network.codec.jce
 
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
+import katium.core.util.netty.EmptyByteBuf
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
@@ -42,7 +43,7 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
     protected fun <K, V> map(tag: UByte): Delegation<MutableMap<K, V>> = field(tag) { mutableMapOf() }
     protected fun <E> list(tag: UByte): Delegation<MutableList<E>> = field(tag) { mutableListOf() }
     protected fun <E> set(tag: UByte): Delegation<MutableSet<E>> = field(tag) { mutableSetOf() }
-    protected fun byteBuf(tag: UByte): Delegation<ByteBuf> = field(tag) { ByteBufAllocator.DEFAULT.heapBuffer() }
+    protected fun byteBuf(tag: UByte): Delegation<ByteBuf> = field(tag) { EmptyByteBuf }
     protected fun <T : SimpleJceStruct> struct(tag: UByte, type: KClass<T>): StructDelegation<T> {
         tags.computeIfAbsent(tag) { type.constructors.find { it.parameters.isEmpty() }!!.call() }
         return StructDelegation(
