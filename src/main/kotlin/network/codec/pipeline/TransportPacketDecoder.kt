@@ -21,6 +21,7 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.event.QQTransportDecodersInitializeEvent
 import katium.client.qq.network.packet.configPushSvc.ConfigPushRequest
+import katium.client.qq.network.packet.imgStore.UploadGroupPictureResponse
 import katium.client.qq.network.packet.longConn.QueryFriendImageResponse
 import katium.client.qq.network.packet.messageSvc.PullMessagesResponse
 import katium.client.qq.network.packet.messageSvc.PushNotifyPacket
@@ -48,6 +49,7 @@ class TransportPacketDecoder(val client: QQClient) : MessageToMessageDecoder<Tra
         decoders["MessageSvc.PbGetMsg"] = ::PullMessagesResponse
         decoders["OnlinePush.PbPushGroupMsg"] = ::PushGroupMessagesPacket
         decoders["LongConn.OffPicUp"] = ::QueryFriendImageResponse
+        decoders["ImgStore.GroupPicUp"] = ::UploadGroupPictureResponse
     }
 
     override fun decode(ctx: ChannelHandlerContext, msg: TransportPacket.Response, out: MutableList<Any>) {

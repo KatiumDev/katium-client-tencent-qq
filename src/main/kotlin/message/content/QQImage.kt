@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
 import okhttp3.Request
 
-class QQImage(val resourceKey: String, originUrl: String, val md5: ByteString) : Image() {
+class QQImage(val resourceKey: String, originUrl: String, val md5: ByteString, val size: Int? = null) : Image() {
 
     override val contentBytes: ByteArray by lazy {
         runBlocking(CoroutineName("Download QQ Chat Image")) {

@@ -12,9 +12,9 @@ message Element {
   optional NotOnlineImage notOnlineImage = 4;
   /*optional TransElem transElemInfo = 5;
   optional MarketFace marketFace = 6;
-  //ElemFlags elemFlags = 7;
+  //ElemFlags elemFlags = 7;*/
   optional CustomFace customFace = 8;
-  optional ElemFlags2 elemFlags2 = 9;
+  /*optional ElemFlags2 elemFlags2 = 9;
   //FunFace funFace = 10;
   //SecretFileMsg secretFile = 11;
   optional RichMsg richMsg = 12;
@@ -70,16 +70,6 @@ message PlainText {
   optional bytes pbReserve = 12;
 }
 
-message AnonymousGroupMessage {
-  optional int32 flags = 1;
-  optional bytes id = 2;
-  optional bytes nick = 3;
-  optional int32 headPortrait = 4;
-  optional int32 expireTime = 5;
-  optional int32 bubbleID = 6;
-  optional bytes rankColor = 7;
-}
-
 message NotOnlineImage {
   string filePath = 1;
   optional int32 fileLen = 2;
@@ -107,4 +97,61 @@ message NotOnlineImage {
   optional int32 showLen = 24;
   optional int32 downloadLen = 25;
   optional bytes pbReserve = 29;
+}
+
+message CustomFace {
+  optional bytes guid = 1;
+  string filePath = 2;
+  optional string shortcut = 3;
+  optional bytes buffer = 4;
+  optional bytes flag = 5;
+  optional bytes oldData = 6;
+  uint64 fileID = 7;
+  optional int32 serverIP = 8;
+  optional int32 serverPort = 9;
+  int32 fileType = 10;
+  optional bytes signature = 11;
+  int32 useful = 12;
+  bytes md5 = 13;
+  optional string thumbUrl = 14;
+  optional string bigUrl = 15;
+  optional string origUrl = 16;
+  int32 bizType = 17;
+  optional int32 repeatIndex = 18;
+  optional int32 repeatImage = 19;
+  int32 imageType = 20;
+  optional int32 index = 21;
+  optional int32 width = 22;
+  optional int32 height = 23;
+  optional int32 source = 24;
+  int32 size = 25;
+  optional int32 origin = 26;
+  optional int32 thumbWidth = 27;
+  optional int32 thumbHeight = 28;
+  optional int32 showLen = 29;
+  optional int32 downloadLen = 30;
+  optional string X400Url = 31;
+  optional int32 X400Width = 32;
+  optional int32 X400Height = 33;
+  optional bytes pbReserve = 34;
+}
+
+message ResvAttributes {
+  optional uint32 imageBizType = 1;
+  optional AnimationImageShow imageShow = 7;
+}
+
+message AnimationImageShow {
+  optional int32 effectID = 1;
+  optional bytes animationParam = 2;
+}
+
+message AnonymousGroupMessage {
+  optional int32 flags = 1;
+  optional bytes id = 2;
+  optional bytes nick = 3;
+  optional int32 headPortrait = 4;
+  optional int32 expireTime = 5;
+  optional int32 bubbleID = 6;
+  optional bytes rankColor = 7;
 }
