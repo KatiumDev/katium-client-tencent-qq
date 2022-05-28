@@ -19,6 +19,8 @@ import com.google.common.hash.HashCode
 import com.google.common.hash.Hashing
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.codec.highway.HighwayTransaction
+import katium.client.qq.network.packet.imgStore.UploadGroupPictureRequest
+import katium.client.qq.network.packet.imgStore.UploadGroupPictureResponse
 import katium.client.qq.network.packet.longConn.ImageUploadResult
 import katium.client.qq.network.packet.longConn.QueryFriendImageRequest
 import katium.client.qq.network.packet.longConn.QueryFriendImageResponse
@@ -40,12 +42,11 @@ class QQContact(asUser: QQUser) : Contact(asUser) {
     }
 
     suspend fun uploadImage(data: ByteArray, depth: Int = 0): ImageUploadResult {
-        if(depth >= 5) throw IllegalStateException("Unable to upload images")
+        if (depth >= 5) throw IllegalStateException("Unable to upload image")
         @Suppress("DEPRECATION")
         val md5 = Hashing.md5().hashBytes(data)
         val query = queryImage(md5, data.size)
         if (query.resourceKey == null) throw IllegalStateException(query.toString())
-        println(query)
         if (!query.isExists) {
             if (bot.client.highway.ssoAddresses.isEmpty())
                 bot.client.highway.ssoAddresses += query.uploadServers
@@ -57,8 +58,19 @@ class QQContact(asUser: QQUser) : Contact(asUser) {
                         body = data.toUByteArray()
                     )
                 )
-            }.getOrThrow() // @TODO: upload as group
-            return uploadImage(data, depth = depth +1)
+            }.recoverCatching {
+                val groupQuery = queryGroupImage(md5, data.size)
+                if (!groupQuery.isExists) {
+                    bot.client.highway.upload(
+                        HighwayTransaction(
+                            command = 2,
+                            ticket = groupQuery.uploadKey!!.toByteArray().toUByteArray(),
+                            body = data.toUByteArray()
+                        )
+                    )
+                }
+            }.getOrThrow()
+            return uploadImage(data, depth = depth + 1)
         } else {
             return query
         }
@@ -72,5 +84,14 @@ class QQContact(asUser: QQUser) : Contact(asUser) {
             fileSize = size
         )
     ) as QueryFriendImageResponse).result
+
+    suspend fun queryGroupImage(md5: HashCode, size: Int) = (bot.client.sendAndWait(
+        UploadGroupPictureRequest.create(
+            bot.client,
+            groupCode = id,
+            md5 = md5,
+            fileSize = size
+        )
+    ) as UploadGroupPictureResponse).result
 
 }

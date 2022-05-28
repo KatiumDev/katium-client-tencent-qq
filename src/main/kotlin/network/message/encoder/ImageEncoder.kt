@@ -17,21 +17,24 @@ object ImageEncoder : MessageEncoder<Image> {
         val md5 =
             if (message is QQImage) message.md5
             else ByteString.copyFrom(Hashing.md5().hashBytes(message.contentBytes!!).asBytes())
-        @Suppress("DEPRECATION")
-        return arrayOf(
-            PbMessageElements.Element.newBuilder()
-                .setNotOnlineImage(
-                    PbMessageElements.NotOnlineImage.newBuilder()
-                        .setFilePath(resourceKey)
-                        .setResourceID(resourceKey)
-                        .setOldPictureMd5(false)
-                        .setPictureMd5(md5)
-                        .setDownloadPath(resourceKey)
-                        .setOriginal(1)
-                        .setPbReserve(ByteString.copyFrom(byteArrayOf(0x78, 0x02)))
-                )
-                .build()
-        )
+        if (context.contextContact != null) {
+            @Suppress("DEPRECATION")
+            return arrayOf(
+                PbMessageElements.Element.newBuilder()
+                    .setNotOnlineImage(
+                        PbMessageElements.NotOnlineImage.newBuilder()
+                            .setFilePath(resourceKey)
+                            .setResourceID(resourceKey)
+                            .setOldPictureMd5(false)
+                            .setPictureMd5(md5)
+                            .setDownloadPath(resourceKey)
+                            .setOriginal(1)
+                            .setPbReserve(ByteString.copyFrom(byteArrayOf(0x78, 0x02)))
+                    )
+                    .build()
+            )
+        } else {
+        }
     }
 
 }

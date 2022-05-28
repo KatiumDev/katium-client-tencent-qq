@@ -1,29 +1,28 @@
-package katium.client.qq.network.packet.longConn
+package katium.client.qq.network.packet.imgStore
 
-import com.google.common.net.InetAddresses
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.highway.Highway
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbCmd0x352
+import katium.client.qq.network.packet.longConn.ImageUploadResult
+import katium.client.qq.network.pb.PbCmd0x388
 import katium.core.util.netty.toArray
 import java.net.InetSocketAddress
 
-class QueryFriendImageResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
+class UploadGroupPictureResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
-    lateinit var response: PbCmd0x352.C352Response
+    lateinit var response: PbCmd0x388.C388Response
         private set
 
     lateinit var result: ImageUploadResult
         private set
 
     override fun readBody(input: ByteBuf) {
-        response = PbCmd0x352.C352Response.parseFrom(input.toArray(release = false))
+        response = PbCmd0x388.C388Response.parseFrom(input.toArray(release = false))
+        println(response)
 
-        result = if (response.hasFailMessage()) {
-            ImageUploadResult(message = "failMessage: ${response.failMessage}")
-        } else if (response.subCommand != 1) {
+        result = if (response.subCommand != 1) {
             ImageUploadResult(message = "subCommand: ${response.subCommand}")
         } else if (response.uploadResponseCount == 0) {
             ImageUploadResult(message = "no upload response")
@@ -34,12 +33,12 @@ class QueryFriendImageResponse(val client: QQClient, packet: TransportPacket.Res
             } else if (uploadResponse.fileExists) {
                 ImageUploadResult(
                     isExists = true,
-                    resourceKey = uploadResponse.uploadResourceID.toStringUtf8()
+                    resourceKey = uploadResponse.fileID2.toString()
                 )
             } else {
                 ImageUploadResult(
                     isExists = false,
-                    resourceKey = uploadResponse.uploadResourceID.toStringUtf8(),
+                    resourceKey = uploadResponse.fileID2.toString(),
                     uploadServers = uploadResponse.uploadIPList.mapIndexed { index, ip ->
                         InetSocketAddress(
                             Highway.decodeIP(ip),

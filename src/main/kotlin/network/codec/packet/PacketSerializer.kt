@@ -60,7 +60,7 @@ fun ByteBuf.writePacket(client: QQClient, packet: TransportPacket.Request, relea
                 else -> {
                     QQTeaCipher(
                         *when (encryptType) {
-                            TransportPacket.EncryptType.D2_KEY -> client.sig.d2Key
+                            TransportPacket.EncryptType.D2_KEY -> synchronized(client.sig) { client.sig.d2Key }
                             TransportPacket.EncryptType.EMPTY_KEY -> EMPTY_KEY
                             else -> throw IllegalStateException()
                         }

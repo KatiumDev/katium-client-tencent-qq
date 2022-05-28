@@ -55,7 +55,7 @@ message C352UploadResponse {
   optional bytes failMessage = 4;
   bool fileExists = 5;
   // optional ImgInfo imgInfo = 6;
-  repeated uint32 uploadIp = 7;
+  repeated uint32 uploadIP = 7;
   repeated uint32 uploadPort = 8;
   optional bytes uploadUkey = 9;
   optional bytes uploadResourceID = 10;

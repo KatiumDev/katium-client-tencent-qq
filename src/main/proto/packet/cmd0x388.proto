@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package katium.client.qq.packet;
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "PbCmd0x388";
+
+message C388Request {
+  optional uint32 networkType = 1;
+  uint32 subCommand = 2;
+  repeated C388UploadRequest uploadRequest = 3;
+  /*repeated GetImgUrlReq getimgUrlReq = 4;
+  repeated TryUpPttReq tryupPttReq = 5;
+  repeated GetPttUrlReq getpttUrlReq = 6;*/
+  optional uint32 commandID = 7;
+  //repeated DelImgReq delImgReq = 8;
+  optional bytes extension = 1001;
+}
+
+message C388UploadRequest {
+  uint64 groupCode = 1;
+  uint64 fromUin = 2;
+  uint64 fileID = 3;
+  bytes fileMd5 = 4;
+  uint64 fileSize = 5;
+  bytes fileName = 6;
+  uint32 sourceTerm = 7;
+  uint32 platformType = 8;
+  uint32 buType = 9;
+  uint32 pictureWidth = 10;
+  uint32 pictureHeight = 11;
+  uint32 pictureType = 12;
+  bytes buildVersion = 13;
+  optional uint32 innerIp = 14;
+  uint32 appPictureType = 15;
+  uint32 originalPicture = 16;
+  optional bytes fileIndex = 17;
+  optional uint64 dstUin = 18;
+  optional uint32 srvUpload = 19;
+  optional bytes transferUrl = 20;
+  optional uint64 qqMeetGuildId = 21;
+  optional uint64 qqMeetChannelId = 22;
+}
+
+message C388Response {
+  optional uint32 clientIP = 1;
+  optional uint32 subCommand = 2;
+  repeated C388UploadResponse uploadResponse = 3;
+  /*repeated GetImgUrlRsp getimgUrlRsp = 4;
+  repeated TryUpPttRsp tryupPttRsp = 5;
+  repeated GetPttUrlRsp getpttUrlRsp = 6;
+  repeated DelImgRsp delImgRsp = 7;*/
+}
+
+message C388UploadResponse {
+  optional uint64 fileID1 = 1;
+  uint32 result = 2;
+  optional bytes failMessage = 3;
+  optional bool fileExists = 4;
+  optional C388ImageInfo imgInfo = 5;
+  repeated uint32 uploadIP = 6;
+  repeated uint32 uploadPort = 7;
+  optional bytes uploadUkey = 8;
+  uint64 fileID2 = 9;
+  optional uint64 upOffset = 10;
+  optional uint64 blockSize = 11;
+  optional bool newBigChan = 12;
+  repeated C388IPv6Info upIp6 = 26;
+  optional bytes clientIp6 = 27;
+  optional bytes downloadIndex = 28;
+  optional C388UploadResponseBusi info4Busi = 1001;
+}
+
+message C388UploadResponseBusi {
+  optional bytes downDomain = 1;
+  optional bytes thumbDownUrl = 2;
+  optional bytes originalDownUrl = 3;
+  optional bytes bigDownUrl = 4;
+  optional bytes fileResourceID = 5;
+}
+
+message C388IPv6Info {
+  optional bytes ip6 = 1;
+  optional uint32 port = 2;
+}
+
+message C388ImageInfo {
+  optional bytes fileMd5 = 1;
+  optional uint32 fileType = 2;
+  optional uint64 fileSize = 3;
+  optional uint32 fileWidth = 4;
+  optional uint32 fileHeight = 5;
+}
