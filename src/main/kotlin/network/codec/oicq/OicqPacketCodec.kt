@@ -21,6 +21,7 @@ import katium.client.qq.network.crypto.ecdh.EcdhKeyProvider
 import katium.client.qq.network.crypto.tea.QQTeaCipher
 import katium.client.qq.network.event.QQOicqDecodersInitializeEvent
 import katium.client.qq.network.packet.wtlogin.LoginResponsePacket
+import katium.client.qq.network.packet.wtlogin.UpdateSigResponse
 import katium.core.util.event.post
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
@@ -49,6 +50,7 @@ class OicqPacketCodec(
 
     private fun registerBuiltinDecoders(decoders: MutableMap<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple>) {
         decoders["wtlogin.login"] = ::LoginResponsePacket
+        decoders["wtlogin.exchange_emp"] = ::UpdateSigResponse
     }
 
     fun encode(output: ByteBuf, packet: OicqPacket.Request, release: Boolean = true) {

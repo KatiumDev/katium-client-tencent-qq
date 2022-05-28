@@ -198,7 +198,6 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
             .addLast("ResponsePacketDecoder", ResponsePacketDecoder(this))
             .addLast("TransportPacketDecoder", TransportPacketDecoder(this))
             .addLast("InboundPacketHandler", InboundPacketHandler(this))
-            .addLast("PacketReleaseHandler", PacketReleaseHandler)
             .addLast("InactiveHandler", InactiveHandler(this))
     }
 

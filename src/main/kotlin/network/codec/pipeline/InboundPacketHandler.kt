@@ -29,14 +29,16 @@ class InboundPacketHandler(val client: QQClient) : ChannelInboundHandlerAdapter(
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         super.channelRead(ctx, msg)
         msg as TransportPacket.Response
-        println("recv ${msg.command}, ${msg.sequenceID}")
+        println("recv ${msg.command}, ${msg.sequenceID}, ${msg.type}, ${msg.encryptType}")
         val handler = client.packetHandlers[msg.sequenceID]
         if (handler != null) {
             handler.resume(msg)
             client.packetHandlers.remove(msg.sequenceID)
+            msg.close()
         } else {
             client.bot.launch {
                 client.bot.post(QQPacketReceivedEvent(client, msg))
+                msg.close()
             }
         }
     }

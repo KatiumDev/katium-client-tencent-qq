@@ -56,7 +56,7 @@ object ConfigPushHandler : EventListener {
                     client,
                     sequenceID = packet.sequenceID,
                     type = action.type,
-                    buffer = action.buffer.duplicate(),
+                    buffer = action.buffer.retainedDuplicate(),
                     actionSequenceID = action.sequenceID
                 )
             )

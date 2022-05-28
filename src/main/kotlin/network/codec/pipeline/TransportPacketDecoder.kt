@@ -25,6 +25,7 @@ import katium.client.qq.network.packet.messageSvc.PullMessagesResponse
 import katium.client.qq.network.packet.messageSvc.PushNotifyPacket
 import katium.client.qq.network.packet.onlinePush.PushGroupMessagesPacket
 import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesResponse
+import katium.client.qq.network.packet.wtlogin.UpdateSigResponse
 import katium.core.util.event.post
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking

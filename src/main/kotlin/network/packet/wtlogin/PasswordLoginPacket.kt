@@ -98,19 +98,15 @@ class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
             writeT511()
             writeT187(macAddress = client.deviceInfo.macAddress.toByteArray())
             writeT188(androidID = client.deviceInfo.androidID.toByteArray())
-            if (client.deviceInfo.IMSIMD5.isNotEmpty()) {
-                writeT194(imsiMD5 = HexFormat.of().parseHex(client.deviceInfo.IMSIMD5))
-            }
+            writeT194(imsiMD5 = HexFormat.of().parseHex(client.deviceInfo.IMSIMD5))
             if (client.bot.allowSlider) {
                 writeT191()
             }
-            if (client.deviceInfo.wifiBSSID.isNotEmpty() && client.deviceInfo.wifiSSID.isNotEmpty()) {
-                @Suppress("DEPRECATION")
-                writeT202(
-                    wifiBSSIDMD5 = Hashing.md5().hashBytes(client.deviceInfo.wifiBSSID.toByteArray()).asBytes(),
-                    wifiSSID = client.deviceInfo.wifiSSID.toByteArray()
-                )
-            }
+            @Suppress("DEPRECATION")
+            writeT202(
+                wifiBSSIDMD5 = Hashing.md5().hashBytes(client.deviceInfo.wifiBSSID.toByteArray()).asBytes(),
+                wifiSSID = client.deviceInfo.wifiSSID.toByteArray()
+            )
             writeT177(
                 buildTime = client.clientVersion.buildTime,
                 sdkVersion = client.clientVersion.sdkVersion.toByteArray()
