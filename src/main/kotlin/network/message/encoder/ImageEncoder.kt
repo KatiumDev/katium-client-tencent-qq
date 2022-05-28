@@ -38,41 +38,6 @@ object ImageEncoder : MessageEncoder<Image> {
                     .build()
             )
         } else {
-            println(resourceKey)
-            println(resourceKey.toLong())
-            println(resourceKey.toLong().toInt())
-            println(
-                PbMessageElements.Element.newBuilder()
-                    .setCustomFace(
-                        PbMessageElements.CustomFace.newBuilder()
-                            //.setFilePath("{${UUID.nameUUIDFromBytes(md5.toByteArray())}}.png".uppercase())
-                            .setFilePath("${HexFormat.of().formatHex(md5.toByteArray()).uppercase()}.jpg")
-                            .setFileID(resourceKey.toLong())
-                            //.setServerIP()
-                            //.setServerPort()
-                            .setFileType(66)
-                            //.setSignature()
-                            .setUseful(1)
-                            .setMd5(md5)
-                            .setBizType(5)
-                            .setImageType(1000) // @TODO: 2000 for gif?
-                            .setWidth(message.width ?: 720) // @TODO: missing if?
-                            .setHeight(message.height ?: 480)
-                            .also {
-                                if (message.width != null) it.thumbWidth = message.width!!
-                                if (message.height != null) it.thumbHeight = message.height!!
-                            }
-                            .setSource(200)
-                            .setSize(
-                                if (message is QQImage) message.size!!
-                                else message.contentBytes!!.size
-                            )
-                            .setOrigin(0)
-                            .setShowLen(0)
-                            .setDownloadLen(0)
-                            .setPbReserve(PbMessageElements.ResvAttributes.newBuilder().build().toByteString())
-                    )
-                    .build())
             return arrayOf(
                 PbMessageElements.Element.newBuilder()
                     .setCustomFace(
