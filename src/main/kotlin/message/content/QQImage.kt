@@ -28,4 +28,6 @@ class QQImage(val resourceKey: String, originUrl: String, val md5: ByteString, v
 
     override val contentUrl = "https://c2cpicdw.qpic.cn/$originUrl"
 
+    override fun toString() = "[QQImage($resourceKey, $contentUrl)]"
+
 }
