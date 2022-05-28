@@ -26,7 +26,7 @@ class QQUser(bot: Bot, val id: Long) : User(bot, QQLocalChatID(id)) {
 
     override val name: String
         get() = "Unknown"
-    override val chat: Chat? by lazy {
+    override val chat: Chat by lazy {
         QQChat(bot, id, this)
     }
     override val asContact: Contact?

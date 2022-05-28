@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.message.parser
+package katium.client.qq.network.packet.onlinePush
 
+import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
+import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbMessages
-import katium.core.message.content.MessageContent
+import katium.core.util.netty.toArray
 
-interface MessageParser {
+class PushGroupMessagesPacket(val client: QQClient, packet: TransportPacket.Response.Buffered) :
+    TransportPacket.Response.Simple(packet) {
 
-    fun parse(client: QQClient, message: PbMessages.Message, element: PbMessages.Element): MessageContent?
+    lateinit var response: PbMessages.OnlinePushRequest
+        private set
+
+    override fun readBody(input: ByteBuf) {
+        response = PbMessages.OnlinePushRequest.parseFrom(input.toArray(release = false))
+    }
 
 }

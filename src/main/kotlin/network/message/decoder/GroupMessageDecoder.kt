@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.message.parser
+package katium.client.qq.network.message.decoder
 
+import katium.client.qq.message.QQMessage
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.pb.PbMessages
-import katium.core.message.content.MessageContent
 
-interface MessageParser {
+object GroupMessageDecoder : MessageDecoder {
 
-    fun parse(client: QQClient, message: PbMessages.Message, element: PbMessages.Element): MessageContent?
+    override fun decode(client: QQClient, message: PbMessages.Message): QQMessage {
+        val group = client.bot.getGroup(message.header.groupInfo.groupCode).chat
+        val sender = client.bot.getUser(message.header.fromUin)
+        return QQMessage(
+            bot = client.bot,
+            context = group,
+            content = client.messageParsers.parse(message),
+            sender = sender,
+            time = message.header.time * 1000L
+        )
+    }
 
 }

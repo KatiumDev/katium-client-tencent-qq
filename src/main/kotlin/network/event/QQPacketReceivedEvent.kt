@@ -26,18 +26,20 @@ class QQPacketReceivedEvent(val client: QQClient, val packet: TransportPacket.Re
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is QQChannelInitializeEvent) return false
+        if (other !is QQPacketReceivedEvent) return false
         if (!super.equals(other)) return false
         if (client != other.client) return false
+        if (packet != other.packet) return false
         return true
     }
 
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + client.hashCode()
+        result = 31 * result + packet.hashCode()
         return result
     }
 
-    override fun toString() = "QQPacketReceivedEvent(bot=$bot, client$client)"
+    override fun toString() = "QQPacketReceivedEvent(bot=$bot, client=$client, packet=$packet)"
 
 }

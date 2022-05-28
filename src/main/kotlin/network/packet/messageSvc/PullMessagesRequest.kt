@@ -46,15 +46,13 @@ object PullMessagesRequest {
     ): PbMessages.PullMessagesRequest =
         PbMessages.PullMessagesRequest.newBuilder().apply {
             syncFlag = flag
-            syncCookie = syncCookies
-                ?: if (!client.synchronzier.syncCookie.isEmpty) client.synchronzier.syncCookie
-                else createInitialSyncCookies()
+            syncCookie = syncCookies ?: client.synchronzier.syncCookie ?: createInitialSyncCookies()
             latestRambleNumber = 20
             otherRambleNumber = 3
             onlineSyncFlag = 1
             contextFlag = 1
             requestType = 1
-            publicAccountCookie = ByteString.empty()
+            publicAccountCookie = client.synchronzier.publicAccountCookie ?: ByteString.empty()
             messageControlBuffer = ByteString.empty()
             serverBuffer = ByteString.empty()
         }.build()

@@ -33,6 +33,14 @@ message PullMessagesResponse {
   optional bytes controlBuffer = 10;
 }
 
+message OnlinePushRequest {
+  Message message = 1;
+  optional int32 serverIP = 2;
+  optional bytes pushToken = 3;
+  optional int32 pingFlag = 4;
+  optional int32 generateFlag = 9;
+}
+
 enum SyncFlag {
   START = 0;
   CONTINUE = 1;
@@ -59,9 +67,9 @@ message UinPairMessage {
 }
 
 message Message {
-  optional MessageHeader header = 1;
+  MessageHeader header = 1;
   optional ContentHead content = 2;
-  optional MessageBody body = 3;
+  MessageBody body = 3;
 }
 
 message MessageHeader {
@@ -204,9 +212,9 @@ message Element {
   //ShakeWindow? shakeWindow = 17;
   //PubAccount? pubAccount = 18;
   optional VideoFile videoFile = 19;
-  //TipsInfo? tipsInfo = 20;
-  optional AnonymousGroupMessage anonGroupMsg = 21;
-  //QQLiveOld? qqLiveOld = 22;
+  //TipsInfo? tipsInfo = 20;*/
+  optional AnonymousGroupMessage anonymousInfo = 21;
+  /*//QQLiveOld? qqLiveOld = 22;
   //LifeOnlineAccount? lifeOnline = 23;
   optional QQWalletMsg QQWalletMsg = 24;
   //CrmElem? crmElem = 25;

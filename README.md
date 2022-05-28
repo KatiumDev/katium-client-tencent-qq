@@ -45,30 +45,28 @@ Katium的腾讯QQ协议实现。
   - [ ] 修改群成员昵称
   - [ ] 修改群成员头像
 - 好友
- - [ ]   获取/刷新好友列表
- - [ ]   处理好友申请
- - [ ]   获取陌生人信息
+  - [ ]   获取/刷新好友列表
+  - [ ]   处理好友申请
+  - [ ]   获取陌生人信息
 - 其他
   - [ ] 其他客户端状态
   - [x] 心跳包
   - [ ] 自定义在线状态
 
 ## 许可证
-与Katium核心不同的是，本协议库使用AGPL-3.0许可证发布。关于更多信息，请查阅`LICENSE`文件。
+本协议库使用与Katium核心相同的Apache License 2.0许可证发布。关于更多信息，请查阅`LICENSE`文件。
 ```
-Katium Client Tencent QQ: Tencent QQ protocol implementation for Katium
-Copyright (C) 2022  Katium Project
+Copyright 2022 Katium Project
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
+   http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 ```

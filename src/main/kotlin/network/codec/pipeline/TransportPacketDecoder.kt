@@ -23,6 +23,7 @@ import katium.client.qq.network.event.QQTransportDecodersInitializeEvent
 import katium.client.qq.network.packet.configPushSvc.ConfigPushRequest
 import katium.client.qq.network.packet.messageSvc.PullMessagesResponse
 import katium.client.qq.network.packet.messageSvc.PushNotifyPacket
+import katium.client.qq.network.packet.onlinePush.PushGroupMessagesPacket
 import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesResponse
 import katium.core.util.event.post
 import kotlinx.coroutines.CoroutineName
@@ -44,6 +45,7 @@ class TransportPacketDecoder(val client: QQClient) : MessageToMessageDecoder<Tra
         decoders["ConfigPushSvc.PushReq"] = ::ConfigPushRequest
         decoders["MessageSvc.PushNotify"] = ::PushNotifyPacket
         decoders["MessageSvc.PbGetMsg"] = ::PullMessagesResponse
+        decoders["OnlinePush.PbPushGroupMsg"] = ::PushGroupMessagesPacket
     }
 
     override fun decode(ctx: ChannelHandlerContext, msg: TransportPacket.Response, out: MutableList<Any>) {

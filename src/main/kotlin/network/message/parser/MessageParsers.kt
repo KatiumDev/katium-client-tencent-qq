@@ -48,8 +48,8 @@ class MessageParsers(val client: QQClient) {
             ?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
     }
 
-    fun parse(message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.map {
+    fun parse(message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {
         get(it)?.parse(client, message, it)
-    }.filterNotNull().toTypedArray()).simplest
+    }.toTypedArray()).simplest
 
 }

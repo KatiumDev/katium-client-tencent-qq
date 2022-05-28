@@ -11,3 +11,13 @@ message PlainText {
   optional bytes buffer = 11;
   optional bytes pbReserve = 12;
 }
+
+message AnonymousGroupMessage {
+  optional int32 flags = 1;
+  optional bytes id = 2;
+  optional bytes nick = 3;
+  optional int32 headPortrait = 4;
+  optional int32 expireTime = 5;
+  optional int32 bubbleID = 6;
+  optional bytes rankColor = 7;
+}

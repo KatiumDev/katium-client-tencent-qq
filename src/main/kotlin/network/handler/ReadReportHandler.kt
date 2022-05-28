@@ -16,7 +16,6 @@
 package katium.client.qq.network.handler
 
 import katium.client.qq.QQBot
-import katium.client.qq.network.packet.heartbeat.HeartbeatAlivePacket
 import katium.core.event.BotOfflineEvent
 import katium.core.event.BotOnlineEvent
 import katium.core.util.event.EventListener
@@ -25,25 +24,28 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
-object HeartbeatHandler : EventListener {
+object ReadReportHandler : EventListener {
 
     @Subscribe
     fun onOnline(event: BotOnlineEvent) {
         val (bot) = event
         bot as QQBot
-        if (!(bot.config["qq.heartbeat.enabled"] ?: "true").toBoolean())
+        if (!(bot.config["qq.auto_read_report.enabled"] ?: "true").toBoolean())
             return
-        bot.client.heartbeatJob = bot.launch {
-            var times = 0
+        bot.client.synchronzier.readReportJob = bot.launch {
             while (currentCoroutineContext()[Job]!!.isActive) {
-                delay(bot.config["qq.heartbeat.interval"]?.toLong() ?: 30000)
-                bot.client.send(HeartbeatAlivePacket.create(bot.client))
-                times++
-                if (times >= 7) {
-                    bot.client.registerClient()
-                    times = 0
-                }
+                delay(
+                    Random.Default.nextLong(
+                        bot.config["qq.auto_read_report.interval.min"]?.toLong() ?: 60000,
+                        bot.config["qq.auto_read_report.interval.max"]?.toLong() ?: 2000000
+                    )
+                )
+                if ((bot.config["qq.auto_read_report.full"] ?: "false").toBoolean())
+                    bot.client.synchronzier.reportAllGroupRead()
+                else
+                    bot.client.synchronzier.reportSomeGroupRead()
             }
         }
     }
@@ -52,8 +54,8 @@ object HeartbeatHandler : EventListener {
     fun onOffline(event: BotOfflineEvent) {
         val (bot) = event
         bot as QQBot
-        bot.client.heartbeatJob?.cancel()
-        bot.client.heartbeatJob = null
+        bot.client.synchronzier.readReportJob?.cancel()
+        bot.client.synchronzier.readReportJob = null
     }
 
 }

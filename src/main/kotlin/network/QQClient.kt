@@ -30,9 +30,7 @@ import katium.client.qq.network.codec.oicq.OicqPacketCodec
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.pipeline.*
 import katium.client.qq.network.event.QQChannelInitializeEvent
-import katium.client.qq.network.handler.ConfigPushHandler
-import katium.client.qq.network.handler.HeartbeatHandler
-import katium.client.qq.network.handler.MessagesHandler
+import katium.client.qq.network.handler.*
 import katium.client.qq.network.message.decoder.MessageDecoders
 import katium.client.qq.network.message.parser.MessageParsers
 import katium.client.qq.network.packet.messageSvc.PullMessagesRequest
@@ -72,7 +70,10 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     init {
         bot.register(HeartbeatHandler)
         bot.register(ConfigPushHandler)
-        bot.register(MessagesHandler)
+        bot.register(FriendMessagesHandler)
+        bot.register(GroupMessagesHandler)
+        bot.register(RawMessageHandler)
+        bot.register(ReadReportHandler)
     }
 
     val serverAddresses: MutableList<InetSocketAddress> by lazy {
@@ -138,7 +139,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     val oicqCodec = OicqPacketCodec(this)
     var heartbeatJob: Job? = null
     var lastMessageTime = 0L
-    val synchronzier = Synchronizer()
+    val synchronzier = Synchronizer(this)
     val messageDecoders = MessageDecoders(this)
     val messageParsers = MessageParsers(this)
 

@@ -17,13 +17,13 @@ package katium.client.qq.network.handler
 
 import com.google.protobuf.ByteString
 import katium.client.qq.network.event.QQPacketReceivedEvent
+import katium.client.qq.network.event.QQReceivedRawMessageEvent
 import katium.client.qq.network.packet.messageSvc.DeleteMessagesRequest
 import katium.client.qq.network.packet.messageSvc.PullMessagesRequest
 import katium.client.qq.network.packet.messageSvc.PullMessagesResponse
 import katium.client.qq.network.packet.messageSvc.PushNotifyPacket
 import katium.client.qq.network.pb.PbDeleteMessages
 import katium.client.qq.network.pb.PbMessages
-import katium.core.event.ReceivedMessageEvent
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
@@ -32,18 +32,17 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-object MessagesHandler : EventListener {
+object FriendMessagesHandler : EventListener {
 
     @Subscribe
-    fun onPacket(event: QQPacketReceivedEvent) {
+    suspend fun onPacket(event: QQPacketReceivedEvent) {
         val (_, client, packet) = event
         if (packet is PushNotifyPacket) {
             val data = packet.data
             client.send(
                 PullMessagesRequest.create(
                     client,
-                    syncFlag = PbMessages.SyncFlag.START,
-                    syncCookies = ByteString.copyFrom(data.notifyCookie.toArray(false))
+                    syncCookies = ByteString.copyFrom(data.notifyCookie.toArray(release = false))
                 )
             )
         }
@@ -55,17 +54,19 @@ object MessagesHandler : EventListener {
                     client.send(PullMessagesRequest.create(client))
                 }
             }
+            val synchronzier = client.synchronzier
             when (response.syncType) {
                 0 -> {
-                    client.synchronzier.syncCookie = response.syncCookie
-                    client.synchronzier.publicAccountCookie = response.publicAccountCookie
+                    synchronzier.syncCookie = response.syncCookie
+                    synchronzier.publicAccountCookie = response.publicAccountCookie
                 }
-                1 -> client.synchronzier.syncCookie = response.syncCookie
-                2 -> client.synchronzier.publicAccountCookie = response.publicAccountCookie
+                1 -> synchronzier.syncCookie = response.syncCookie
+                2 -> synchronzier.publicAccountCookie = response.publicAccountCookie
                 else -> throw UnsupportedOperationException("Unknown sync type: ${response.syncType}")
             }
+            val isInitialSync = synchronzier.friendInitialSync.getAndSet(false)
             if (response.messagesList.isEmpty()) return
-            response.messagesList.asSequence()
+            val messages = response.messagesList.asSequence()
                 .filterNot { it.messagesList.isEmpty() }
                 .flatMap { pair ->
                     pair.messagesList.asSequence()
@@ -74,34 +75,30 @@ object MessagesHandler : EventListener {
                 .toList()
                 .also {
                     // Delete messages
-                    client.send(DeleteMessagesRequest.create(client, items = it.map {
-                        PbDeleteMessages.MessageItem.newBuilder().apply {
-                            fromUin = it.header.fromUin
-                            toUin = it.header.toUin
-                            type = it.header.type
-                            sequence = it.header.sequence
-                            uid = it.header.uid
-                        }.build()
-                    }))
+                    if (it.isNotEmpty()) {
+                        client.send(DeleteMessagesRequest.create(client, items = it.map {
+                            PbDeleteMessages.MessageItem.newBuilder().apply {
+                                fromUin = it.header.fromUin
+                                toUin = it.header.toUin
+                                type = 187
+                                sequence = it.header.sequence
+                                uid = it.header.uid
+                            }.build()
+                        }))
+                    }
                 }
                 .filter {
-                    client.synchronzier.writePullMessagesCache(
+                    synchronzier.writePullMessagesCache(
                         it.header.uid,
                         it.header.sequence,
                         it.header.time
                     )
                 }
-                .forEach {
-                    client.launch(CoroutineName("Handle Received Message")) {
-                        client.bot.post(
-                            ReceivedMessageEvent(
-                                (client.messageDecoders[it.header.type]
-                                    ?: throw UnsupportedOperationException("Unknown message type: ${it.header.type}"))
-                                    .decode(client, it)
-                            )
-                        )
-                    }
-                }
+            synchronzier.recordUnreadFriendMessages(response.messagesList.map(PbMessages.UinPairMessage::getPeerUin))
+            if (isInitialSync) return
+            for (message in messages.map { QQReceivedRawMessageEvent(client, it) }) {
+                client.bot.post(message)
+            }
             if (response.syncFlag != PbMessages.SyncFlag.STOP) { // Continue
                 client.send(PullMessagesRequest.create(client, syncFlag = response.syncFlag))
             }
