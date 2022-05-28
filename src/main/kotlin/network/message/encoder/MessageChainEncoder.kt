@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.packet.onlinePush
+package katium.client.qq.network.message.encoder
 
-import io.netty.buffer.ByteBuf
+import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessagePackets
-import katium.core.util.netty.toArray
+import katium.core.message.content.MessageChain
 
-class PushGroupMessagesPacket(val client: QQClient, packet: TransportPacket.Response.Buffered) :
-    TransportPacket.Response.Simple(packet) {
+object MessageChainEncoder : MessageEncoder<MessageChain> {
 
-    lateinit var response: PbMessagePackets.OnlinePushRequest
-        private set
-
-    override fun readBody(input: ByteBuf) {
-        response = PbMessagePackets.OnlinePushRequest.parseFrom(input.toArray(release = false))
-    }
+    override suspend fun encode(
+        client: QQClient,
+        context: QQChat,
+        message: MessageChain
+    ) = message.parts.flatMap { client.messageEncoders.encode(context, it) }.toTypedArray()
 
 }

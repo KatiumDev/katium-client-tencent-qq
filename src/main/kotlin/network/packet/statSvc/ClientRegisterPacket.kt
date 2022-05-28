@@ -34,7 +34,7 @@ class ClientRegisterPacket(other: SimpleJceStruct) : SimpleJceStruct(other) {
 
     companion object {
 
-        fun create(client: QQClient, sequenceID: Int = client.allocSequenceID()) =
+        fun create(client: QQClient, sequenceID: Int = client.allocPacketSequenceID()) =
             TransportPacket.Request.Buffered(
                 client = client,
                 type = TransportPacket.Type.LOGIN,

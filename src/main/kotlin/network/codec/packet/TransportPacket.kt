@@ -44,7 +44,7 @@ class TransportPacket private constructor() {
             override val type: Type = Type.SIMPLE,
             override val encryptType: EncryptType,
             override val uin: Long = client.uin,
-            override val sequenceID: Int = client.allocSequenceID(),
+            override val sequenceID: Int = client.allocPacketSequenceID(),
             override val command: String
         ) : Request
 
@@ -53,7 +53,7 @@ class TransportPacket private constructor() {
             type: Type = Type.SIMPLE,
             encryptType: EncryptType,
             uin: Long = client.uin,
-            sequenceID: Int = client.allocSequenceID(),
+            sequenceID: Int = client.allocPacketSequenceID(),
             command: String,
             val body: ByteBuf
         ) : Simple(client, type, encryptType, uin, sequenceID, command) {

@@ -33,7 +33,7 @@ class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
 
     companion object {
 
-        fun create(client: QQClient, sequenceID: Int = client.allocSequenceID()) =
+        fun create(client: QQClient, sequenceID: Int = client.allocPacketSequenceID()) =
             TransportPacket.Request.Oicq(
                 client = client,
                 type = TransportPacket.Type.LOGIN,

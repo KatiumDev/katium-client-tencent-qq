@@ -1,74 +1,15 @@
 syntax = "proto3";
 
+package katium.client.qq.message;
+
 option java_package = "katium.client.qq.network.pb";
 option java_outer_classname = "PbMessages";
 
 import "message_elements.proto";
 
-message PullMessagesRequest {
-  optional SyncFlag syncFlag = 1;
-  optional bytes syncCookie = 2;
-  optional int32 rambleFlag = 3;
-  optional int32 latestRambleNumber = 4;
-  optional int32 otherRambleNumber = 5;
-  optional int32 onlineSyncFlag = 6;
-  optional int32 contextFlag = 7;
-  optional int32 whisperSessionId = 8;
-  optional int32 requestType = 9;
-  optional bytes publicAccountCookie = 10;
-  optional bytes messageControlBuffer = 11;
-  optional bytes serverBuffer = 12;
-}
-
-message PullMessagesResponse {
-  int32 result = 1;
-  optional string errorMessage = 2;
-  optional bytes syncCookie = 3;
-  SyncFlag syncFlag = 4;
-  repeated UinPairMessage messages = 5;
-  optional int64 uin = 6;
-  int32 syncType = 7;
-  optional bytes publicAccountCookie = 8;
-  optional bool isPartialSync = 9;
-  optional bytes controlBuffer = 10;
-}
-
-message OnlinePushRequest {
-  Message message = 1;
-  optional int32 serverIP = 2;
-  optional bytes pushToken = 3;
-  optional int32 pingFlag = 4;
-  optional int32 generateFlag = 9;
-}
-
-enum SyncFlag {
-  START = 0;
-  CONTINUE = 1;
-  STOP = 2;
-}
-
-message SyncCookie {
-  optional int64 time1 = 1;
-  optional int64 time = 2;
-  optional int64 ran1 = 3;
-  optional int64 ran2 = 4;
-  optional int64 const1 = 5;
-  optional int64 const2 = 11;
-  optional int64 const3 = 12;
-  optional int64 lastSyncTime = 13;
-  optional int64 const4 = 14;
-}
-
-message UinPairMessage {
-  int32 lastReadTime = 1;
-  optional int64 peerUin = 2;
-  optional int32 completed = 3;
-  repeated Message messages = 4;
-}
-
 message Message {
   MessageHeader header = 1;
-  optional ContentHead content = 2;
+  optional ContentHeader content = 2;
   MessageBody body = 3;
 }
 
@@ -159,10 +100,10 @@ message ExtensionGroupKeyInfo {
   optional int64 time = 2;
 }
 
-message ContentHead {
-  optional int32 packageNumber = 1;
-  optional int32 packageIndex = 2;
-  optional int32 divideSequence = 3;
+message ContentHeader {
+  int32 packageNumber = 1;
+  int32 packageIndex = 2;
+  int32 divideSequence = 3;
   optional int32 autoReply = 4;
 }
 
@@ -190,62 +131,6 @@ message Attributes {
   optional int32 pitchAndFamily = 8;
   optional string fontName = 9;
   optional bytes reserveData = 10;
-}
-
-message Element {
-  optional PlainText plainText = 1;
-  /*optional Face face = 2;
-  optional OnlineImage onlineImage = 3;
-  optional NotOnlineImage notOnlineImage = 4;
-  optional TransElem transElemInfo = 5;
-  optional MarketFace marketFace = 6;
-  //ElemFlags elemFlags = 7;
-  optional CustomFace customFace = 8;
-  optional ElemFlags2 elemFlags2 = 9;
-  //FunFace funFace = 10;
-  //SecretFileMsg secretFile = 11;
-  optional RichMsg richMsg = 12;
-  optional GroupFile groupFile = 13;
-  //PubGroup pubGroup = 14;
-  //MarketTrans marketTrans = 15;
-  optional ExtraInfo extraInfo = 16;
-  //ShakeWindow? shakeWindow = 17;
-  //PubAccount? pubAccount = 18;
-  optional VideoFile videoFile = 19;
-  //TipsInfo? tipsInfo = 20;*/
-  optional AnonymousGroupMessage anonymousInfo = 21;
-  /*//QQLiveOld? qqLiveOld = 22;
-  //LifeOnlineAccount? lifeOnline = 23;
-  optional QQWalletMsg QQWalletMsg = 24;
-  //CrmElem? crmElem = 25;
-  //ConferenceTipsInfo? conferenceTipsInfo = 26;
-  //RedBagInfo? redbagInfo = 27;
-  //LowVersionTips? lowVersionTips = 28;
-  //bytes bankcodeCtrlInfo = 29;
-  //NearByMessageType? nearByMsg = 30;
-  optional CustomElem customElem = 31;
-  //LocationInfo? locationInfo = 32;
-  //PubAccInfo? pubAccInfo = 33;
-  //SmallEmoji? smallEmoji = 34;
-  //FSJMessageElem? fsjMsgElem = 35;
-  //ArkAppElem? arkApp = 36;
-  optional GeneralFlags generalFlags = 37;
-  //CustomFace? hcFlashPic = 38;
-  //DeliverGiftMsg? deliverGiftMsg = 39;
-  //BitAppMsg? bitappMsg = 40;
-  //OpenQQData? openQqData = 41;
-  //ApolloActMsg? apolloMsg = 42;
-  //GroupPubAccountInfo? groupPubAccInfo = 43;
-  //BlessingMessage? blessMsg = 44;
-  optional SourceMsg srcMsg = 45;
-  //LolaMsg? lolaMsg = 46;
-  //GroupBusinessMsg? groupBusinessMsg = 47;
-  //WorkflowNotifyMsg? msgWorkflowNotify = 48;
-  //PatsElem? patElem = 49;
-  //GroupPostElem? groupPostElem = 50;
-  optional LightAppElem lightApp = 51;
-  //EIMInfo? eimInfo = 52;
-  optional CommonElem commonElem = 53;*/
 }
 
 message NotOnlineFile {

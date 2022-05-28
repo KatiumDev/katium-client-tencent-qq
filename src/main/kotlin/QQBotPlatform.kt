@@ -17,7 +17,7 @@ package katium.client.qq
 
 import katium.core.BotPlatform
 
-object QQBotPlatform : BotPlatform {
+object QQBotPlatform : BotPlatform() {
 
     override val id: String
         get() = "qq"

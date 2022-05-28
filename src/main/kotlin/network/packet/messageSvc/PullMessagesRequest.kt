@@ -19,15 +19,15 @@ import com.google.protobuf.ByteString
 import io.netty.buffer.ByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.util.netty.heapBuffer
 
 object PullMessagesRequest {
 
     fun create(
         client: QQClient,
-        sequenceID: Int = client.allocSequenceID(),
-        syncFlag: PbMessages.SyncFlag = PbMessages.SyncFlag.START,
+        sequenceID: Int = client.allocPacketSequenceID(),
+        syncFlag: PbMessagePackets.SyncFlag = PbMessagePackets.SyncFlag.START,
         syncCookies: ByteString? = null
     ) =
         TransportPacket.Request.Buffered(
@@ -41,10 +41,10 @@ object PullMessagesRequest {
 
     fun createRequest(
         client: QQClient,
-        flag: PbMessages.SyncFlag,
+        flag: PbMessagePackets.SyncFlag,
         syncCookies: ByteString? = null
-    ): PbMessages.PullMessagesRequest =
-        PbMessages.PullMessagesRequest.newBuilder().apply {
+    ): PbMessagePackets.PullMessagesRequest =
+        PbMessagePackets.PullMessagesRequest.newBuilder().apply {
             syncFlag = flag
             syncCookie = syncCookies ?: client.synchronzier.syncCookie ?: createInitialSyncCookies()
             latestRambleNumber = 20
@@ -58,7 +58,7 @@ object PullMessagesRequest {
         }.build()
 
     fun createInitialSyncCookies(messageTime: Long = System.currentTimeMillis() / 1000): ByteString =
-        PbMessages.SyncCookie.newBuilder().apply {
+        PbMessagePackets.SyncCookie.newBuilder().apply {
             time = messageTime
             ran1 = 758330138L
             ran2 = 2480149246L

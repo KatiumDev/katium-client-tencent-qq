@@ -20,7 +20,7 @@ import katium.core.message.Message
 import katium.core.message.MessageRef
 import java.lang.ref.WeakReference
 
-class QQMessageRef(override val bot: Bot, message: Message) : MessageRef {
+class QQMessageRef(override val bot: Bot, message: Message?) : MessageRef {
 
     private val messageRef = WeakReference(message)
 

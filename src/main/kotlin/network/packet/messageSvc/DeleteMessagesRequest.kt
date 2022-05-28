@@ -25,7 +25,7 @@ object DeleteMessagesRequest {
 
     fun create(
         client: QQClient,
-        sequenceID: Int = client.allocSequenceID(),
+        sequenceID: Int = client.allocPacketSequenceID(),
         items: Collection<PbDeleteMessages.MessageItem>
     ) =
         TransportPacket.Request.Buffered(

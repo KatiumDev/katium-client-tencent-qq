@@ -23,7 +23,7 @@ import katium.client.qq.network.packet.messageSvc.PullMessagesRequest
 import katium.client.qq.network.packet.messageSvc.PullMessagesResponse
 import katium.client.qq.network.packet.messageSvc.PushNotifyPacket
 import katium.client.qq.network.pb.PbDeleteMessages
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
@@ -94,12 +94,12 @@ object FriendMessagesHandler : EventListener {
                         it.header.time
                     )
                 }
-            synchronzier.recordUnreadFriendMessages(response.messagesList.map(PbMessages.UinPairMessage::getPeerUin))
+            synchronzier.recordUnreadFriendMessages(response.messagesList.map(PbMessagePackets.UinPairMessage::getPeerUin))
             if (isInitialSync) return
             for (message in messages.map { QQReceivedRawMessageEvent(client, it) }) {
                 client.bot.post(message)
             }
-            if (response.syncFlag != PbMessages.SyncFlag.STOP) { // Continue
+            if (response.syncFlag != PbMessagePackets.SyncFlag.STOP) { // Continue
                 client.send(PullMessagesRequest.create(client, syncFlag = response.syncFlag))
             }
         }

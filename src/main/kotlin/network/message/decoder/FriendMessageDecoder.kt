@@ -21,11 +21,11 @@ import katium.client.qq.network.pb.PbMessages
 
 object FriendMessageDecoder : MessageDecoder {
 
-    override fun decode(client: QQClient, message: PbMessages.Message): QQMessage {
+    override suspend fun decode(client: QQClient, message: PbMessages.Message): QQMessage {
         val sender = client.bot.getUser(message.header.fromUin)
         return QQMessage(
             bot = client.bot,
-            context = sender.chat,
+            context = sender.chat!!,
             content = client.messageParsers.parse(message),
             sender = sender,
             time = message.header.time * 1000L

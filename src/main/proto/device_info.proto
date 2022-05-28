@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package katium.client.qq;
+
 option java_package = "katium.client.qq.network.pb";
 option java_outer_classname = "PbDeviceInfo";
 

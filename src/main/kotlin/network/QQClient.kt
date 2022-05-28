@@ -32,6 +32,8 @@ import katium.client.qq.network.codec.pipeline.*
 import katium.client.qq.network.event.QQChannelInitializeEvent
 import katium.client.qq.network.handler.*
 import katium.client.qq.network.message.decoder.MessageDecoders
+import katium.client.qq.network.message.encoder.MessageEncoder
+import katium.client.qq.network.message.encoder.MessageEncoders
 import katium.client.qq.network.message.parser.MessageParsers
 import katium.client.qq.network.packet.messageSvc.PullMessagesRequest
 import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesRequest
@@ -135,13 +137,13 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     }
 
     val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
-    val sequenceID = atomic(Random.Default.nextInt())
     val oicqCodec = OicqPacketCodec(this)
     var heartbeatJob: Job? = null
     var lastMessageTime = 0L
     val synchronzier = Synchronizer(this)
     val messageDecoders = MessageDecoders(this)
     val messageParsers = MessageParsers(this)
+    val messageEncoders = MessageEncoders(this)
 
     lateinit var reviewMessages: Set<ReviewMessage>
 
@@ -198,7 +200,10 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
             .addLast("InactiveHandler", InactiveHandler(this))
     }
 
-    fun allocSequenceID() = sequenceID.incrementAndGet()
+    val packetSequenceID = atomic(Random.Default.nextInt())
+    val groupMessageSequenceID = atomic(Random.Default.nextInt(20000))
+    fun allocPacketSequenceID() = packetSequenceID.incrementAndGet()
+    fun allocGroupMessageSequenceID() = groupMessageSequenceID.addAndGet(2)
 
     fun send(packet: TransportPacket.Request) {
         println("sent ${packet.command}, ${packet.sequenceID}")

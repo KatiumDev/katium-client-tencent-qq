@@ -29,7 +29,7 @@ class HeartbeatAlivePacket private constructor(client: QQClient, sequenceID: Int
 
     companion object {
 
-        fun create(client: QQClient, sequenceID: Int = client.allocSequenceID()) =
+        fun create(client: QQClient, sequenceID: Int = client.allocPacketSequenceID()) =
             HeartbeatAlivePacket(client, sequenceID)
 
     }

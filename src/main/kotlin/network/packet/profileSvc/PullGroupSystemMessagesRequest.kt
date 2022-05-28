@@ -23,7 +23,7 @@ import katium.core.util.netty.heapBuffer
 
 object PullGroupSystemMessagesRequest {
 
-    fun create(client: QQClient, sequenceID: Int = client.allocSequenceID(), suspicious: Boolean) =
+    fun create(client: QQClient, sequenceID: Int = client.allocPacketSequenceID(), suspicious: Boolean) =
         TransportPacket.Request.Buffered(
             client = client,
             encryptType = TransportPacket.EncryptType.D2_KEY,

@@ -26,7 +26,7 @@ object ConfigPushResponse {
 
     fun create(
         client: QQClient,
-        sequenceID: Int = client.allocSequenceID(),
+        sequenceID: Int = client.allocPacketSequenceID(),
         type: Int,
         buffer: ByteBuf,
         actionSequenceID: Long

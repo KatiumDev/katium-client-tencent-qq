@@ -17,6 +17,7 @@ package katium.client.qq.network.message.parser
 
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageParsersInitializeEvent
+import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
 import katium.core.message.content.MessageChain
 import katium.core.util.event.post
@@ -40,7 +41,7 @@ class MessageParsers(val client: QQClient) {
 
     operator fun get(type: Int) = parsers[type]
 
-    operator fun get(element: PbMessages.Element): MessageParser? {
+    operator fun get(element: PbMessageElements.Element): MessageParser? {
         val fieldKeys = element.allFields.keys
         if (fieldKeys.isEmpty()) return null
         if (fieldKeys.size != 1) throw UnsupportedOperationException("Too many fields: $fieldKeys in $element")
@@ -48,7 +49,7 @@ class MessageParsers(val client: QQClient) {
             ?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
     }
 
-    fun parse(message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {
+    suspend fun parse(message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {
         get(it)?.parse(client, message, it)
     }.toTypedArray()).simplest
 

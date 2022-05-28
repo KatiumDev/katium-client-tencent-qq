@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.message.decoder
+package katium.client.qq.user
 
-import katium.client.qq.message.QQMessage
-import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.chat.QQChat
+import katium.client.qq.network.pb.PbMessagePackets
+import katium.core.chat.Chat
+import katium.core.user.Contact
 
-interface MessageDecoder {
+class QQContact(asUser: QQUser) : Contact(asUser) {
 
-    suspend fun decode(client: QQClient, message: PbMessages.Message): QQMessage
+    override val bot by asUser::bot
+    val id by asUser::id
+
+    override val chat: Chat by lazy {
+        QQChat(
+            bot, id, this,
+            PbMessagePackets.RoutingHeader.newBuilder().setFriend(PbMessagePackets.ToFriend.newBuilder().setToUin(id))
+                .build()
+        )
+    }
 
 }

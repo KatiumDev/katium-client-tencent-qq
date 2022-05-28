@@ -16,11 +16,12 @@
 package katium.client.qq.network.message.parser
 
 import katium.client.qq.network.QQClient
+import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
 import katium.core.message.content.MessageContent
 
 interface MessageParser {
 
-    fun parse(client: QQClient, message: PbMessages.Message, element: PbMessages.Element): MessageContent?
+    suspend fun parse(client: QQClient, message: PbMessages.Message, element: PbMessageElements.Element): MessageContent?
 
 }

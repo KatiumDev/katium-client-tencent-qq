@@ -15,17 +15,22 @@
  */
 package katium.client.qq.group
 
+import katium.client.qq.QQBot
 import katium.client.qq.QQLocalChatID
 import katium.client.qq.chat.QQChat
-import katium.core.Bot
+import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.chat.Chat
 import katium.core.group.Group
 import katium.core.user.User
 
-class QQGroup(bot: Bot, val id: Long) : Group(bot, QQLocalChatID(id)) {
+class QQGroup(override val bot: QQBot, val id: Long) : Group(bot, QQLocalChatID(id)) {
 
     override val chat: Chat by lazy {
-        QQChat(bot, id, this)
+        QQChat(
+            bot, id, this,
+            PbMessagePackets.RoutingHeader.newBuilder().setGroup(PbMessagePackets.ToGroup.newBuilder().setGroupCode(id))
+                .build()
+        )
     }
 
     override val members: Set<User>

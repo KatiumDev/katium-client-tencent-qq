@@ -15,21 +15,15 @@
  */
 package katium.client.qq.user
 
+import katium.client.qq.QQBot
 import katium.client.qq.QQLocalChatID
-import katium.client.qq.chat.QQChat
-import katium.core.Bot
-import katium.core.chat.Chat
 import katium.core.user.Contact
 import katium.core.user.User
 
-class QQUser(bot: Bot, val id: Long) : User(bot, QQLocalChatID(id)) {
+class QQUser(override val bot: QQBot, val id: Long) : User(bot, QQLocalChatID(id)) {
 
     override val name: String
         get() = "Unknown"
-    override val chat: Chat by lazy {
-        QQChat(bot, id, this)
-    }
-    override val asContact: Contact?
-        get() = null
+    override val asContact: Contact? = QQContact(this)
 
 }

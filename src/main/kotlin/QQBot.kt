@@ -22,10 +22,7 @@ import katium.core.Bot
 import katium.core.chat.LocalChatID
 import katium.core.review.ReviewMessage
 import katium.core.user.Contact
-import kotlinx.coroutines.CancellableContinuation
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.*
 
 class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user.id"]!!.toLong()), config) {
 
@@ -46,15 +43,18 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
     override val isConnected by client::isConnected
     override val isOnline by client::isOnline
 
-    override fun getGroup(id: LocalChatID) = getGroup(id.asQQ.uin)
-    override fun getUser(id: LocalChatID) = getUser(id.asQQ.uin)
+    override suspend fun getGroup(id: LocalChatID) = getGroup(id.asQQ.uin)
+    override suspend fun getUser(id: LocalChatID) = getUser(id.asQQ.uin)
 
-    fun getGroup(id: Long): QQGroup {
+    fun getUserSync(id: Long) = runBlocking(coroutineContext) { getUser(id) }
+    fun getGroupSync(id: Long) = runBlocking(coroutineContext) { getGroup(id) }
+
+    suspend fun getGroup(id: Long): QQGroup {
         // @TODO: Cache groups
         return QQGroup(this, id)
     }
 
-    fun getUser(id: Long): QQUser {
+    suspend fun getUser(id: Long): QQUser {
         // @TODO: Cache users
         return QQUser(this, id)
     }

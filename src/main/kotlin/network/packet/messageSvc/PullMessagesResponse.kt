@@ -18,17 +18,17 @@ package katium.client.qq.network.packet.messageSvc
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.util.netty.toArray
 
 class PullMessagesResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
-    lateinit var response: PbMessages.PullMessagesResponse
+    lateinit var response: PbMessagePackets.PullMessagesResponse
         private set
 
     override fun readBody(input: ByteBuf) {
-        response = PbMessages.PullMessagesResponse.parseFrom(input.toArray(release = false))
+        response = PbMessagePackets.PullMessagesResponse.parseFrom(input.toArray(release = false))
     }
 
 }

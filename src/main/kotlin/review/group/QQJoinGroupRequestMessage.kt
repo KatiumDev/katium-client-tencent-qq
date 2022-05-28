@@ -32,10 +32,10 @@ class QQJoinGroupRequestMessage(
 ) : JoinGroupRequestMessage(chatInfo) {
 
     constructor(client: QQClient, message: PbSystemMessages.StructMessage) : this(
-        chatInfo = client.bot.getGroup(QQLocalChatID(message.message.groupCode)),
+        chatInfo = client.bot.getGroupSync(QQLocalChatID(message.message.groupCode)),
         sequence = message.messageSequence,
         message = message.message.addition,
-        requester = client.bot.getUser(QQLocalChatID(message.requesterUin)),
+        requester = client.bot.getUserSync(QQLocalChatID(message.requesterUin)),
         processed = message.message.subType == 2,
         suspicious = message.message.warningTips.size() > 0
     )

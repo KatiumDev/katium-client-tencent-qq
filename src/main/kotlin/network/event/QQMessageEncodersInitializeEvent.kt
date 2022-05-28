@@ -16,30 +16,35 @@
 package katium.client.qq.network.event
 
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.encoder.MessageEncoder
 import katium.core.event.BotEvent
+import katium.core.message.content.MessageContent
+import kotlin.reflect.KClass
 
-class QQReceivedRawMessageEvent(val client: QQClient, val message: PbMessages.Message) : BotEvent(client.bot) {
+class QQMessageEncodersInitializeEvent(
+    val client: QQClient,
+    val encoders: MutableMap<KClass<out MessageContent>, MessageEncoder<*>>
+) : BotEvent(client.bot) {
 
     operator fun component2() = client
-    operator fun component3() = message
+    operator fun component3() = encoders
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is QQReceivedRawMessageEvent) return false
+        if (other !is QQMessageEncodersInitializeEvent) return false
         if (!super.equals(other)) return false
         if (client != other.client) return false
-        if (message != other.message) return false
+        if (encoders != other.encoders) return false
         return true
     }
 
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + client.hashCode()
-        result = 31 * result + message.hashCode()
+        result = 31 * result + encoders.hashCode()
         return result
     }
 
-    override fun toString() = "QQReceivedRawMessageEvent(bot=$bot, client=$client, message=$message)"
+    override fun toString() = "QQMessageEncodersInitializeEvent(bot=$bot, client=$client, encoders=$encoders)"
 
 }

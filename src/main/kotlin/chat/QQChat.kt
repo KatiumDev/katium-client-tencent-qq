@@ -15,29 +15,47 @@
  */
 package katium.client.qq.chat
 
+import katium.client.qq.QQBot
 import katium.client.qq.QQLocalChatID
-import katium.core.Bot
+import katium.client.qq.message.QQMessage
+import katium.client.qq.message.QQMessageRef
+import katium.client.qq.network.packet.messageSvc.SendMessageRequest
+import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.chat.Chat
 import katium.core.chat.Chattable
-import katium.core.chat.LocalChatID
+import katium.core.event.MessagePreSendEvent
+import katium.core.event.MessageSentEvent
 import katium.core.message.MessageRef
 import katium.core.message.content.MessageContent
 import katium.core.user.User
+import katium.core.util.event.post
 
-class QQChat(bot: Bot, id: Long, context: Chattable) : Chat(bot, QQLocalChatID(id), context) {
-
-    override val members: Set<User>
-        get() = TODO("Not yet implemented")
-
-    override fun removeMessage(message: MessageRef) {
-        TODO("Not yet implemented")
-    }
-
-    override fun sendMessage(message: MessageContent): MessageRef {
-        TODO("Not yet implemented")
-    }
+class QQChat(override val bot: QQBot, id: Long, context: Chattable, val routingHeader: PbMessagePackets.RoutingHeader) :
+    Chat(bot, QQLocalChatID(id), context) {
 
     override val name: String
         get() = "Unknown"
+    override val members: Set<User>
+        get() = TODO("Not yet implemented")
+
+    override suspend fun sendMessage(content: MessageContent): MessageRef? {
+        val client = bot.client
+        return bot.post(MessagePreSendEvent(bot, this, content.simplest))?.let {
+            val message = QQMessage(bot, this@QQChat, bot.selfInfo, it.content, System.currentTimeMillis())
+            client.send(
+                SendMessageRequest.create(
+                    client,
+                    routingHeader = routingHeader,
+                    elements = client.messageEncoders.encode(this, it.content)
+                )
+            )
+            bot.post(MessageSentEvent(message))
+            QQMessageRef(bot, message)
+        }
+    }
+
+    override suspend fun removeMessage(message: MessageRef) {
+        TODO("Not yet implemented")
+    }
 
 }
