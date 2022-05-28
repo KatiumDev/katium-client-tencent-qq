@@ -91,7 +91,7 @@ fun TlvMap.applyT119(client: QQClient) {
     client.sig.d2 = this[0x143]!!.toArray(false).toUByteArray()
     client.sig.d2KeyEncoded = this[0x305]!!.toArray(false).toUByteArray()
     client.sig.d2Key = TeaCipher.decodeByteKey(client.sig.d2KeyEncoded)
-    client.sig.deviceToken = this[0x322]!!.toArray(false).toUByteArray()
+    if(0x322 in this) client.sig.deviceToken = this[0x322]!!.toArray(false).toUByteArray()
 
     @Suppress("DEPRECATION")
     val key = Hashing.md5().hashBytes(ByteBufAllocator.DEFAULT.buffer {

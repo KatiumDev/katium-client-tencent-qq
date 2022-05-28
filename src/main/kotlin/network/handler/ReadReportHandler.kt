@@ -20,10 +20,7 @@ import katium.core.event.BotOfflineEvent
 import katium.core.event.BotOnlineEvent
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlin.random.Random
 
 object ReadReportHandler : EventListener {
@@ -34,7 +31,7 @@ object ReadReportHandler : EventListener {
         bot as QQBot
         if (!(bot.config["qq.auto_read_report.enabled"] ?: "true").toBoolean())
             return
-        bot.client.synchronzier.readReportJob = bot.launch {
+        bot.client.synchronzier.readReportJob = bot.launch(CoroutineName("Read Report")) {
             while (currentCoroutineContext()[Job]!!.isActive) {
                 delay(
                     Random.Default.nextLong(

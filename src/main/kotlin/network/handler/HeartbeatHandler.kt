@@ -21,10 +21,7 @@ import katium.core.event.BotOfflineEvent
 import katium.core.event.BotOnlineEvent
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 object HeartbeatHandler : EventListener {
 
@@ -34,7 +31,7 @@ object HeartbeatHandler : EventListener {
         bot as QQBot
         if (!(bot.config["qq.heartbeat.enabled"] ?: "true").toBoolean())
             return
-        bot.client.heartbeatJob = bot.launch {
+        bot.client.heartbeatJob = bot.launch(CoroutineName("Heartbeat")) {
             var times = 0
             while (currentCoroutineContext()[Job]!!.isActive) {
                 delay(bot.config["qq.heartbeat.interval"]?.toLong() ?: 30000)
