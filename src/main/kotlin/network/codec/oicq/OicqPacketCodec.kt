@@ -24,7 +24,7 @@ import katium.client.qq.network.packet.wtlogin.LoginResponsePacket
 import katium.core.util.event.post
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
-import katium.core.util.netty.writeUByteArray
+import katium.core.util.netty.writeUBytes
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
@@ -75,7 +75,7 @@ class OicqPacketCodec(
                 OicqPacket.EncryptType.ECDH -> {
                     writeByte(0x02)
                     writeByte(0x01)
-                    writeUByteArray(randomKey)
+                    writeUBytes(randomKey)
                     writeShort(0x01_31)
                     writeShort(ecdh.serverKeyVersion)
                     writeShort(ecdh.clientPublicKeyEncoded.size)
@@ -89,7 +89,7 @@ class OicqPacketCodec(
                 OicqPacket.EncryptType.ST -> {
                     writeByte(0x01)
                     writeByte(0x03)
-                    writeUByteArray(randomKey)
+                    writeUBytes(randomKey)
                     writeShort(0x01_02)
                     writeShort(0x0000)
                     randomKeyCipher.encrypt(alloc().buffer {

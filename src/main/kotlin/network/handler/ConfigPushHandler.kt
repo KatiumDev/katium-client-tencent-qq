@@ -30,11 +30,9 @@ object ConfigPushHandler : EventListener {
 
     @Subscribe
     fun onPacket(event: QQPacketReceivedEvent) {
-        val (bot, client, packet) = event
+        val (_, client, packet) = event
         if (packet is ConfigPushRequest) {
             val action = packet.action
-            val actionBuffer = packet.action.buffer.duplicate()
-            val actionBuffer2 = packet.action.buffer.duplicate()
             if (action.buffer.isReadable)
                 when (action.type) {
                     1 -> {
@@ -56,6 +54,7 @@ object ConfigPushHandler : EventListener {
             client.send(
                 ConfigPushResponse.create(
                     client,
+                    sequenceID = packet.sequenceID,
                     type = action.type,
                     buffer = action.buffer.duplicate(),
                     actionSequenceID = action.sequenceID

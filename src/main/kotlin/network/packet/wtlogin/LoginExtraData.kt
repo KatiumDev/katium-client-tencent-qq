@@ -16,7 +16,7 @@
 package katium.client.qq.network.packet.wtlogin
 
 import io.netty.buffer.ByteBuf
-import katium.core.util.netty.writeUByteArray
+import katium.core.util.netty.writeUBytes
 
 data class LoginExtraData(
     val uin: Long,
@@ -28,7 +28,7 @@ data class LoginExtraData(
 fun ByteBuf.writeLoginExtraData(data: LoginExtraData): ByteBuf {
     writeLong(data.uin)
     writeByte(data.ip.size)
-    writeUByteArray(data.ip)
+    writeUBytes(data.ip)
     writeInt(data.time)
     writeInt(data.version)
     return this

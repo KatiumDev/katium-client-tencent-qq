@@ -13,21 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.codec.pipeline
+package katium.client.qq.network.codec.tlv
 
-import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.ChannelInboundHandlerAdapter
-import katium.client.qq.network.QQClient
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.launch
+import io.netty.buffer.ByteBuf
+import katium.core.util.netty.writeUBytes
 
-class InactiveHandler(val client: QQClient) : ChannelInboundHandlerAdapter() {
-
-    override fun channelInactive(ctx: ChannelHandlerContext) {
-        super.channelInactive(ctx)
-        client.bot.launch(CoroutineName("Notify Offline")) {
-            client.notifyOffline()
-        }
-    }
-
+fun ByteBuf.writeT10A(tgt: UByteArray) = writeTlv(0x10A) {
+    writeUBytes(tgt)
 }

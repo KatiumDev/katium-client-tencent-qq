@@ -72,6 +72,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     init {
         bot.register(HeartbeatHandler)
         bot.register(ConfigPushHandler)
+        bot.register(SidTicketExpiredHandler)
         bot.register(FriendMessagesHandler)
         bot.register(GroupMessagesHandler)
         bot.register(RawMessageHandler)
@@ -197,6 +198,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
             .addLast("ResponsePacketDecoder", ResponsePacketDecoder(this))
             .addLast("TransportPacketDecoder", TransportPacketDecoder(this))
             .addLast("InboundPacketHandler", InboundPacketHandler(this))
+            .addLast("PacketReleaseHandler", PacketReleaseHandler)
             .addLast("InactiveHandler", InactiveHandler(this))
     }
 

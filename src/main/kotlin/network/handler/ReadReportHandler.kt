@@ -42,10 +42,13 @@ object ReadReportHandler : EventListener {
                         bot.config["qq.auto_read_report.interval.max"]?.toLong() ?: 2000000
                     )
                 )
-                if ((bot.config["qq.auto_read_report.full"] ?: "false").toBoolean())
+                if ((bot.config["qq.auto_read_report.full"] ?: "false").toBoolean()) {
                     bot.client.synchronzier.reportAllGroupRead()
-                else
+                    bot.client.synchronzier.reportAllFriendRead()
+                } else {
                     bot.client.synchronzier.reportSomeGroupRead()
+                    bot.client.synchronzier.reportSomeFriendRead()
+                }
             }
         }
     }

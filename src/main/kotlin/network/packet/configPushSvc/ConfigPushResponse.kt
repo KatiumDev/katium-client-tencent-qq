@@ -26,7 +26,7 @@ object ConfigPushResponse {
 
     fun create(
         client: QQClient,
-        sequenceID: Int = client.allocPacketSequenceID(),
+        sequenceID: Int,
         type: Int,
         buffer: ByteBuf,
         actionSequenceID: Long
@@ -37,16 +37,18 @@ object ConfigPushResponse {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "ConfigPushSvc.PushResp",
-            body = createRequestPacket(client, type, buffer, actionSequenceID).dump()
+            body = createRequestPacket(type, buffer, actionSequenceID).dump()
         )
 
-    fun createRequestPacket(client: QQClient, type: Int, buffer: ByteBuf, sequenceID: Long) = RequestPacket(
+    fun createRequestPacket(type: Int, buffer: ByteBuf, sequenceID: Long) = RequestPacket(
         version = 3,
         servantName = "QQService.ConfigPushSvc.MainServant",
         functionName = "PushResp",
         buffer = RequestDataV3(
             "PushResp" to ConfigPushAction().apply {
-
+                this.type = type
+                this.buffer = buffer
+                this.sequenceID = sequenceID
             }.dump().wrapUniRequestData()
         ).dump()
     )

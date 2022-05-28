@@ -33,10 +33,11 @@ data class LoginSigInfo(
     var sKey: UByteArray? = null,
     var sKeyExpiredTime: Long = 0,
     var d2: UByteArray = UByteArray(0),
+    var d2KeyEncoded: UByteArray = UByteArray(16),
     /**
      * Decode with TeaCipher.decodeByteKey
      */
-    var d2Key: UIntArray? = UIntArray(4),
+    var d2Key: UIntArray = UIntArray(4),
     var deviceToken: UByteArray? = null,
 
     var psKeyMap: Map<String, ByteArray>? = null,

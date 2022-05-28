@@ -39,7 +39,7 @@ fun ByteBuf.writePacket(client: QQClient, packet: TransportPacket.Request, relea
                     when (encryptType) {
                         TransportPacket.EncryptType.D2_KEY -> {
                             writeInt(client.sig.d2.size + 4)
-                            writeUByteArray(client.sig.d2)
+                            writeUBytes(client.sig.d2)
                         }
                         else -> {
                             writeInt(4)
@@ -60,7 +60,7 @@ fun ByteBuf.writePacket(client: QQClient, packet: TransportPacket.Request, relea
                 else -> {
                     QQTeaCipher(
                         *when (encryptType) {
-                            TransportPacket.EncryptType.D2_KEY -> client.sig.d2Key!!
+                            TransportPacket.EncryptType.D2_KEY -> client.sig.d2Key
                             TransportPacket.EncryptType.EMPTY_KEY -> EMPTY_KEY
                             else -> throw IllegalStateException()
                         }
@@ -89,7 +89,7 @@ fun ByteBuf.writePacketBody(client: QQClient, packet: TransportPacket.Request, r
             writeQQIntLengthString(client.deviceInfo.IMEI, true)
             writeInt(0x04)
             writeShort(client.sig.ksid.size + 2)
-            writeUByteArray(client.sig.ksid)
+            writeUBytes(client.sig.ksid)
         }
         writeInt(0x04)
     }
@@ -112,7 +112,7 @@ fun ByteBuf.readPacket(client: QQClient, release: Boolean = true): TransportPack
     val uin = readQQIntLengthString(true).toLong()
     val data = when (encryptType) {
         TransportPacket.EncryptType.NONE -> this.retainedDuplicate()
-        TransportPacket.EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key!!).decrypt(this, release = false)
+        TransportPacket.EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key).decrypt(this, release = false)
         TransportPacket.EncryptType.EMPTY_KEY -> QQTeaCipher(*EMPTY_KEY).decrypt(this, release = false)
     }
     if (release) {

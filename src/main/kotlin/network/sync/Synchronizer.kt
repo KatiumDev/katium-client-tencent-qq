@@ -47,11 +47,13 @@ class Synchronizer(val client: QQClient) {
     }
 
     fun reportAllFriendRead() {
+        if(unreadFriendMessages.isEmpty()) return
         reportFriendRead(unreadFriendMessages)
         unreadFriendMessages.clear()
     }
 
     fun reportSomeFriendRead() {
+        if(unreadFriendMessages.isEmpty()) return
         val shuffled = unreadFriendMessages.shuffled()
         val peerUins = shuffled.take(shuffled.size / 2)
         unreadFriendMessages -= peerUins.toSet()
@@ -59,6 +61,7 @@ class Synchronizer(val client: QQClient) {
     }
 
     fun reportFriendRead(peerUins: Collection<Long>) {
+        if(peerUins.isEmpty()) return
         client.logger.info("Reporting ${peerUins.size} friends as read")
         val time = (System.currentTimeMillis() / 1000).toInt()
         client.send(
@@ -83,11 +86,13 @@ class Synchronizer(val client: QQClient) {
     }
 
     fun reportAllGroupRead() {
+        if(unreadFriendMessages.isEmpty()) return
         reportGroupRead(unreadGroupMessages)
         unreadGroupMessages.clear()
     }
 
     fun reportSomeGroupRead() {
+        if(unreadFriendMessages.isEmpty()) return
         val shuffled = unreadGroupMessages.entries.shuffled()
         val messages = LinkedHashMap<Long, Long>()
         for (i in 0 until shuffled.size / 2) {
@@ -99,6 +104,7 @@ class Synchronizer(val client: QQClient) {
     }
 
     fun reportGroupRead(messages: Map<Long, Long>) {
+        if(messages.isEmpty()) return
         client.logger.info("Reporting ${messages.size} groups as read")
         client.send(
             MessageReadReportRequest.create(

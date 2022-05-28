@@ -16,7 +16,7 @@
 package katium.client.qq.network.codec.base
 
 import io.netty.buffer.ByteBuf
-import katium.core.util.netty.writeUByteArray
+import katium.core.util.netty.writeUBytes
 
 /**
  * Write a packet with an int32 length prefix(without the length itself)
@@ -43,7 +43,7 @@ fun ByteBuf.writeWithIntLength(data: ByteArray): ByteBuf {
 
 fun ByteBuf.writeWithIntLength(data: UByteArray): ByteBuf {
     writeInt(data.size + 4)
-    writeUByteArray(data)
+    writeUBytes(data)
     return this
 }
 
