@@ -15,7 +15,13 @@
  */
 package katium.client.qq.user
 
+import com.google.common.hash.HashCode
+import com.google.common.hash.Hashing
 import katium.client.qq.chat.QQChat
+import katium.client.qq.network.codec.highway.HighwayTransaction
+import katium.client.qq.network.packet.longConn.ImageUploadResult
+import katium.client.qq.network.packet.longConn.QueryFriendImageRequest
+import katium.client.qq.network.packet.longConn.QueryFriendImageResponse
 import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.chat.Chat
 import katium.core.user.Contact
@@ -32,5 +38,39 @@ class QQContact(asUser: QQUser) : Contact(asUser) {
                 .build()
         )
     }
+
+    suspend fun uploadImage(data: ByteArray, depth: Int = 0): ImageUploadResult {
+        if(depth >= 5) throw IllegalStateException("Unable to upload images")
+        @Suppress("DEPRECATION")
+        val md5 = Hashing.md5().hashBytes(data)
+        val query = queryImage(md5, data.size)
+        if (query.resourceKey == null) throw IllegalStateException(query.toString())
+        println(query)
+        if (!query.isExists) {
+            if (bot.client.highway.ssoAddresses.isEmpty())
+                bot.client.highway.ssoAddresses += query.uploadServers
+            runCatching {
+                bot.client.highway.upload(
+                    HighwayTransaction(
+                        command = 1,
+                        ticket = query.uploadKey!!.toByteArray().toUByteArray(),
+                        body = data.toUByteArray()
+                    )
+                )
+            }.getOrThrow() // @TODO: upload as group
+            return uploadImage(data, depth = depth +1)
+        } else {
+            return query
+        }
+    }
+
+    suspend fun queryImage(md5: HashCode, size: Int) = (bot.client.sendAndWait(
+        QueryFriendImageRequest.create(
+            bot.client,
+            target = id,
+            md5 = md5,
+            fileSize = size
+        )
+    ) as QueryFriendImageResponse).result
 
 }

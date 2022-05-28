@@ -18,6 +18,7 @@ package katium.client.qq.network.message.encoder
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageEncodersInitializeEvent
+import katium.core.message.content.Image
 import katium.core.message.content.MessageChain
 import katium.core.message.content.MessageContent
 import katium.core.message.content.PlainText
@@ -25,6 +26,8 @@ import katium.core.util.event.post
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.superclasses
 
 class MessageEncoders(val client: QQClient) {
 
@@ -40,13 +43,21 @@ class MessageEncoders(val client: QQClient) {
     private fun registerBuiltinEncoders(encoders: MutableMap<KClass<out MessageContent>, MessageEncoder<*>>) {
         encoders[MessageChain::class] = MessageChainEncoder
         encoders[PlainText::class] = PlainTextEncoder
+        encoders[Image::class] = ImageEncoder
     }
 
-    operator fun get(type: KClass<out MessageContent>) = encoders[type]
+    operator fun get(type: KClass<out MessageContent>): MessageEncoder<*>? =
+        encoders[type] ?: type.superclasses
+            .filter { it.isSubclassOf(MessageContent::class) }
+            .map {
+                @Suppress("UNCHECKED_CAST")
+                get(it as KClass<out MessageContent>)
+            }
+            .firstOrNull()
 
     @Suppress("UNCHECKED_CAST")
     operator fun get(content: MessageContent) =
-        (encoders[content::class] ?: throw UnsupportedOperationException("No message encoder for ${content::class}"))
+        (this[content::class] ?: throw UnsupportedOperationException("No message encoder for ${content::class}"))
                 as MessageEncoder<MessageContent>
 
     suspend fun encode(chat: QQChat, content: MessageContent) = this[content].encode(client, chat, content).toList()

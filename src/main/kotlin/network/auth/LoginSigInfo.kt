@@ -15,8 +15,6 @@
  */
 package katium.client.qq.network.auth
 
-import com.google.protobuf.ByteString
-
 data class LoginSigInfo(
     var loginBitmap: ULong = 0uL,
     var tgt: UByteArray = UByteArray(0),

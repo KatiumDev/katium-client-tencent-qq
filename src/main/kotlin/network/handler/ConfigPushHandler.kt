@@ -15,16 +15,21 @@
  */
 package katium.client.qq.network.handler
 
+import katium.client.qq.network.codec.highway.Highway
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 import katium.client.qq.network.codec.jce.readJceStruct
 import katium.client.qq.network.event.QQPacketReceivedEvent
 import katium.client.qq.network.packet.configPushSvc.ConfigPushRequest
 import katium.client.qq.network.packet.configPushSvc.ConfigPushResponse
+import katium.client.qq.network.packet.configPushSvc.FileStorageConfigPushData
+import katium.client.qq.network.pb.PbCmd0x6ff
 import katium.client.qq.network.sso.SsoServerListManager
 import katium.client.qq.network.sso.SsoServerRecord
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
+import katium.core.util.netty.toArray
 import kotlinx.coroutines.launch
+import java.net.InetSocketAddress
 
 object ConfigPushHandler : EventListener {
 
@@ -46,7 +51,26 @@ object ConfigPushHandler : EventListener {
                         }
                     }
                     2 -> {
-                        //@TODO: Decode highway config push https://cs.github.com/Mrs4s/MiraiGo/blob/master/client/decoders.go#L339
+                        val list = FileStorageConfigPushData(action.buffer.duplicate().readJceStruct())
+                        val response =
+                            PbCmd0x6ff.C501ResponseBody.parseFrom(list.bigDataChannel.buffer.toArray(release = false))
+                        client.highway.sigSession = response.body.sigSession.toByteArray()
+                        client.highway.sessionKey = response.body.sessionKey.toByteArray()
+                        response.body.addressesList.forEach {
+                            val addresses = it.addressesList.map { address ->
+                                InetSocketAddress(Highway.decodeIP(address.ip), address.port)
+                            }
+                            when (it.serviceType) {
+                                10 -> {
+                                    client.logger.info("Retrieved ${addresses.size} highway SSO addresses from ConfigPush")
+                                    client.highway.ssoAddresses.addAll(addresses)
+                                }
+                                21 -> {
+                                    client.logger.info("Retrieved ${addresses.size} highway other addresses from ConfigPush")
+                                    client.highway.otherAddresses.addAll(addresses)
+                                }
+                            }
+                        }
                     }
                     3 -> {} // log action
                     else -> throw UnsupportedOperationException("Unknown ConfigPush request type: ${action.type}")

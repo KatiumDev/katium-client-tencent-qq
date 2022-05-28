@@ -7,10 +7,10 @@ option java_outer_classname = "PbMessageElements";
 
 message Element {
   optional PlainText plainText = 1;
-  /*optional Face face = 2;
-  optional OnlineImage onlineImage = 3;
+  //optional Face face = 2;
+  //optional OnlineImage onlineImage = 3;
   optional NotOnlineImage notOnlineImage = 4;
-  optional TransElem transElemInfo = 5;
+  /*optional TransElem transElemInfo = 5;
   optional MarketFace marketFace = 6;
   //ElemFlags elemFlags = 7;
   optional CustomFace customFace = 8;
@@ -78,4 +78,33 @@ message AnonymousGroupMessage {
   optional int32 expireTime = 5;
   optional int32 bubbleID = 6;
   optional bytes rankColor = 7;
+}
+
+message NotOnlineImage {
+  string filePath = 1;
+  optional int32 fileLen = 2;
+  string downloadPath = 3;
+  optional bytes oldVerSendFile = 4;
+  optional int32 imgType = 5;
+  optional bytes previewsImage = 6;
+  bytes pictureMd5 = 7;
+  optional int32 pictureHeight = 8;
+  optional int32 pictureWidth = 9;
+  string resourceID = 10;
+  optional bytes flag = 11;
+  optional string thumbUrl = 12;
+  optional int32 original = 13;
+  optional string bigUrl = 14;
+  optional string origUrl = 15;
+  optional int32 bizType = 16;
+  optional int32 result = 17;
+  optional int32 index = 18;
+  optional bytes opFaceBuf = 19;
+  bool oldPictureMd5 = 20;
+  optional int32 thumbWidth = 21;
+  optional int32 thumbHeight = 22;
+  optional int32 fileID = 23;
+  optional int32 showLen = 24;
+  optional int32 downloadLen = 25;
+  optional bytes pbReserve = 29;
 }

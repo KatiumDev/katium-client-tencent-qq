@@ -31,7 +31,6 @@ object PlainTextEncoder : MessageEncoder<PlainText> {
             .setPlainText(
                 PbMessageElements.PlainText.newBuilder()
                     .setString(message.text)
-                    .build()
             )
             .build()
     )

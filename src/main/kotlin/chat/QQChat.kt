@@ -19,8 +19,10 @@ import katium.client.qq.QQBot
 import katium.client.qq.QQLocalChatID
 import katium.client.qq.message.QQMessage
 import katium.client.qq.message.QQMessageRef
+import katium.client.qq.network.packet.longConn.ImageUploadResult
 import katium.client.qq.network.packet.messageSvc.SendMessageRequest
 import katium.client.qq.network.pb.PbMessagePackets
+import katium.client.qq.user.QQContact
 import katium.core.chat.Chat
 import katium.core.chat.Chattable
 import katium.core.event.MessagePreSendEvent
@@ -56,6 +58,12 @@ class QQChat(override val bot: QQBot, id: Long, context: Chattable, val routingH
 
     override suspend fun removeMessage(message: MessageRef) {
         TODO("Not yet implemented")
+    }
+
+    suspend fun uploadImage(data: ByteArray): ImageUploadResult {
+        if(this.context is QQContact) {
+            return context.uploadImage(data)
+        } else TODO()
     }
 
 }

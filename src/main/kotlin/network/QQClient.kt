@@ -26,6 +26,7 @@ import katium.client.qq.QQBot
 import katium.client.qq.network.auth.DeviceInfo
 import katium.client.qq.network.auth.LoginSigInfo
 import katium.client.qq.network.auth.ProtocolType
+import katium.client.qq.network.codec.highway.Highway
 import katium.client.qq.network.codec.oicq.OicqPacketCodec
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.pipeline.*
@@ -49,10 +50,7 @@ import katium.core.review.ReviewMessage
 import katium.core.util.event.post
 import katium.core.util.event.register
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okio.IOException
@@ -139,6 +137,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
     val oicqCodec = OicqPacketCodec(this)
+    val highway = Highway(this)
     var heartbeatJob: Job? = null
     var lastMessageTime = 0L
     val synchronzier = Synchronizer(this)
@@ -150,7 +149,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     // @TODO: reconnect on disconnected
     suspend fun connect() {
-        while (retryTimes <= serverAddresses.size) {
+        while (retryTimes <= (bot.config["qq.retry_times"]?.toInt() ?: 10)) {
             retryTimes++
             currentServerCounter++
             if (currentServerCounter >= serverAddresses.size) {
@@ -188,6 +187,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
             } catch (e: Throwable) {
                 logger.error("Connect to $currentServerAddress failed", e)
             }
+            delay((bot.config["qq.retry_delay"]?.toLong() ?: 5000L))
         }
         throw IOException("All servers are unreachable")
     }

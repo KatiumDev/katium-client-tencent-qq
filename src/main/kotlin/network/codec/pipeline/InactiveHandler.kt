@@ -25,6 +25,7 @@ class InactiveHandler(val client: QQClient) : ChannelInboundHandlerAdapter() {
 
     override fun channelInactive(ctx: ChannelHandlerContext) {
         super.channelInactive(ctx)
+        client.logger.info("Disconnected from server")
         client.bot.launch(CoroutineName("Notify Offline")) {
             client.notifyOffline()
         }

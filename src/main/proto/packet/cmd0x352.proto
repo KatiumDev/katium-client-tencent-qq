@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package katium.client.qq.packet;
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "PbCmd0x352";
+
+message C352Request {
+  uint32 subCommand = 1;
+  repeated C352UploadRequest uploadRequest = 2;
+  // repeated GetImgUrlReq getimgUrlReq = 3;
+  // repeated DelImgReq delImgReq = 4;
+  uint32 networkType = 10;
+}
+
+message C352UploadRequest {
+  optional uint64 fromUin = 1;
+  optional uint64 toUin = 2;
+  optional uint64 fileID = 3;
+  optional bytes fileMd5 = 4;
+  optional uint64 fileSize = 5;
+  optional bytes fileName = 6;
+  optional uint32 sourceTerm = 7;
+  optional uint32 platformType = 8;
+  optional uint32 innerIp = 9;
+  optional bool addressBook = 10;
+  optional uint32 retry = 11;
+  optional uint32 buType = 12;
+  optional bool pictureOriginal = 13;
+  optional uint32 pictureWidth = 14;
+  optional uint32 pictureHeight = 15;
+  optional uint32 pictureType = 16;
+  optional bytes buildVersion = 17;
+  optional bytes fileIndex = 18;
+  optional uint32 storeDays = 19;
+  optional uint32 stepFlag = 20;
+  optional bool rejectTryFast = 21;
+  optional uint32 srvUpload = 22;
+  optional bytes transferUrl = 23;
+}
+
+message C352Response {
+  optional uint32 subCommand = 1;
+  repeated C352UploadResponse uploadResponse = 2;
+  // repeated GetImgUrlRsp getimgUrlRsp = 3;
+  optional bool newBigchan = 4;
+  // repeated DelImgRsp delImgRsp = 5;
+  optional bytes failMessage = 10;
+}
+
+message C352UploadResponse {
+  optional uint64 fileID = 1;
+  optional uint32 clientIP = 2;
+  uint32 result = 3;
+  optional bytes failMessage = 4;
+  bool fileExists = 5;
+  // optional ImgInfo imgInfo = 6;
+  repeated uint32 uploadIp = 7;
+  repeated uint32 uploadPort = 8;
+  optional bytes uploadUkey = 9;
+  optional bytes uploadResourceID = 10;
+  optional bytes uploadUuid = 11;
+  optional uint64 upOffset = 12;
+  optional uint64 blockSize = 13;
+  optional bytes encryptToIP = 14;
+  optional uint32 roamdays = 15;
+  // repeated IPv6Info upIp6 = 26;
+  optional bytes clientIP6 = 27;
+  optional bytes thumbDownPara = 60;
+  optional bytes originalDownPara = 61;
+  optional bytes downDomain = 62;
+  optional bytes bigDownPara = 64;
+  optional bytes bigThumbDownPara = 65;
+  optional uint32 httpsUrlFlag = 66;
+  // optional TryUpInfo4Busi info4Busi = 1001;
+}

@@ -21,11 +21,11 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.event.QQTransportDecodersInitializeEvent
 import katium.client.qq.network.packet.configPushSvc.ConfigPushRequest
+import katium.client.qq.network.packet.longConn.QueryFriendImageResponse
 import katium.client.qq.network.packet.messageSvc.PullMessagesResponse
 import katium.client.qq.network.packet.messageSvc.PushNotifyPacket
 import katium.client.qq.network.packet.onlinePush.PushGroupMessagesPacket
 import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesResponse
-import katium.client.qq.network.packet.wtlogin.UpdateSigResponse
 import katium.core.util.event.post
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
@@ -47,6 +47,7 @@ class TransportPacketDecoder(val client: QQClient) : MessageToMessageDecoder<Tra
         decoders["MessageSvc.PushNotify"] = ::PushNotifyPacket
         decoders["MessageSvc.PbGetMsg"] = ::PullMessagesResponse
         decoders["OnlinePush.PbPushGroupMsg"] = ::PushGroupMessagesPacket
+        decoders["LongConn.OffPicUp"] = ::QueryFriendImageResponse
     }
 
     override fun decode(ctx: ChannelHandlerContext, msg: TransportPacket.Response, out: MutableList<Any>) {

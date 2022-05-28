@@ -112,7 +112,12 @@ fun ByteBuf.readPacket(client: QQClient, release: Boolean = true): TransportPack
     val uin = readQQIntLengthString(true).toLong()
     val data = when (encryptType) {
         TransportPacket.EncryptType.NONE -> this.retainedDuplicate()
-        TransportPacket.EncryptType.D2_KEY -> QQTeaCipher(*client.sig.d2Key).decrypt(this, release = false)
+        TransportPacket.EncryptType.D2_KEY -> synchronized(client.sig) {
+            QQTeaCipher(*client.sig.d2Key).decrypt(
+                this,
+                release = false
+            )
+        }
         TransportPacket.EncryptType.EMPTY_KEY -> QQTeaCipher(*EMPTY_KEY).decrypt(this, release = false)
     }
     if (release) {

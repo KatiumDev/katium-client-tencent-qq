@@ -5,7 +5,7 @@ package katium.client.qq.message;
 option java_package = "katium.client.qq.network.pb";
 option java_outer_classname = "PbMessagePackets";
 
-import "messages.proto";
+import "message/messages.proto";
 
 message PullMessagesRequest {
   optional SyncFlag syncFlag = 1;

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package katium.client.qq.packet;
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "PbHighway";
+
+message HighwayRequestHeader {
+  HighwayDataHeader data = 1;
+  HighwaySegmentHeader segment = 2;
+  bytes extensionInfo = 3;
+  int64 timestamp = 4;
+  //LoginSigHead? msgLoginSigHead = 5;
+}
+
+message HighwayResponseHeader {
+  HighwayDataHeader data = 1;
+  HighwaySegmentHeader segment = 2;
+  int32 errorCode = 3;
+  int32 allowRetry = 4;
+  int32 cacheCost = 5;
+  int32 htCost = 6;
+  bytes extensionInfo = 7;
+  int64 timestamp = 8;
+  int64 range = 9;
+  int32 isReset = 10;
+}
+
+message HighwayDataHeader {
+  int32 version = 1;
+  string uin = 2;
+  string command = 3;
+  int32 sequence = 4;
+  int32 retryTimes = 5;
+  int32 appID = 6;
+  int32 flag = 7;
+  int32 commandID = 8;
+  string buildVersion = 9;
+  int32 localeID = 10;
+}
+
+message HighwaySegmentHeader {
+  int32 serviceID = 1;
+  int64 fileSize = 2;
+  int64 dataOffset = 3;
+  int32 dataLength = 4;
+  int32 rtCode = 5;
+  bytes serviceTicket = 6;
+  int32 flag = 7;
+  bytes md5 = 8;
+  bytes fileMd5 = 9;
+  int32 cacheAddress = 10;
+  int32 queryTimes = 11;
+  int32 updateCacheIP = 12;
+}

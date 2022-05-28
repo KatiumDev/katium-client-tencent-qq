@@ -5,7 +5,7 @@ package katium.client.qq.message;
 option java_package = "katium.client.qq.network.pb";
 option java_outer_classname = "PbMessages";
 
-import "message_elements.proto";
+import "message/message_elements.proto";
 
 message Message {
   MessageHeader header = 1;

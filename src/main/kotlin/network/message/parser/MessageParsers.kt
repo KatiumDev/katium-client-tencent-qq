@@ -37,6 +37,7 @@ class MessageParsers(val client: QQClient) {
 
     private fun registerBuiltinParsers(parsers: MutableMap<Int, MessageParser>) {
         parsers[1] = PlainTextParser
+        parsers[4] = NotOnlineImageParser
     }
 
     operator fun get(type: Int) = parsers[type]
