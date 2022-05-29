@@ -7,7 +7,7 @@ import katium.client.qq.message.content.QQImage
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.pb.PbMessageElements
 import katium.core.message.content.Image
-import java.util.HexFormat
+import java.util.*
 
 object ImageEncoder : MessageEncoder<Image> {
 
@@ -43,7 +43,10 @@ object ImageEncoder : MessageEncoder<Image> {
                     .setCustomFace(
                         PbMessageElements.CustomFace.newBuilder()
                             //.setFilePath("{${UUID.nameUUIDFromBytes(md5.toByteArray())}}.png".uppercase())
-                            .setFilePath("${HexFormat.of().formatHex(md5.toByteArray()).uppercase()}.jpg")
+                            .setFilePath(
+                                if (message is QQImage) message.filePath
+                                else "${HexFormat.of().formatHex(md5.toByteArray()).uppercase()}.jpg"
+                            )
                             .setFileID(resourceKey.toLong())
                             //.setServerIP()
                             //.setServerPort()
@@ -53,7 +56,7 @@ object ImageEncoder : MessageEncoder<Image> {
                             .setMd5(md5)
                             .setBizType(5)
                             .setImageType(1000) // @TODO: 2000 for gif?
-                            .setWidth(message.width ?: 720) // @TODO: missing if?
+                            .setWidth(message.width ?: 720)
                             .setHeight(message.height ?: 480)
                             .also {
                                 if (message.width != null) it.thumbWidth = message.width!!

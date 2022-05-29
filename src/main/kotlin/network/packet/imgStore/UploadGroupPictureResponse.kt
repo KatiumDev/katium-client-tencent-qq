@@ -20,7 +20,6 @@ class UploadGroupPictureResponse(val client: QQClient, packet: TransportPacket.R
 
     override fun readBody(input: ByteBuf) {
         response = PbCmd0x388.C388Response.parseFrom(input.toArray(release = false))
-        println(response)
 
         result = if (response.subCommand != 1) {
             ImageUploadResult(message = "subCommand: ${response.subCommand}")

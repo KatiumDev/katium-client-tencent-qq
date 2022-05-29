@@ -8,8 +8,17 @@ import katium.core.util.okhttp.expected
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
 import okhttp3.Request
+import java.util.*
 
-class QQImage(val resourceKey: String, originUrl: String, val md5: ByteString, val size: Int? = null) : Image() {
+class QQImage(
+    val resourceKey: String,
+    originUrl: String,
+    val md5: ByteString,
+    val size: Int? = null,
+    val filePath: String = "${HexFormat.of().formatHex(md5.toByteArray()).uppercase()}.jpg",
+    width: Int? = null,
+    height: Int? = null,
+) : Image(width, height) {
 
     override val contentBytes: ByteArray by lazy {
         runBlocking(CoroutineName("Download QQ Chat Image")) {

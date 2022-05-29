@@ -5,19 +5,21 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
 
-object NotOnlineImageParser : MessageParser {
+object CustomFaceParser : MessageParser {
 
     override suspend fun parse(
         client: QQClient,
         message: PbMessages.Message,
         element: PbMessageElements.Element
-    ) = element.notOnlineImage.run {
+    ) = element.customFace.run {
         QQImage(
-            resourceKey = resourceID,
-            originUrl = origUrl,
-            md5 = pictureMd5,
-            width = if (hasPictureWidth()) pictureWidth else null,
-            height = if (hasPictureHeight()) pictureHeight else null
+            resourceKey = fileID.toString(),
+            originUrl = origUrl.substring(1), // remove `/` prefix
+            md5 = md5,
+            filePath = filePath,
+            size = size,
+            width = if (hasWidth()) width else null,
+            height = if (hasHeight()) height else null
         )
     }
 

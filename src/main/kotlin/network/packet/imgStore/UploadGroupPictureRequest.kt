@@ -44,8 +44,8 @@ object UploadGroupPictureRequest {
             sourceTerm = 5
             platformType = 9
             buType = 1
-            pictureWidth = 736
-            pictureHeight = 414
+            pictureWidth = 0
+            pictureHeight = 0
             pictureType = 1000
             buildVersion = ByteString.copyFrom(client.clientVersion.version.toByteArray())
             appPictureType = 1052
