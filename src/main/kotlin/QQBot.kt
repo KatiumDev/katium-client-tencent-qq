@@ -15,30 +15,39 @@
  */
 package katium.client.qq
 
-import katium.client.qq.group.QQGroup
 import katium.client.qq.network.QQClient
 import katium.client.qq.user.QQUser
 import katium.core.Bot
 import katium.core.chat.LocalChatID
 import katium.core.review.ReviewMessage
 import katium.core.user.Contact
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user.id"]!!.toLong()), config) {
 
     val uin = selfID.asQQ.uin
     val client: QQClient = QQClient(this)
 
-    var loopContinuation: CancellableContinuation<Unit>? = null
+    var loopContinuation: Continuation<Unit>? = null
     override val loopJob = launch(start = CoroutineStart.LAZY) {
         client.connect()
-        suspendCancellableCoroutine {
+        suspendCoroutine<Unit> {
             loopContinuation = it
         }
+        client.close()
+    }
+
+    override fun stop() {
+        loopContinuation!!.resume(Unit)
     }
 
     override val allContacts: Set<Contact>
-        get() = TODO("Not yet implemented")
+        get() = client.getFriendsSync().values.toSet()
 
     override val isConnected by client::isConnected
     override val isOnline by client::isOnline
@@ -49,15 +58,9 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
     fun getUserSync(id: Long) = runBlocking(coroutineContext) { getUser(id) }
     fun getGroupSync(id: Long) = runBlocking(coroutineContext) { getGroup(id) }
 
-    suspend fun getGroup(id: Long): QQGroup {
-        // @TODO: Cache groups
-        return QQGroup(this, id)
-    }
+    suspend fun getGroup(id: Long) = client.getGroups()[id]
 
-    suspend fun getUser(id: Long): QQUser {
-        // @TODO: Cache users
-        return QQUser(this, id)
-    }
+    suspend fun getUser(id: Long) = client.getFriends()[id]?.asUser ?: QQUser(this, id, "Unknown", false)
 
     override val reviewMessages: Set<ReviewMessage> by client::reviewMessages
 

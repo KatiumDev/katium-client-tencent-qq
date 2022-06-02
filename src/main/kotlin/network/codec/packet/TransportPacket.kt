@@ -131,10 +131,7 @@ class TransportPacket private constructor() {
                 sequenceID = other.sequenceID,
                 command = other.command,
                 message = other.message
-            ) {
-                @Suppress("LeakingThis")
-                readBody(other.body)
-            }
+            )
 
         }
 

@@ -18,10 +18,10 @@ package katium.client.qq.network.handler
 import com.google.protobuf.ByteString
 import katium.client.qq.network.event.QQPacketReceivedEvent
 import katium.client.qq.network.event.QQReceivedRawMessageEvent
-import katium.client.qq.network.packet.messageSvc.DeleteMessagesRequest
-import katium.client.qq.network.packet.messageSvc.PullMessagesRequest
-import katium.client.qq.network.packet.messageSvc.PullMessagesResponse
-import katium.client.qq.network.packet.messageSvc.PushNotifyPacket
+import katium.client.qq.network.packet.chat.DeleteMessagesRequest
+import katium.client.qq.network.packet.chat.PullMessagesRequest
+import katium.client.qq.network.packet.chat.PullMessagesResponse
+import katium.client.qq.network.packet.chat.PushNotifyPacket
 import katium.client.qq.network.pb.PbDeleteMessages
 import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.util.event.EventListener

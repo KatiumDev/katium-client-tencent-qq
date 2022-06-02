@@ -32,12 +32,12 @@ class QQGroupInvitationMessage(
 ) : GroupInvitationMessage(chatInfo) {
 
     constructor(client: QQClient, message: PbSystemMessages.StructMessage) : this(
-        chatInfo = client.bot.getGroupSync(QQLocalChatID(message.message.groupCode)),
+        chatInfo = client.bot.getGroupSync(QQLocalChatID(message.message.groupCode))!!,
         sequence = message.messageSequence,
         message = message.message.addition,
         processed = message.message.subType == 2,
         suspicious = message.message.warningTips.size() > 0,
-        invitor = client.bot.getUserSync(QQLocalChatID(message.message.actionUin))
+        invitor = client.bot.getUserSync(QQLocalChatID(message.message.actionUin))!!
     )
 
     override val id: String = sequence.toString()

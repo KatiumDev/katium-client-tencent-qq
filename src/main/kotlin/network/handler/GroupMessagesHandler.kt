@@ -17,7 +17,7 @@ package katium.client.qq.network.handler
 
 import katium.client.qq.network.event.QQPacketReceivedEvent
 import katium.client.qq.network.event.QQReceivedRawMessageEvent
-import katium.client.qq.network.packet.onlinePush.PushGroupMessagesPacket
+import katium.client.qq.network.packet.chat.PushGroupMessagesPacket
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
@@ -30,10 +30,9 @@ object GroupMessagesHandler : EventListener {
         if (packet is PushGroupMessagesPacket) {
             val response = packet.response
             val message = response.message
-            client.synchronzier.recordUnreadGroupMessage(
-                message.header.groupInfo.groupCode,
-                message.header.sequence.toLong()
-            )
+            val groupCode = message.header.groupInfo.groupCode
+            client.getGroups()[groupCode]!!.lastReadSequence.set(message.header.sequence.toLong())
+            client.synchronzier.recordUnreadGroupMessage(groupCode)
             client.bot.post(QQReceivedRawMessageEvent(client, message))
         }
     }

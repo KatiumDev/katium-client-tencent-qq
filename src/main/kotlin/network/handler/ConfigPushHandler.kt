@@ -19,9 +19,9 @@ import katium.client.qq.network.codec.highway.Highway
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 import katium.client.qq.network.codec.jce.readJceStruct
 import katium.client.qq.network.event.QQPacketReceivedEvent
-import katium.client.qq.network.packet.configPushSvc.ConfigPushRequest
-import katium.client.qq.network.packet.configPushSvc.ConfigPushResponse
-import katium.client.qq.network.packet.configPushSvc.FileStorageConfigPushData
+import katium.client.qq.network.packet.meta.configPush.ConfigPushRequest
+import katium.client.qq.network.packet.meta.configPush.ConfigPushResponse
+import katium.client.qq.network.packet.meta.configPush.FileStorageConfigPushData
 import katium.client.qq.network.pb.PbCmd0x6ff
 import katium.client.qq.network.sso.SsoServerListManager
 import katium.client.qq.network.sso.SsoServerRecord

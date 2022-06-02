@@ -17,7 +17,7 @@ package katium.client.qq.network.sync
 
 import com.google.protobuf.ByteString
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.packet.messageSvc.MessageReadReportRequest
+import katium.client.qq.network.packet.chat.MessageReadReportRequest
 import katium.client.qq.network.pb.PbMessagesReadReport
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Job
@@ -36,7 +36,7 @@ class Synchronizer(val client: QQClient) {
     var readReportJob: Job? = null
 
     val unreadFriendMessages = mutableListOf<Long>()
-    val unreadGroupMessages = mutableMapOf<Long, Long>()
+    val unreadGroupMessages = mutableListOf<Long>()
 
     fun recordUnreadFriendMessage(peerUin: Long) {
         unreadFriendMessages += peerUin
@@ -47,13 +47,13 @@ class Synchronizer(val client: QQClient) {
     }
 
     fun reportAllFriendRead() {
-        if(unreadFriendMessages.isEmpty()) return
+        if (unreadFriendMessages.isEmpty()) return
         reportFriendRead(unreadFriendMessages)
         unreadFriendMessages.clear()
     }
 
     fun reportSomeFriendRead() {
-        if(unreadFriendMessages.isEmpty()) return
+        if (unreadFriendMessages.isEmpty()) return
         val shuffled = unreadFriendMessages.shuffled()
         val peerUins = shuffled.take(shuffled.size / 2)
         unreadFriendMessages -= peerUins.toSet()
@@ -61,7 +61,7 @@ class Synchronizer(val client: QQClient) {
     }
 
     fun reportFriendRead(peerUins: Collection<Long>) {
-        if(peerUins.isEmpty()) return
+        if (peerUins.isEmpty()) return
         client.logger.info("Reporting ${peerUins.size} friends as read")
         val time = (System.currentTimeMillis() / 1000).toInt()
         client.send(
@@ -81,38 +81,34 @@ class Synchronizer(val client: QQClient) {
         )
     }
 
-    fun recordUnreadGroupMessage(groupCode: Long, lastReadSequence: Long) {
-        unreadGroupMessages[groupCode] = lastReadSequence
+    fun recordUnreadGroupMessage(groupCode: Long) {
+        unreadGroupMessages += groupCode
     }
 
-    fun reportAllGroupRead() {
-        if(unreadFriendMessages.isEmpty()) return
+    suspend fun reportAllGroupRead() {
+        if (unreadFriendMessages.isEmpty()) return
         reportGroupRead(unreadGroupMessages)
         unreadGroupMessages.clear()
     }
 
-    fun reportSomeGroupRead() {
-        if(unreadFriendMessages.isEmpty()) return
-        val shuffled = unreadGroupMessages.entries.shuffled()
-        val messages = LinkedHashMap<Long, Long>()
-        for (i in 0 until shuffled.size / 2) {
-            val (groupCode, lastReadSequence) = shuffled[i]
-            messages[groupCode] = lastReadSequence
-            unreadGroupMessages.remove(groupCode)
-        }
-        reportGroupRead(messages)
+    suspend fun reportSomeGroupRead() {
+        if (unreadGroupMessages.isEmpty()) return
+        val shuffled = unreadGroupMessages.shuffled()
+        val groups = shuffled.take(shuffled.size / 2)
+        unreadGroupMessages -= groups.toSet()
+        reportGroupRead(groups)
     }
 
-    fun reportGroupRead(messages: Map<Long, Long>) {
-        if(messages.isEmpty()) return
-        client.logger.info("Reporting ${messages.size} groups as read")
+    suspend fun reportGroupRead(groups: Collection<Long>) {
+        if (groups.isEmpty()) return
+        client.logger.info("Reporting ${groups.size} groups as read")
         client.send(
             MessageReadReportRequest.create(
                 client, report = PbMessagesReadReport.ReadReportRequest.newBuilder().addAllGroup(
-                    messages.map { (groupCode, lastReadSequence) ->
+                    groups.map { groupCode ->
                         PbMessagesReadReport.GroupReadReportRequest.newBuilder().apply {
                             this.groupCode = groupCode
-                            this.lastReadSequence = lastReadSequence
+                            this.lastReadSequence = client.getGroups()[groupCode]!!.lastReadSequence.get()
                         }.build()
                     }
                 ).build()

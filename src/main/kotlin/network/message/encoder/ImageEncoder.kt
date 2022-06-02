@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Katium Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package katium.client.qq.network.message.encoder
 
 import com.google.common.hash.Hashing
@@ -15,6 +30,7 @@ object ImageEncoder : MessageEncoder<Image> {
         val resourceKey =
             if (message is QQImage) message.resourceKey
             else context.uploadImage(message.contentBytes!!).resourceKey!!
+        @Suppress("DEPRECATION")
         val md5 =
             if (message is QQImage) message.md5
             else ByteString.copyFrom(Hashing.md5().hashBytes(message.contentBytes!!).asBytes())
@@ -55,7 +71,7 @@ object ImageEncoder : MessageEncoder<Image> {
                             .setUseful(1)
                             .setMd5(md5)
                             .setBizType(5)
-                            .setImageType(1000) // @TODO: 2000 for gif?
+                            .setImageType(1000)
                             .setWidth(message.width ?: 720)
                             .setHeight(message.height ?: 480)
                             .also {

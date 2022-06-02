@@ -17,6 +17,7 @@ package katium.client.qq.network.handler
 
 import katium.client.qq.network.event.QQReceivedRawMessageEvent
 import katium.core.event.MessageReceivedEvent
+import katium.core.event.MessageSentEvent
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
@@ -26,14 +27,14 @@ object RawMessageHandler : EventListener {
     @Subscribe
     suspend fun onMessage(event: QQReceivedRawMessageEvent) {
         val (_, client, message) = event
-        if (message.header.fromUin == client.uin) return
-        client.bot.post(
-            MessageReceivedEvent(
-                (client.messageDecoders[message.header.type]
-                    ?: throw UnsupportedOperationException("Unknown message type: ${message.header.type}"))
-                    .decode(client, message)
-            )
-        )
+        val decodedMessage = (client.messageDecoders[message.header.type]
+            ?: throw UnsupportedOperationException("Unknown message type: ${message.header.type}"))
+            .decode(client, message)
+        if (message.header.fromUin == client.uin) {
+            client.bot.post(MessageSentEvent(decodedMessage))
+        } else {
+            client.bot.post(MessageReceivedEvent(decodedMessage))
+        }
     }
 
 }

@@ -20,13 +20,11 @@ import io.netty.handler.codec.MessageToMessageDecoder
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.event.QQTransportDecodersInitializeEvent
-import katium.client.qq.network.packet.configPushSvc.ConfigPushRequest
-import katium.client.qq.network.packet.imgStore.UploadGroupPictureResponse
-import katium.client.qq.network.packet.longConn.QueryFriendImageResponse
-import katium.client.qq.network.packet.messageSvc.PullMessagesResponse
-import katium.client.qq.network.packet.messageSvc.PushNotifyPacket
-import katium.client.qq.network.packet.onlinePush.PushGroupMessagesPacket
-import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesResponse
+import katium.client.qq.network.packet.chat.*
+import katium.client.qq.network.packet.chat.image.QueryFriendImageResponse
+import katium.client.qq.network.packet.chat.image.UploadGroupPictureResponse
+import katium.client.qq.network.packet.meta.configPush.ConfigPushRequest
+import katium.client.qq.network.packet.review.PullGroupSystemMessagesResponse
 import katium.core.util.event.post
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
@@ -47,15 +45,21 @@ class TransportPacketDecoder(val client: QQClient) : MessageToMessageDecoder<Tra
         decoders["ConfigPushSvc.PushReq"] = ::ConfigPushRequest
         decoders["MessageSvc.PushNotify"] = ::PushNotifyPacket
         decoders["MessageSvc.PbGetMsg"] = ::PullMessagesResponse
+        decoders["MessageSvc.PbGetGroupMsg"] = ::PullGroupHistoryMessagesResponse
         decoders["OnlinePush.PbPushGroupMsg"] = ::PushGroupMessagesPacket
         decoders["LongConn.OffPicUp"] = ::QueryFriendImageResponse
         decoders["ImgStore.GroupPicUp"] = ::UploadGroupPictureResponse
+        decoders["PbMessageSvc.PbMsgWithDraw"] = ::RecallMessagesResponse
+        decoders["MessageSvc.PbSendMsg"] = ::SendMessageResponse
+        decoders["friendlist.getFriendGroupList"] = ::PullFriendListResponse
+        decoders["friendlist.GetTroopListReqV2"] = ::PullGroupListResponse
+        decoders["OidbSvc.0x88d_0"] = ::PullGroupInfoResponse
     }
 
     override fun decode(ctx: ChannelHandlerContext, msg: TransportPacket.Response, out: MutableList<Any>) {
         out.add(
             if (msg is TransportPacket.Response.Buffered) {
-                decoders[msg.command]?.invoke(client, msg) ?: msg
+                decoders[msg.command]?.invoke(client, msg)?.apply { readBody(msg.body) } ?: msg
             } else msg
         )
     }

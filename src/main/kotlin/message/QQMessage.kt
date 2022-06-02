@@ -22,9 +22,11 @@ import katium.core.message.Message
 import katium.core.message.MessageRef
 import katium.core.message.content.MessageContent
 
-class QQMessage(bot: Bot, context: Chat, sender: ChatInfo, content: MessageContent, time: Long) :
-    Message(bot, context, sender, content, time) {
+class QQMessage(
+    bot: Bot, context: Chat, sender: ChatInfo, content: MessageContent, time: Long,
+    val sequence: Int, val type: Int, val messageRandom: Int
+) : Message(bot, context, sender, content, time) {
 
-    override val ref: MessageRef by lazy { QQMessageRef(bot, this) }
+    override val ref: MessageRef by lazy { QQMessageRef(bot, this, sequence, type) }
 
 }

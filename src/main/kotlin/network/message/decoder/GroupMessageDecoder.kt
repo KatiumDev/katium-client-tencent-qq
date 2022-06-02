@@ -22,14 +22,17 @@ import katium.client.qq.network.pb.PbMessages
 object GroupMessageDecoder : MessageDecoder {
 
     override suspend fun decode(client: QQClient, message: PbMessages.Message): QQMessage {
-        val group = client.bot.getGroup(message.header.groupInfo.groupCode).chat
-        val sender = client.bot.getUser(message.header.fromUin)
+        val group = client.bot.getGroup(message.header.groupInfo.groupCode)!!.chat!!
+        val sender = client.bot.getUser(message.header.fromUin)!!
         return QQMessage(
             bot = client.bot,
             context = group,
             content = client.messageParsers.parse(message),
             sender = sender,
-            time = message.header.time * 1000L
+            time = message.header.time * 1000L,
+            sequence = message.header.sequence,
+            type = message.header.type,
+            messageRandom = message.body.richText.attributes.random
         )
     }
 

@@ -17,12 +17,14 @@ package katium.client.qq.network
 
 import com.google.common.hash.Hashing
 import io.netty.bootstrap.Bootstrap
+import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import katium.client.qq.QQBot
+import katium.client.qq.group.QQGroup
 import katium.client.qq.network.auth.DeviceInfo
 import katium.client.qq.network.auth.LoginSigInfo
 import katium.client.qq.network.auth.ProtocolType
@@ -33,27 +35,31 @@ import katium.client.qq.network.codec.pipeline.*
 import katium.client.qq.network.event.QQChannelInitializeEvent
 import katium.client.qq.network.handler.*
 import katium.client.qq.network.message.decoder.MessageDecoders
-import katium.client.qq.network.message.encoder.MessageEncoder
 import katium.client.qq.network.message.encoder.MessageEncoders
 import katium.client.qq.network.message.parser.MessageParsers
-import katium.client.qq.network.packet.messageSvc.PullMessagesRequest
-import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesRequest
-import katium.client.qq.network.packet.profileSvc.PullGroupSystemMessagesResponse
-import katium.client.qq.network.packet.statSvc.ClientRegisterPacket
-import katium.client.qq.network.packet.wtlogin.LoginResponsePacket
-import katium.client.qq.network.packet.wtlogin.PasswordLoginPacket
+import katium.client.qq.network.packet.chat.*
+import katium.client.qq.network.packet.login.LoginResponsePacket
+import katium.client.qq.network.packet.login.PasswordLoginPacket
+import katium.client.qq.network.packet.meta.ClientRegisterPacket
+import katium.client.qq.network.packet.review.PullGroupSystemMessagesRequest
+import katium.client.qq.network.packet.review.PullGroupSystemMessagesResponse
 import katium.client.qq.network.sso.SsoServerListManager
 import katium.client.qq.network.sync.Synchronizer
+import katium.client.qq.user.QQContact
+import katium.client.qq.user.QQUser
+import katium.client.qq.util.CoroutineLazy
 import katium.core.event.BotOfflineEvent
 import katium.core.event.BotOnlineEvent
 import katium.core.review.ReviewMessage
 import katium.core.util.event.post
 import katium.core.util.event.register
+import katium.core.util.netty.EmptyByteBuf
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okio.IOException
+import java.io.Closeable
 import java.io.File
 import java.net.InetSocketAddress
 import java.util.*
@@ -62,7 +68,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
 
-class QQClient(val bot: QQBot) : CoroutineScope by bot {
+class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
 
     val logger by bot::logger
     val uin by bot::uin
@@ -146,6 +152,8 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
     val messageEncoders = MessageEncoders(this)
 
     lateinit var reviewMessages: Set<ReviewMessage>
+    var cachedFriends = CoroutineLazy(this, ::pullFriends)
+    var cachedGroups = CoroutineLazy(this, ::pullGroups)
 
     // @TODO: reconnect on disconnected
     suspend fun connect() {
@@ -199,6 +207,10 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
             .addLast("TransportPacketDecoder", TransportPacketDecoder(this))
             .addLast("InboundPacketHandler", InboundPacketHandler(this))
             .addLast("InactiveHandler", InactiveHandler(this))
+    }
+
+    override fun close() {
+        channel!!.close().sync()
     }
 
     val packetSequenceID = atomic(Random.Default.nextInt())
@@ -264,5 +276,63 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot {
 
     fun startSyncMessages() =
         send(PullMessagesRequest.create(this))
+
+    suspend fun getFriends() = cachedFriends.get()
+
+    fun getFriendsSync() = cachedFriends.getSync()
+
+    suspend fun pullFriends(): Map<Long, QQContact> {
+        logger.info("Pulling friend list")
+        var totalCount = Int.MAX_VALUE
+        val friends = mutableMapOf<Long, QQContact>()
+        while (friends.size < totalCount) {
+            val response = (sendAndWait(
+                PullFriendListRequest.create(
+                    this,
+                    friends = friends.size.toShort() to 150,
+                    groups = 0.toShort() to 0
+                )
+            ) as PullFriendListResponse).response
+            totalCount = response.totalFriendsCount.toInt()
+            friends += response.friends
+                .asSequence()
+                .map { PullFriendListResponseData.Friend(it) }
+                .map { QQUser(bot = bot, id = it.uin, name = it.nickName, isContact = true) }
+                .map(QQUser::asContact)
+                .requireNoNulls()
+                .associateBy { it.id }
+        }
+        logger.info("Got ${friends.size} friends")
+        return friends.toMap()
+    }
+
+    suspend fun getGroups() = cachedGroups.get()
+
+    fun getGroupsSync() = cachedGroups.getSync()
+
+    suspend fun pullGroups(): Map<Long, QQGroup> {
+        logger.info("Pulling group list")
+        val groups = mutableMapOf<Long, QQGroup>()
+        var cookies: ByteBuf = EmptyByteBuf
+        do {
+            val response = (sendAndWait(
+                PullGroupListRequest.create(
+                    this,
+                    cookies = cookies
+                )
+            ) as PullGroupListResponse).response
+            cookies = response.cookies
+            cookies.retain()
+            groups += response.troopList
+                .asSequence()
+                .map { PullGroupListResponseData.Troop(it) }
+                .map { QQGroup(bot = bot, id = it.groupCode, name = it.groupName, isContact = true) }
+                .requireNoNulls()
+                .associateBy { it.id }
+        } while (cookies.isReadable)
+        cookies.release()
+        logger.info("Got ${groups.size} groups")
+        return groups.toMap()
+    }
 
 }

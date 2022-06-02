@@ -42,11 +42,20 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
     protected fun string(tag: UByte, defaultValue: String = ""): Delegation<String> = field(tag, defaultValue)
     protected fun <K, V> map(tag: UByte): Delegation<MutableMap<K, V>> = field(tag) { mutableMapOf() }
     protected fun <E> list(tag: UByte): Delegation<MutableList<E>> = field(tag) { mutableListOf() }
-    protected fun <E> set(tag: UByte): Delegation<MutableSet<E>> = field(tag) { mutableSetOf() }
+    protected fun <E> set(tag: UByte): CastedDelegation<MutableSet<E>> {
+        tags.computeIfAbsent(tag) { mutableSetOf<E>() }
+        @Suppress("UNCHECKED_CAST")
+        return CastedDelegation(
+            tag, MutableSet::class
+        ) {
+            (it as List<E>).toMutableSet()
+        } as CastedDelegation<MutableSet<E>>
+    }
+
     protected fun byteBuf(tag: UByte): Delegation<ByteBuf> = field(tag) { EmptyByteBuf }
-    protected fun <T : SimpleJceStruct> struct(tag: UByte, type: KClass<T>): StructDelegation<T> {
+    protected fun <T : SimpleJceStruct> struct(tag: UByte, type: KClass<T>): CastedDelegation<T> {
         tags.computeIfAbsent(tag) { type.constructors.find { it.parameters.isEmpty() }!!.call() }
-        return StructDelegation(
+        return CastedDelegation(
             tag, type, type.constructors
                 .find { it.parameters.size == 1 && it.parameters[0].type.jvmErasure == SimpleJceStruct::class }!!::call
         )
@@ -114,10 +123,10 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
 
     }
 
-    inner class StructDelegation<T : SimpleJceStruct>(
+    inner class CastedDelegation<T : Any>(
         tag: UByte,
         val type: KClass<T>,
-        val castFunction: (SimpleJceStruct) -> T
+        val castFunction: (Any) -> T
     ) : Delegation<T>(tag) {
 
         override operator fun getValue(thisRef: SimpleJceStruct?, property: KProperty<*>?): T {

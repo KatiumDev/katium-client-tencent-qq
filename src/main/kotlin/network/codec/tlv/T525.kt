@@ -16,7 +16,7 @@
 package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
-import katium.client.qq.network.packet.wtlogin.LoginExtraData
+import katium.client.qq.network.packet.login.LoginExtraData
 import katium.core.util.netty.buffer
 
 fun ByteBuf.writeT525(buffer: ByteBuf, release: Boolean = true) = writeTlv(0x525) {

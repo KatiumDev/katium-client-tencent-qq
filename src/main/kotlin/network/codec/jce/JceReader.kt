@@ -22,25 +22,33 @@ import java.nio.charset.Charset
 fun <T> ByteBuf.readJceTag(): Pair<UByte, T> {
     val (type, tag) = readJceHead()
     @Suppress("UNCHECKED_CAST")
-    return tag to readJceTag(type) as T
+    try {
+        return tag to readJceTag(type) as T
+    } catch (e: Throwable) {
+        throw RuntimeException("type=$type, tag=$tag", e)
+    }
 }
 
 fun ByteBuf.readJceTag(type: UByte): Any {
-    return when (type) {
-        JceConstants.TYPE_BYTE -> readJceByte()
-        JceConstants.TYPE_SHORT -> readJceShort()
-        JceConstants.TYPE_INT -> readJceInt()
-        JceConstants.TYPE_LONG -> readJceLong()
-        JceConstants.TYPE_FLOAT -> readJceFloat()
-        JceConstants.TYPE_DOUBLE -> readJceDouble()
-        JceConstants.TYPE_STRING1 -> readJceString1()
-        JceConstants.TYPE_STRING4 -> readJceString4()
-        JceConstants.TYPE_MAP -> readJceMap()
-        JceConstants.TYPE_LIST -> readJceList()
-        JceConstants.TYPE_STRUCT_BEGIN -> readJceStruct()
-        JceConstants.TYPE_ZERO -> 0
-        JceConstants.TYPE_SIMPLE_LIST -> readJceSimpleList()
-        else -> throw UnsupportedOperationException("$type at ${readerIndex()}")
+    try {
+        return when (type) {
+            JceConstants.TYPE_BYTE -> readJceByte()
+            JceConstants.TYPE_SHORT -> readJceShort()
+            JceConstants.TYPE_INT -> readJceInt()
+            JceConstants.TYPE_LONG -> readJceLong()
+            JceConstants.TYPE_FLOAT -> readJceFloat()
+            JceConstants.TYPE_DOUBLE -> readJceDouble()
+            JceConstants.TYPE_STRING1 -> readJceString1()
+            JceConstants.TYPE_STRING4 -> readJceString4()
+            JceConstants.TYPE_MAP -> readJceMap()
+            JceConstants.TYPE_LIST -> readJceList()
+            JceConstants.TYPE_STRUCT_BEGIN -> readJceStruct()
+            JceConstants.TYPE_ZERO -> 0
+            JceConstants.TYPE_SIMPLE_LIST -> readJceSimpleList()
+            else -> throw UnsupportedOperationException("$type at ${readerIndex()}")
+        }
+    } catch (e: Throwable) {
+        throw RuntimeException("type=$type", e)
     }
 }
 
@@ -102,14 +110,18 @@ fun ByteBuf.readJceList(): MutableList<*> {
 fun ByteBuf.readJceStruct(): SimpleJceStruct {
     val tags: MutableMap<UByte, Any> = mutableMapOf()
     while (true) {
-        if(!isReadable) {
+        if (!isReadable) {
             break
         }
         val (type, tag) = readJceHead()
         if (type == JceConstants.TYPE_STRUCT_END) {
             break
         }
-        tags[tag] = readJceTag(type)
+        try {
+            tags[tag] = readJceTag(type)
+        } catch (e: Throwable) {
+            throw RuntimeException("type=$type, tag=$tag", e)
+        }
     }
     return SimpleJceStruct(tags)
 }

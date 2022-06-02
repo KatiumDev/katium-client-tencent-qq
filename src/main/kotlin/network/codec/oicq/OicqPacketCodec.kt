@@ -20,8 +20,8 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.network.crypto.ecdh.EcdhKeyProvider
 import katium.client.qq.network.crypto.tea.QQTeaCipher
 import katium.client.qq.network.event.QQOicqDecodersInitializeEvent
-import katium.client.qq.network.packet.wtlogin.LoginResponsePacket
-import katium.client.qq.network.packet.wtlogin.UpdateSigResponse
+import katium.client.qq.network.packet.login.LoginResponsePacket
+import katium.client.qq.network.packet.login.UpdateSigResponse
 import katium.core.util.event.post
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
@@ -129,7 +129,6 @@ class OicqPacketCodec(
                     }
                 }
                 3 -> wtSessionTicketKeyCipher!!.decrypt(reader.duplicate().readBytes(bodyLength), release = false)
-                // @TODO: https://cs.github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/components/PacketCodec.kt#L260
                 else -> throw UnsupportedOperationException("Unknown encryption method $encryptionMethod")
             }
             reader.skipBytes(bodyLength + 1)

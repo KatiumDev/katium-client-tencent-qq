@@ -16,7 +16,7 @@
 package katium.client.qq.network.handler
 
 import katium.client.qq.QQBot
-import katium.client.qq.network.packet.heartbeat.HeartbeatAlivePacket
+import katium.client.qq.network.packet.meta.HeartbeatAlivePacket
 import katium.core.event.BotOfflineEvent
 import katium.core.event.BotOnlineEvent
 import katium.core.util.event.EventListener

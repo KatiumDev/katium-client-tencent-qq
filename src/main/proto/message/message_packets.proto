@@ -139,3 +139,78 @@ message ResvResvInfo {
   optional int32 pictureWidth = 7;
   optional int32 resvFlag = 8;
 }
+
+message PullGroupHistoryMessagesRequest {
+  uint64 groupCode = 1;
+  uint64 beginSequence = 2;
+  uint64 endSequence = 3;
+  optional uint32 filter = 4;
+  optional uint64 memberSequence = 5;
+  bool publicGroup = 6;
+  optional uint32 shieldFlag = 7;
+  optional uint32 saveTrafficFlag = 8;
+}
+
+message PullGroupHistoryMessagesResponse {
+  uint32 result = 1;
+  optional string error = 2;
+  optional uint64 groupCode = 3;
+  optional uint64 returnBeginSequence = 4;
+  optional uint64 returnEndSequence = 5;
+  repeated Message messages = 6;
+}
+
+message RecallMessagesRequest {
+  repeated RecallFriendMessagesRequest friend = 1;
+  repeated RecallGroupMessagesRequest group = 2;
+}
+
+message RecallFriendMessagesRequest {
+  repeated FriendMessageReference messages = 1;
+  optional int32 longMessageFlag = 2;
+  optional bytes reserved = 3;
+  optional int32 subCommand = 4;
+}
+
+message RecallGroupMessagesRequest {
+  int32 subCommand = 1;
+  optional int32 groupType = 2;
+  int64 groupCode = 3;
+  repeated GroupMessageReference messages = 4;
+  bytes userDef = 5;
+}
+
+message RecallMessagesResponse {
+  repeated RecallFriendMessagesResponse friend = 1;
+  repeated RecallGroupMessagesResponse group = 2;
+}
+
+message RecallFriendMessagesResponse {
+  int32 result = 1;
+  optional string error = 2;
+}
+
+message RecallGroupMessagesResponse {
+  int32 result = 1;
+  optional string error = 2;
+}
+
+message GroupMessageReference {
+  int32 sequence = 1;
+  int32 random = 2;
+  int32 type = 3;
+}
+
+message FriendMessageReference {
+  optional int64 fromUin = 1;
+  optional int64 toUin = 2;
+  optional int32 sequence = 3;
+  optional int64 uid = 4;
+  optional int64 time = 5;
+  optional int32 random = 6;
+  optional int32 packageNumber = 7;
+  optional int32 packageIndex = 8;
+  optional int32 divideSequence = 9;
+  optional int32 type = 10;
+  optional RoutingHeader routingHead = 20;
+}

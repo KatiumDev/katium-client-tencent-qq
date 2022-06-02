@@ -19,19 +19,15 @@ import com.google.common.hash.HashCode
 import com.google.common.hash.Hashing
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.codec.highway.HighwayTransaction
-import katium.client.qq.network.packet.imgStore.UploadGroupPictureRequest
-import katium.client.qq.network.packet.imgStore.UploadGroupPictureResponse
-import katium.client.qq.network.packet.longConn.ImageUploadResult
-import katium.client.qq.network.packet.longConn.QueryFriendImageRequest
-import katium.client.qq.network.packet.longConn.QueryFriendImageResponse
+import katium.client.qq.network.packet.chat.image.*
 import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.chat.Chat
 import katium.core.user.Contact
 
-class QQContact(asUser: QQUser) : Contact(asUser) {
+class QQContact(override val asUser: QQUser) : Contact(asUser) {
 
-    override val bot by asUser::bot
-    val id by asUser::id
+    override val bot get() = asUser.bot
+    val id get() = asUser.id
 
     override val chat: Chat by lazy {
         QQChat(

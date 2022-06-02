@@ -19,18 +19,19 @@ import katium.client.qq.QQBot
 import katium.client.qq.QQLocalChatID
 import katium.client.qq.group.QQGroup
 import katium.client.qq.message.QQMessage
-import katium.client.qq.message.QQMessageRef
-import katium.client.qq.network.packet.messageSvc.SendMessageRequest
+import katium.client.qq.network.packet.chat.SendMessageRequest
+import katium.client.qq.network.packet.chat.SendMessageResponse
 import katium.client.qq.network.pb.PbMessagePackets
 import katium.client.qq.user.QQContact
 import katium.core.chat.Chat
 import katium.core.chat.Chattable
 import katium.core.event.MessagePreSendEvent
-import katium.core.event.MessageSentEvent
 import katium.core.message.MessageRef
 import katium.core.message.content.MessageContent
 import katium.core.user.User
 import katium.core.util.event.post
+import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 class QQChat(override val bot: QQBot, id: Long, context: Chattable, val routingHeader: PbMessagePackets.RoutingHeader) :
     Chat(bot, QQLocalChatID(id), context) {
@@ -43,21 +44,40 @@ class QQChat(override val bot: QQBot, id: Long, context: Chattable, val routingH
     override suspend fun sendMessage(content: MessageContent): MessageRef? {
         val client = bot.client
         return bot.post(MessagePreSendEvent(bot, this, content.simplest))?.let {
-            val message = QQMessage(bot, this@QQChat, bot.selfInfo, it.content, System.currentTimeMillis())
-            client.send(
+            val messageRandom = Random.Default.nextInt()
+            val response = client.sendAndWait(
                 SendMessageRequest.create(
                     client,
                     routingHeader = routingHeader,
-                    elements = client.messageEncoders.encode(this, it.content)
+                    elements = client.messageEncoders.encode(this, it.content),
+                    messageRandom = messageRandom
                 )
-            )
-            bot.post(MessageSentEvent(message))
-            QQMessageRef(bot, message)
+            ) as SendMessageResponse
+            if (response.errorMessage != null) {
+                throw IllegalStateException(response.errorMessage)
+            }
+            if(context is QQGroup) {
+                val group = context
+                for(i in 0..3) {
+                    val message = group.pullHistoryMessages(group.lastReadSequence.get() - 10, group.lastReadSequence.get() + 1)
+                        .find { message -> message.messageRandom == messageRandom }
+                    if(message != null) {
+                        return@let message.ref
+                    }
+                    delay(200)
+                }
+                throw IllegalStateException("Unable to pull back message, messageRandom=$messageRandom")
+            }
+            val message = QQMessage(bot, this@QQChat, bot.selfInfo, it.content, System.currentTimeMillis(), 0, 0, 0)
+            message.ref
         }
     }
 
-    override suspend fun removeMessage(message: MessageRef) {
-        TODO("Not yet implemented")
+    override suspend fun removeMessage(message: MessageRef) = if (this.contextContact != null) {
+        TODO()
+    } else {
+        val message1 = message.message!! as QQMessage
+        (context as QQGroup).recallMessage(message1.sequence, message1.type)
     }
 
     suspend fun uploadImage(data: ByteArray) = if (this.contextContact != null) {
