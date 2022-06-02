@@ -1,7 +1,11 @@
 # Katium Tencent QQ Client
-Tencent QQ protocol implementation for [Katium](https://github.com/KatiumProject/katium).
+
+Tencent QQ protocol implementation for [Katium](https://github.com/KatiumDev/katium).
+
 Katium的腾讯QQ协议实现。
+
 ## 特性
+
 - 登录
   - [x] 密码登录  
   - [ ] 二维码登录
@@ -23,6 +27,7 @@ Katium的腾讯QQ协议实现。
 - 聊天
   - [x] 好友消息
   - [x] 群消息
+  - [ ] 群匿名消息
   - [ ] 频道消息
   - [ ] 临时会话
   - [ ] 消息撤回
@@ -54,6 +59,7 @@ Katium的腾讯QQ协议实现。
   - [ ] 自定义在线状态
 
 ## 许可证
+
 本协议库使用与Katium核心相同的Apache License 2.0许可证发布。关于更多信息，请查阅`LICENSE`文件。
 ```
 Copyright 2022 Katium Project
