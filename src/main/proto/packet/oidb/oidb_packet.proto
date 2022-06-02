@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package katium.client.qq.packet;
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "PbOidbPacket";
+
+message OIDBPacket {
+  int32 command = 1;
+  int32 serviceType = 2;
+  int32 result = 3;
+  bytes buffer = 4;
+  string error = 5;
+  string clientVersion = 6;
+}
