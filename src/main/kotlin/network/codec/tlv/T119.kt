@@ -36,13 +36,13 @@ fun TlvMap.applyT119(client: QQClient) {
         applyT130(0x113)
     }*/
     /*if(0x528 in this) {
-        client.sig.t528 = this[0x528]!!.toArray(false).toUByteArray()
+        client.sig.t528 = this[0x528]!!.toArray(false)
     }*/
     /*if(0x530 in this) {
-        client.sig.t530 = this[0x530]!!.toArray(false).toUByteArray()
+        client.sig.t530 = this[0x530]!!.toArray(false)
     }*/
     if (0x108 in this) {
-        client.sig.ksid = this[0x108]!!.toArray(false).toUByteArray()
+        client.sig.ksid = this[0x108]!!.toArray(false)
     }
     val (age, gender, nick) = this[0x11A]!!.readT11A(false)
     // @TODO: handle self summary card info
@@ -75,24 +75,24 @@ fun TlvMap.applyT119(client: QQClient) {
     }
     client.sig.loginBitmap = 0uL
     if (0x16A in this) {
-        client.sig.srmToken = this[0x16A]!!.toArray(false).toUByteArray()
+        client.sig.srmToken = this[0x16A]!!.toArray(false)
     }
     if (0x133 in this) {
-        client.sig.t133 = this[0x133]!!.toArray(false).toUByteArray()
+        client.sig.t133 = this[0x133]!!.toArray(false)
     }
     if (0x106 in this) {
-        client.sig.encryptedA1 = this[0x106]!!.toArray(false).toUByteArray()
+        client.sig.encryptedA1 = this[0x106]!!.toArray(false)
     }
-    client.sig.tgt = this[0x10A]!!.toArray(false).toUByteArray()
-    client.sig.tgtKey = this[0x10D]!!.toArray(false).toUByteArray()
-    client.sig.userStKey = this[0x10E]!!.toArray(false).toUByteArray()
-    client.sig.userStWebSig = this[0x103]!!.toArray(false).toUByteArray()
-    client.sig.sKey = this[0x120]!!.toArray(false).toUByteArray()
+    client.sig.tgt = this[0x10A]!!.toArray(false)
+    client.sig.tgtKey = this[0x10D]!!.toArray(false)
+    client.sig.userStKey = this[0x10E]!!.toArray(false)
+    client.sig.userStWebSig = this[0x103]!!.toArray(false)
+    client.sig.sKey = this[0x120]!!.toArray(false)
     client.sig.sKeyExpiredTime = System.currentTimeMillis() + 21600
-    client.sig.d2 = this[0x143]!!.toArray(false).toUByteArray()
+    client.sig.d2 = this[0x143]!!.toArray(false)
     client.sig.d2KeyEncoded = this[0x305]!!.toArray(false).toUByteArray()
     synchronized(client.sig) { client.sig.d2Key = TeaCipher.decodeByteKey(client.sig.d2KeyEncoded) }
-    if (0x322 in this) client.sig.deviceToken = this[0x322]!!.toArray(false).toUByteArray()
+    if (0x322 in this) client.sig.deviceToken = this[0x322]!!.toArray(false)
 
     @Suppress("DEPRECATION")
     val key = Hashing.md5().hashBytes(ByteBufAllocator.DEFAULT.buffer {
@@ -100,7 +100,7 @@ fun TlvMap.applyT119(client: QQClient) {
         writeInt(0) // ByteArray(4)
         writeInt(client.uin.toInt())
     }.toArray(true)).asBytes().toUByteArray()
-    QQTeaCipher(key).decrypt(ByteBufAllocator.DEFAULT.buffer(client.sig.encryptedA1!!.toByteArray())).use {
+    QQTeaCipher(key).decrypt(ByteBufAllocator.DEFAULT.buffer(client.sig.encryptedA1!!)).use {
         if (it.readableBytes() > 51 + 16) {
             it.skipBytes(51)
             client.deviceInfo.tgtgtKey = ByteArray(16)

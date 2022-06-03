@@ -24,13 +24,13 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import katium.client.qq.network.codec.base.writeWithIntLength
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 import katium.client.qq.network.codec.jce.readJceStruct
 import katium.client.qq.network.codec.taf.RequestDataV3
 import katium.client.qq.network.codec.taf.RequestPacket
 import katium.client.qq.network.codec.taf.unwrapUniRequestData
 import katium.client.qq.network.codec.taf.wrapUniRequestData
-import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
 import katium.core.util.okhttp.GlobalHttpClient

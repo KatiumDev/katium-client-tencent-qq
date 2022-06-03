@@ -17,7 +17,6 @@ package katium.client.qq.user
 
 import katium.client.qq.QQBot
 import katium.client.qq.QQLocalChatID
-import katium.core.user.Contact
 import katium.core.user.User
 
 class QQUser(override val bot: QQBot, val id: Long, override val name: String, val isContact: Boolean) :

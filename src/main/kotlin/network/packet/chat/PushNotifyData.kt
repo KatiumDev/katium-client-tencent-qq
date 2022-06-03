@@ -16,7 +16,6 @@
 package katium.client.qq.network.packet.chat
 
 import io.netty.buffer.ByteBuf
-import katium.client.qq.network.codec.jce.JceStruct
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 
 class PushNotifyData(other: SimpleJceStruct) : SimpleJceStruct(other) {

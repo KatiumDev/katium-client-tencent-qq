@@ -30,7 +30,6 @@ import katium.core.message.MessageRef
 import katium.core.message.content.MessageContent
 import katium.core.util.event.post
 import kotlinx.coroutines.delay
-import kotlin.math.abs
 import kotlin.random.Random
 
 class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHeader: PbMessagePackets.RoutingHeader) :
@@ -45,7 +44,6 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
                 else client.allocFriendMessageSequenceID()
             val messageRandom = Random.Default.nextInt()
             val time = System.currentTimeMillis() / 1000
-            println(client.messageEncoders.encode(this, it.content, withGeneralFlags = isGroup))
             val response = client.sendAndWait(
                 SendMessageRequest.create(
                     client,

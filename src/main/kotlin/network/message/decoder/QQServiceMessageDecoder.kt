@@ -35,22 +35,24 @@ object QQServiceMessageDecoder : MessageDecoder {
     ) = element.serviceMessage.run {
         val templateData = template.toByteArray()
         val contentData = if (templateData.isEmpty()) null else templateData.copyOfRange(1, templateData.size - 1)
-        val content = if (contentData == null) null else when (template.byteAt(0).toInt()) {
-            0 -> String(contentData)
-            1 -> String(InflaterInputStream(ByteArrayInputStream(contentData)).readAllBytes())
-            else -> throw IllegalStateException("Unknown service message template type: ${template.byteAt(0)}")
-        }
-        when (serviceID) {
-            33 -> null
-            35 -> TODO("Decode forward messages https://cs.github.com/Mrs4s/MiraiGo/blob/master/message/message.go?q=RichMsg#L422")
-            else -> if (content!!.contains("<?xml", ignoreCase = true)) {
-                QQXmlMessage(content, id = serviceID)
-            } else {
-                try {
-                    Json.Default.parseToJsonElement(content)
-                    QQJsonMessage(content, id = serviceID)
-                } catch (e: SerializationException) {
-                    QQServiceMessage(id = serviceID, type = QQServiceMessage.Type.UNKNOWN, content = content)
+        if (contentData == null) null else {
+            val content = when (template.byteAt(0).toInt()) {
+                0 -> String(contentData)
+                1 -> String(InflaterInputStream(ByteArrayInputStream(contentData)).readAllBytes())
+                else -> throw IllegalStateException("Unknown service message template type: ${template.byteAt(0)}")
+            }
+            when (serviceID) {
+                33 -> null
+                35 -> TODO("Decode forward messages https://cs.github.com/Mrs4s/MiraiGo/blob/master/message/message.go?q=RichMsg#L422")
+                else -> if (content.contains("<?xml", ignoreCase = true)) {
+                    QQXmlMessage(content, id = serviceID)
+                } else {
+                    try {
+                        Json.Default.parseToJsonElement(content)
+                        QQJsonMessage(content, id = serviceID)
+                    } catch (e: SerializationException) {
+                        QQServiceMessage(id = serviceID, type = QQServiceMessage.Type.UNKNOWN, content = content)
+                    }
                 }
             }
         }

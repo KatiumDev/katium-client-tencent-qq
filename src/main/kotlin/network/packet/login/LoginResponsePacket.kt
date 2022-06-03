@@ -25,7 +25,6 @@ import katium.client.qq.network.codec.tlv.readT119
 import katium.client.qq.network.codec.tlv.readTlvMap
 import katium.core.util.netty.readUByte
 import katium.core.util.netty.toArray
-import java.util.*
 import kotlin.random.Random
 
 class LoginResponsePacket(client: QQClient, uin: Int, command: Short) :
@@ -51,13 +50,13 @@ class LoginResponsePacket(client: QQClient, uin: Int, command: Short) :
             skipBytes(2)
             val tlv = readTlvMap(2, release = false)
             if (0x402 in tlv) {
-                client.sig.dpwd = Random.Default.nextBytes(16).toUByteArray()
-                client.sig.t402 = tlv[0x402]!!.toArray(release = false).toUByteArray()
+                client.sig.dpwd = Random.Default.nextBytes(16)
+                client.sig.t402 = tlv[0x402]!!.toArray(release = false)
                 @Suppress("DEPRECATION")
                 client.sig.g =
                     Hashing.md5()
-                        .hashBytes(client.deviceInfo.guid + client.sig.dpwd!!.toByteArray() + client.sig.t402!!.toByteArray())
-                        .asBytes().toUByteArray()
+                        .hashBytes(client.deviceInfo.guid + client.sig.dpwd!! + client.sig.t402!!)
+                        .asBytes()
             }
             when (type) {
                 0x00u -> {
@@ -72,7 +71,7 @@ class LoginResponsePacket(client: QQClient, uin: Int, command: Short) :
                         }
                     }*/
                     if (0x403 in tlv) {
-                        client.sig.randomSeed = tlv[0x403]!!.toArray(release = false).toUByteArray()
+                        client.sig.randomSeed = tlv[0x403]!!.toArray(release = false)
                     }
                     tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false).use {
                         it.applyT119(client)
@@ -95,7 +94,7 @@ class LoginResponsePacket(client: QQClient, uin: Int, command: Short) :
                 0x01u -> errorMessage = "Wrong password"
                 0x02u -> {
                     errorMessage = "Need captcha(2)"
-                    client.sig.t104 = tlv[0x104]!!.toArray(false).toUByteArray()
+                    client.sig.t104 = tlv[0x104]!!.toArray(false)
                     if (0x192 in tlv) {
                         errorMessage += ", url available"
                         verifyUrl = String(tlv[0x192]!!.toArray(false))
@@ -118,16 +117,16 @@ class LoginResponsePacket(client: QQClient, uin: Int, command: Short) :
                     errorMessage = "Unsafe device($type)"
                     if (0x174 in tlv) { // SMS Verify
                         errorMessage += ", with SMS verify(T174), server(T17E): ${String(tlv[0x17E]!!.toArray(false))}"
-                        client.sig.t104 = tlv[0x104]!!.toArray(false).toUByteArray()
-                        client.sig.t174 = tlv[0x174]!!.toArray(false).toUByteArray()
-                        client.sig.randomSeed = tlv[0x403]!!.toArray(false).toUByteArray()
+                        client.sig.t104 = tlv[0x104]!!.toArray(false)
+                        client.sig.t174 = tlv[0x174]!!.toArray(false)
+                        client.sig.randomSeed = tlv[0x403]!!.toArray(false)
                         smsPhone = String(tlv[0x178]!!.toArray(false))
                         val index = smsPhone!!.indexOf(0x0B.toChar()) + 1
                         smsPhone = smsPhone!!.substring(index, index + 11)
                     }
                     if (0x17B in tlv) {
                         errorMessage += ", SMS needed error(T17B)"
-                        client.sig.t104 = tlv[0x104]!!.toArray(false).toUByteArray()
+                        client.sig.t104 = tlv[0x104]!!.toArray(false)
                     }
                     if (0x204 in tlv) { // QR code
                         errorMessage += ", with QR code(T204)"

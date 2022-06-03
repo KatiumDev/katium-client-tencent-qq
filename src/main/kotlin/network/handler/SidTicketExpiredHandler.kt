@@ -17,8 +17,8 @@ package katium.client.qq.network.handler
 
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.event.QQPacketReceivedEvent
-import katium.client.qq.network.packet.meta.SidTicketExpiredResponse
 import katium.client.qq.network.packet.login.UpdateSigRequest
+import katium.client.qq.network.packet.meta.SidTicketExpiredResponse
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 

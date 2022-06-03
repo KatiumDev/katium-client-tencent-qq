@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:Suppress("FunctionName")
+
 package katium.client.qq.message.builder
 
 import katium.client.qq.message.content.QQServiceMessage

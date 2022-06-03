@@ -64,7 +64,7 @@ data class DeviceInfo(
     @Suppress("DEPRECATION")
     var tgtgtKey: ByteArray = Hashing.md5().hashBytes(Random.Default.nextBytes(16) + guid).asBytes()
 
-    fun computeKsid() = "|${IMEI}|A8.2.7.27f6ea96".toByteArray().toUByteArray()
+    fun computeKsid() = "|${IMEI}|A8.2.7.27f6ea96".toByteArray()
 
     fun toProtoBufDeviceInfo(): PbDeviceInfo.DeviceInfo = PbDeviceInfo.DeviceInfo.newBuilder()
         .setBootloader(bootloader)

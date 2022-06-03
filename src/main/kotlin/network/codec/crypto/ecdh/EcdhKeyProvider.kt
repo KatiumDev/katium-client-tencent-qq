@@ -32,6 +32,8 @@ import java.security.PublicKey
 import java.security.Signature
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
 
 class EcdhKeyProvider(val client: QQClient) {
 
@@ -69,6 +71,7 @@ class EcdhKeyProvider(val client: QQClient) {
     val clientPublicKeyEncoded get() = keyPair.clientPublicKeyEncoded
     val shareKeyTeaCipher get() = keyPair.shareKeyTeaCipher
     val oicqSessionCount = atomic(0)
+    var v2Waiters: MutableSet<Continuation<Unit>>? = mutableSetOf()
 
     init {
         if (client.bot.options.ecdhV2Enabled) {
@@ -83,8 +86,12 @@ class EcdhKeyProvider(val client: QQClient) {
         client.logger.info("ECDH key v2 ready, waiting ${oicqSessionCount.value} oicq sessions to end")
         oicqSessionCount.loop {
             if (it == 0) {
-                client.logger.info("ECDH key v2 configured")
                 keyPair = key
+                v2Waiters!!.forEach { continuation ->
+                    continuation.resume(Unit)
+                }
+                v2Waiters = null
+                client.logger.info("ECDH key v2 configured")
                 return
             }
         }

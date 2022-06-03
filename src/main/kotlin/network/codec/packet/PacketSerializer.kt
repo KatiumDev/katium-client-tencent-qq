@@ -39,7 +39,7 @@ fun ByteBuf.writePacket(client: QQClient, packet: TransportPacket.Request, relea
                     when (encryptType) {
                         TransportPacket.EncryptType.D2_KEY -> {
                             writeInt(client.sig.d2.size + 4)
-                            writeUBytes(client.sig.d2)
+                            writeBytes(client.sig.d2)
                         }
                         else -> {
                             writeInt(4)
@@ -89,7 +89,7 @@ fun ByteBuf.writePacketBody(client: QQClient, packet: TransportPacket.Request, r
             writeQQIntLengthString(client.deviceInfo.IMEI, true)
             writeInt(0x04)
             writeShort(client.sig.ksid.size + 2)
-            writeUBytes(client.sig.ksid)
+            writeBytes(client.sig.ksid)
         }
         writeInt(0x04)
     }

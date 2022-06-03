@@ -16,7 +16,6 @@
 package katium.client.qq.message
 
 import katium.client.qq.QQBot
-import katium.core.Bot
 import katium.core.chat.Chat
 import katium.core.chat.ChatInfo
 import katium.core.message.Message

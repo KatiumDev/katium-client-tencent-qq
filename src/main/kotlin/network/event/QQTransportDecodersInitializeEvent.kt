@@ -16,7 +16,6 @@
 package katium.client.qq.network.event
 
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.codec.oicq.OicqPacket
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.core.event.BotEvent
 

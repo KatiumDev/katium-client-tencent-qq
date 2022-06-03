@@ -15,7 +15,6 @@
  */
 package katium.client.qq.network.packet.chat.image
 
-import com.google.common.net.InetAddresses
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.highway.Highway

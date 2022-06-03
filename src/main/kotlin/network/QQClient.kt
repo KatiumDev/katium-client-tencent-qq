@@ -154,15 +154,15 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
                 logger.warn("Session cache found at ${sessionFile.absolutePathString()}, but uin is not matched")
                 return false
             }
-            sig.d2 = session.d2.toByteArray().toUByteArray()
+            sig.d2 = session.d2.toByteArray()
             sig.d2KeyEncoded = session.d2Key.toByteArray().toUByteArray()
             synchronized(sig) { sig.d2Key = TeaCipher.decodeByteKey(sig.d2KeyEncoded) }
-            sig.tgt = session.tgt.toByteArray().toUByteArray()
+            sig.tgt = session.tgt.toByteArray()
             deviceInfo.tgtgtKey = session.tgtgtKey.toByteArray()
             if (session.hasT133())
-                sig.t133 = session.t133.toByteArray().toUByteArray()
+                sig.t133 = session.t133.toByteArray()
             if (session.hasEncryptedA1())
-                sig.encryptedA1 = session.encryptedA1.toByteArray().toUByteArray()
+                sig.encryptedA1 = session.encryptedA1.toByteArray()
             if (session.hasWtSessionTicketKey()) {
                 oicqCodec.wtSessionTicketKey = session.wtSessionTicketKey.toByteArray()
                 oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(oicqCodec.wtSessionTicketKey!!.toUByteArray())
@@ -176,13 +176,13 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         sessionFile.writeBytes(
             PbSessionToken.SessionToken.newBuilder()
                 .setUin(uin)
-                .setD2(ByteString.copyFrom(sig.d2.toByteArray()))
+                .setD2(ByteString.copyFrom(sig.d2))
                 .setD2Key(ByteString.copyFrom(sig.d2KeyEncoded.toByteArray()))
-                .setTgt(ByteString.copyFrom(sig.tgt.toByteArray()))
+                .setTgt(ByteString.copyFrom(sig.tgt))
                 .setTgtgtKey(ByteString.copyFrom(deviceInfo.tgtgtKey))
-                .apply { if (sig.t133 != null) t133 = ByteString.copyFrom(sig.t133!!.toByteArray()) }
+                .apply { if (sig.t133 != null) t133 = ByteString.copyFrom(sig.t133!!) }
                 .apply {
-                    if (sig.encryptedA1 != null) encryptedA1 = ByteString.copyFrom(sig.encryptedA1!!.toByteArray())
+                    if (sig.encryptedA1 != null) encryptedA1 = ByteString.copyFrom(sig.encryptedA1!!)
                 }
                 .apply {
                     if (oicqCodec.wtSessionTicketKey != null) wtSessionTicketKey =
@@ -289,8 +289,15 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         logger.info("Login succeeded")
     }
 
-    suspend fun loginWithToken() =
+    suspend fun loginWithToken() {
+        if (oicqCodec.ecdh.v2Waiters != null) {
+            logger.info("Token login requires ECDH v2, waiting...")
+            suspendCoroutine<Unit> {
+                oicqCodec.ecdh.v2Waiters!!.add(it)
+            }
+        }
         sendAndWaitOicq(UpdateSigRequest.create(this, mainSigMap = version.mainSigMap)).close()
+    }
 
     suspend fun loginWithPassword() = sendAndWaitOicq(PasswordLoginPacket.create(this)).use {
         val response = it.packet as LoginResponsePacket
@@ -310,7 +317,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
 
     internal suspend fun notifyOnline() {
         isLoggedIn = true
-        if(bot.options.cacheSession) writeSession()
+        if (bot.options.cacheSession) writeSession()
         bot.post(BotOnlineEvent(bot))
     }
 

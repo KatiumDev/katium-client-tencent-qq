@@ -16,7 +16,6 @@
 package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
-import katium.core.util.netty.readUShort
 
 /**
  * https://cs.github.com/Mrs4s/MiraiGo/tree/master/internal/tlv
