@@ -83,20 +83,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         bot.register(ReadReportHandler)
     }
 
-    val serverAddresses: MutableList<InetSocketAddress> by lazy {
-        if ("qq.remote_server_address" in bot.config) {
-            mutableListOf(
-                InetSocketAddress(
-                    bot.config["qq.remote_server_address"]!!, (bot.config["qq.remote_server_port"]
-                        ?: throw IllegalArgumentException("qq.remote_server_port not found but qq.remote_server_address set")).toInt()
-                )
-            )
-        } else {
-            runBlocking(coroutineContext) {
-                SsoServerListManager.fetchAddressesForConnection().toMutableList()
-            }
-        }
-    }
+    val serverAddresses = selectServerAddresses()
     var currentServerCounter = 0
     val currentServerAddress get() = serverAddresses[currentServerCounter]
     var retryTimes = 0
@@ -109,36 +96,12 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     val isOnline get() = isConnected && isClientRegistered
     var isClientRegistered: Boolean = false
 
-    val deviceInfo by lazy {
-        if ("qq.device_info_file" in bot.config) {
-            val file = bot.config["qq.device_info_file"]!!
-            logger.info("Reading device info from $file")
-            File(file).readText().let {
-                Json.decodeFromString(it)
-            }
-        } else {
-            logger.info("Using default device info")
-            DeviceInfo()
-        }
-    }
-    val clientVersion by lazy {
-        if ("qq.client_version_info_file" in bot.config) {
-            val file = bot.config["qq.client_version_info_file"]!!
-            logger.info("Reading client version info from $file")
-            File(file).readText().let {
-                Json.decodeFromString(it)
-            }
-        } else {
-            val type = bot.config["qq.protocol_type"] ?: "ANDROID_PHONE"
-            logger.info("Using builtin client version info for $type")
-            ProtocolType.valueOf(type).builtinVersion
-        }
-    }
-    val protocolType by clientVersion::protocolType
+    val deviceInfo = selectDeviceInfo()
+    val version = selectClientVersion()
     val passwordMD5: ByteArray by lazy {
         @Suppress("DEPRECATION")
-        if ("qq.user.password.md5" in bot.config) HexFormat.of().parseHex(bot.config["qq.user.password.md5"]!!)
-        else Hashing.md5().hashBytes(bot.config["qq.user.password"]!!.toByteArray()).asBytes()
+        if (bot.options.passwordMD5 != null) HexFormat.of().parseHex(bot.options.passwordMD5)
+        else Hashing.md5().hashBytes(bot.options.password!!.toByteArray()).asBytes()
     }
 
     val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
@@ -155,9 +118,33 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     var cachedFriends = CoroutineLazy(this, ::pullFriends)
     var cachedGroups = CoroutineLazy(this, ::pullGroups)
 
+    private fun selectServerAddresses() = if (bot.options.remoteServerAddress != null) {
+        mutableListOf(InetSocketAddress(bot.options.remoteServerAddress, bot.options.remoteServerPort!!))
+    } else {
+        runBlocking(coroutineContext) {
+            SsoServerListManager.fetchAddressesForConnection().toMutableList()
+        }
+    }
+
+    private fun selectDeviceInfo() = if (bot.options.deviceInfoFile != null) {
+        logger.info("Reading device info from ${bot.options.deviceInfoFile}")
+        Json.decodeFromString(File(bot.options.deviceInfoFile).readText())
+    } else {
+        logger.info("Using default device info")
+        DeviceInfo()
+    }
+
+    private fun selectClientVersion() = if (bot.options.clientVersionFile != null) {
+        logger.info("Reading client version info from ${bot.options.clientVersionFile}")
+        Json.decodeFromString(File(bot.options.clientVersionFile).readText())
+    } else {
+        logger.info("Using builtin client version info for ${bot.options.protocolType}")
+        ProtocolType.valueOf(bot.options.protocolType).builtinVersion
+    }
+
     // @TODO: reconnect on disconnected
     suspend fun connect() {
-        while (retryTimes <= (bot.config["qq.retry_times"]?.toInt() ?: 10)) {
+        while (retryTimes <= bot.options.ssoRetryTimes) {
             retryTimes++
             currentServerCounter++
             if (currentServerCounter >= serverAddresses.size) {
@@ -195,7 +182,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
             } catch (e: Throwable) {
                 logger.error("Connect to $currentServerAddress failed", e)
             }
-            delay((bot.config["qq.retry_delay"]?.toLong() ?: 5000L))
+            delay(bot.options.ssoRetryDelay)
         }
         throw IOException("All servers are unreachable")
     }
@@ -231,8 +218,6 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     }
 
     suspend fun sendAndWaitOicq(packet: TransportPacket.Request) = sendAndWait(packet) as TransportPacket.Response.Oicq
-    suspend fun sendAndWaitBuffered(packet: TransportPacket.Request) =
-        sendAndWait(packet) as TransportPacket.Response.Buffered
 
     suspend fun login() {
         sendAndWaitOicq(PasswordLoginPacket.create(this)).use {

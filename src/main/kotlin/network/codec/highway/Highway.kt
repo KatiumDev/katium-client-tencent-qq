@@ -30,7 +30,6 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import kotlin.coroutines.resume
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 class Highway(val client: QQClient) {
 
@@ -57,11 +56,8 @@ class Highway(val client: QQClient) {
             Bootstrap()
                 .channel(NioSocketChannel::class.java)
                 .group(client.eventLoopGroup)
-                .option(ChannelOption.TCP_NODELAY, true)
-                .option(
-                    ChannelOption.CONNECT_TIMEOUT_MILLIS,
-                    client.bot.config["qq.highway.connect_timeout"]?.toInt() ?: 3000
-                )
+                .option(ChannelOption.TCP_NODELAY, client.bot.options.highwayTcpNoDelay)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, client.bot.options.highwayConnectTimeout)
                 .handler(object : ChannelInitializer<SocketChannel>() {
                     override fun initChannel(ch: SocketChannel) {
                         channel = ch
@@ -80,7 +76,7 @@ class Highway(val client: QQClient) {
     }
 
     suspend fun tryConnect(): HighwaySession {
-        for (i in 0 until (client.bot.config["qq.highway.reconnect_times"]?.toInt() ?: 10)) {
+        for (i in 0 until client.bot.options.highwayReconnectTimes) {
             val address = ssoAddresses.random()
             try {
                 return HighwaySession(this, connect(address))
@@ -93,9 +89,8 @@ class Highway(val client: QQClient) {
 
     suspend fun upload(
         transaction: HighwayTransaction,
-        threadCount: Int = if (transaction.body.size > (client.bot.config["qq.highway.parallel_upload_min_size"]?.toInt()
-                ?: (3 * 1024 * 1024))
-        ) (client.bot.config["qq.highway.parallel_upload_threads"]?.toInt() ?: 5) else 1
+        threadCount: Int = if (transaction.body.size > client.bot.options.highwayParallelUploadMinSize)
+            client.bot.options.highwayParallelThreads else 1
     ) {
         val chunkCount = (transaction.body.size + transaction.chunkSize) / transaction.chunkSize
         assert(chunkCount != 0)

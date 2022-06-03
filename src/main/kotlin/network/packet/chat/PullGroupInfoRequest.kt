@@ -40,7 +40,7 @@ object PullGroupInfoRequest {
         )
 
     fun createRequest(client: QQClient, groupCode: Long): PbOidb0x88D.D88DRequest = PbOidb0x88D.D88DRequest.newBuilder()
-        .setAppID(client.clientVersion.appID)
+        .setAppID(client.version.appID)
         .addInfo(
             PbOidb0x88D.D88DRequestInfo.newBuilder()
                 .setGroupCode(groupCode)

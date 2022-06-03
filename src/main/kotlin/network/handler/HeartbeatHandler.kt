@@ -29,12 +29,12 @@ object HeartbeatHandler : EventListener {
     fun onOnline(event: BotOnlineEvent) {
         val (bot) = event
         bot as QQBot
-        if (!(bot.config["qq.heartbeat.enabled"] ?: "true").toBoolean())
+        if (!bot.options.heartbeatEnabled)
             return
         bot.client.heartbeatJob = bot.launch(CoroutineName("Heartbeat")) {
             var times = 0
-            while (currentCoroutineContext()[Job]!!.isActive) {
-                delay(bot.config["qq.heartbeat.interval"]?.toLong() ?: 30000)
+            while (!currentCoroutineContext()[Job]!!.isCancelled) {
+                delay(bot.options.heartbeatInterval)
                 bot.client.send(HeartbeatAlivePacket.create(bot.client))
                 times++
                 if (times >= 7) {

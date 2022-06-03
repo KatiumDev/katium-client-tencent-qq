@@ -48,27 +48,27 @@ class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
     override fun writeBody(output: ByteBuf) {
         output.apply {
             writeShort(9)
-            writeShort(if (client.bot.allowSlider) 0x17 else 0x16)
+            writeShort(if (client.bot.options.allowSlider) 0x17 else 0x16)
 
             writeT18(uin = client.uin.toInt())
             writeT1(uin = client.uin.toInt(), ip = client.deviceInfo.ipAddress.map(Int::toByte).toByteArray())
             writeT106(
                 uin = client.uin,
-                subAppID = client.clientVersion.appID,
-                ssoVersion = client.clientVersion.ssoVersion,
+                subAppID = client.version.appID,
+                ssoVersion = client.version.ssoVersion,
                 passwordMD5 = client.passwordMD5,
                 guidAvailable = true,
                 guid = client.deviceInfo.guid,
                 tgtgtKey = client.deviceInfo.tgtgtKey,
             )
-            writeT116(miscBitmap = client.clientVersion.miscBitMap, subSigMap = client.clientVersion.subSigMap)
+            writeT116(miscBitmap = client.version.miscBitMap, subSigMap = client.version.subSigMap)
             writeT100(
-                subAppID = client.clientVersion.subAppID,
-                ssoVersion = client.clientVersion.ssoVersion,
-                mainSigMap = client.clientVersion.mainSigMap
+                subAppID = client.version.subAppID,
+                ssoVersion = client.version.ssoVersion,
+                mainSigMap = client.version.mainSigMap
             )
             writeT107(0)
-            writeT142(client.clientVersion.apkID.toByteArray())
+            writeT142(client.version.apkID.toByteArray())
             writeT144(
                 imei = client.deviceInfo.IMEI.toByteArray(),
                 deviceInfo = client.deviceInfo.toProtoBufDeviceInfo(),
@@ -83,8 +83,8 @@ class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
             )
             writeT145(guid = client.deviceInfo.guid)
             writeT147(
-                apkVersionName = client.clientVersion.version,
-                apkSignatureMD5 = HexFormat.of().parseHex(client.clientVersion.signature)
+                apkVersionName = client.version.version,
+                apkSignatureMD5 = HexFormat.of().parseHex(client.version.signature)
             )
             /*if (client.clientVersion.miscBitMap and 0x80 != 0) {
                 writeT166(1)
@@ -99,7 +99,7 @@ class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
             writeT187(macAddress = client.deviceInfo.macAddress.toByteArray())
             writeT188(androidID = client.deviceInfo.androidID.toByteArray())
             writeT194(imsiMD5 = HexFormat.of().parseHex(client.deviceInfo.IMSIMD5))
-            if (client.bot.allowSlider) {
+            if (client.bot.options.allowSlider) {
                 writeT191()
             }
             @Suppress("DEPRECATION")
@@ -108,8 +108,8 @@ class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
                 wifiSSID = client.deviceInfo.wifiSSID.toByteArray()
             )
             writeT177(
-                buildTime = client.clientVersion.buildTime,
-                sdkVersion = client.clientVersion.sdkVersion.toByteArray()
+                buildTime = client.version.buildTime,
+                sdkVersion = client.version.sdkVersion.toByteArray()
             )
             writeT516()
             writeT521()

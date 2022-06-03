@@ -25,7 +25,7 @@ fun ByteBuf.writeOidbPacket(client: QQClient, command: Int, serviceType: Int, bo
         .setCommand(command)
         .setServiceType(serviceType)
         .setBuffer(body)
-        .setClientVersion("Android ${client.clientVersion.version}")
+        .setClientVersion("Android ${client.version.version}")
         .build()
         .toByteArray())
     return this

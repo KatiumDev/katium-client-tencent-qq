@@ -78,8 +78,8 @@ fun ByteBuf.writePacketBody(client: QQClient, packet: TransportPacket.Request, r
     writeWithIntLength {
         if (packet.type == TransportPacket.Type.LOGIN) {
             writeInt(packet.sequenceID)
-            writeInt(client.clientVersion.appID)
-            writeInt(client.clientVersion.subAppID)
+            writeInt(client.version.appID)
+            writeInt(client.version.subAppID)
             writeBytes(byteArrayOf(0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00))
             writeWithIntLength(client.sig.tgt)
         }

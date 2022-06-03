@@ -59,7 +59,7 @@ object QueryFriendImageRequest {
             buType = 1
             pictureOriginal = true
             pictureType = 1000
-            buildVersion = ByteString.copyFrom(client.clientVersion.version.toByteArray())
+            buildVersion = ByteString.copyFrom(client.version.version.toByteArray())
             fileIndex = ByteString.empty()
             srvUpload = 1
             transferUrl = ByteString.empty()

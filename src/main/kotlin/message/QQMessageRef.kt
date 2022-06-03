@@ -15,13 +15,12 @@
  */
 package katium.client.qq.message
 
-import katium.core.Bot
+import katium.client.qq.QQBot
 import katium.core.message.Message
 import katium.core.message.MessageRef
 import java.lang.ref.SoftReference
-import java.lang.ref.WeakReference
 
-class QQMessageRef(override val bot: Bot, message: Message?, val sequence: Int) : MessageRef {
+class QQMessageRef(override val bot: QQBot, message: Message?, val sequence: Int) : MessageRef(bot) {
 
     private val messageRef = SoftReference(message)
 

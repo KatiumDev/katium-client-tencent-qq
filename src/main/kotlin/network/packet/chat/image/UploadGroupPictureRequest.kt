@@ -62,7 +62,7 @@ object UploadGroupPictureRequest {
             pictureWidth = 0
             pictureHeight = 0
             pictureType = 1000
-            buildVersion = ByteString.copyFrom(client.clientVersion.version.toByteArray())
+            buildVersion = ByteString.copyFrom(client.version.version.toByteArray())
             appPictureType = 1052
             originalPicture = 0
         })

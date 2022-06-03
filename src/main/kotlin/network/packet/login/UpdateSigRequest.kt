@@ -48,15 +48,15 @@ class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: In
     override fun writeBody(output: ByteBuf) {
         output.apply {
             writeShort(11)
-            writeShort(16) // TLV count
+            writeShort(17) // TLV count
 
             writeT100(
                 subAppID = 100,
-                ssoVersion = client.clientVersion.ssoVersion,
+                ssoVersion = client.version.ssoVersion,
                 mainSigMap = mainSigMap
             )
             writeT10A(tgt = client.sig.tgt)
-            writeT116(miscBitmap = client.clientVersion.miscBitMap, subSigMap = client.clientVersion.subSigMap)
+            writeT116(miscBitmap = client.version.miscBitMap, subSigMap = client.version.subSigMap)
             writeT108(ksid = client.sig.ksid)
             @Suppress("DEPRECATION")
             writeT144(
@@ -72,7 +72,7 @@ class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: In
                 tgtgtKey = Hashing.md5().hashBytes(client.sig.d2KeyEncoded.toByteArray()).asBytes()
             )
             writeT143(d2 = client.sig.d2)
-            writeT142(apkID = client.clientVersion.apkID.toByteArray())
+            writeT142(apkID = client.version.apkID.toByteArray())
             writeT154(sequenceID = sequenceID)
             writeT141(
                 simInfo = client.deviceInfo.simInfo.toByteArray(),
@@ -80,12 +80,12 @@ class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: In
             )
             writeT8()
             writeT147(
-                apkVersionName = client.clientVersion.version,
-                apkSignatureMD5 = HexFormat.of().parseHex(client.clientVersion.signature)
+                apkVersionName = client.version.version,
+                apkSignatureMD5 = HexFormat.of().parseHex(client.version.signature)
             )
             writeT177(
-                buildTime = client.clientVersion.buildTime,
-                sdkVersion = client.clientVersion.sdkVersion.toByteArray()
+                buildTime = client.version.buildTime,
+                sdkVersion = client.version.sdkVersion.toByteArray()
             )
             writeT187(macAddress = client.deviceInfo.macAddress.toByteArray())
             writeT188(androidID = client.deviceInfo.androidID.toByteArray())

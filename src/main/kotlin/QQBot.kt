@@ -29,10 +29,11 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.user.id"]!!.toLong()), config) {
+class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(config["qq.login.id"]!!.toLong()), config) {
 
     val uin = selfID.asQQ.uin
-    val client: QQClient = QQClient(this)
+    val options = QQBotOptions(config)
+    val client = QQClient(this)
 
     var loopContinuation: Continuation<Unit>? = null
     override val loopJob = launch(start = CoroutineStart.LAZY) {
@@ -63,7 +64,5 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
     suspend fun getUser(id: Long) = client.getFriends()[id]?.asUser ?: QQUser(this, id, "Unknown", false)
 
     override val reviewMessages: Set<ReviewMessage> by client::reviewMessages
-
-    val allowSlider = (config["qq.allow_slider"] ?: "true").toBoolean()
 
 }

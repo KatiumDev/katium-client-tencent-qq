@@ -15,6 +15,7 @@
  */
 package katium.client.qq.message
 
+import katium.client.qq.QQBot
 import katium.core.Bot
 import katium.core.chat.Chat
 import katium.core.chat.ChatInfo
@@ -23,7 +24,7 @@ import katium.core.message.MessageRef
 import katium.core.message.content.MessageContent
 
 class QQMessage(
-    bot: Bot, context: Chat, sender: ChatInfo, content: MessageContent, time: Long,
+    bot: QQBot, context: Chat, sender: ChatInfo, content: MessageContent, time: Long,
     val sequence: Int, val messageRandom: Int
 ) : Message(bot, context, sender, content, time) {
 

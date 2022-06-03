@@ -19,7 +19,10 @@ import katium.client.qq.network.QQClient
 import katium.core.util.okhttp.GlobalHttpClient
 import katium.core.util.okhttp.await
 import katium.core.util.okhttp.expected
-import kotlinx.coroutines.runBlocking
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.loop
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -50,27 +53,45 @@ class EcdhKeyProvider(val client: QQClient) {
             )
         }
 
+        fun verifyKeySignature(keyVersion: Int, key: String, keySignature: String): Boolean =
+            Signature.getInstance("SHA256WithRSA").run {
+                initVerify(verifyPublicKey)
+                update((CIPHER_SUITE_VERSION.toString() + keyVersion.toString() + key).toByteArray())
+                return verify(Base64.getDecoder().decode(keySignature))
+            }
+
     }
 
-    var keyPair: EcdhKeyPair = EcdhKeyPair.Builtin
-    val serverKeyVersion by keyPair::serverKeyVersion
-    val clientPublicKey by keyPair::clientPublicKey
-    val shareKey by keyPair::shareKey
-    val clientPublicKeyEncoded by keyPair::clientPublicKeyEncoded
-    val shareKeyTeaCipher by keyPair::shareKeyTeaCipher
+    var keyPair = EcdhKeyPair.Builtin
+    val serverKeyVersion get() = keyPair.serverKeyVersion
+    val clientPublicKey get() = keyPair.clientPublicKey
+    val shareKey get() = keyPair.shareKey
+    val clientPublicKeyEncoded get() = keyPair.clientPublicKeyEncoded
+    val shareKeyTeaCipher get() = keyPair.shareKeyTeaCipher
+    val oicqSessionCount = atomic(0)
 
     init {
-        runBlocking(client.coroutineContext) {
-            //updateFromKeyRotate()
+        if (client.bot.options.ecdhV2Enabled) {
+            client.launch(CoroutineName("Fetch ECDH v2")) {
+                updateFromKeyRotate()
+            }
         }
     }
 
     suspend fun updateFromKeyRotate() {
-        keyPair = fetchFromKeyRotate()
+        val key = fetchFromKeyRotate()
+        client.logger.info("ECDH key v2 got")
+        oicqSessionCount.loop {
+            if (it == 0) {
+                client.logger.info("ECDH key v2 installed")
+                keyPair = key
+                return
+            }
+        }
     }
 
     suspend fun fetchFromKeyRotate(): EcdhKeyPair {
-        client.logger.info("Fetching ECDH key from keyrotate server for ${client.uin}...")
+        client.logger.info("Fetching ECDH v2 from server for ${client.uin}...")
         val response: KeyRotateResponse = Json.decodeFromString(
             KeyRotateResponse.serializer(), GlobalHttpClient.newCall(
                 Request.Builder()
@@ -80,23 +101,18 @@ class EcdhKeyProvider(val client: QQClient) {
             ).await().expected(200).body.byteStream().reader().readText()
         )
         client.logger.info("Server ECDH public key: ${response.meta.publicKey}")
-        if (!verifyKeySignature(response.meta.keyVersion, response.meta.publicKey, response.meta.publicKeySignature)) {
+        if (client.bot.options.ecdhV2Verifying
+            && !verifyKeySignature(response.meta.keyVersion, response.meta.publicKey, response.meta.publicKeySignature)
+        ) {
             throw IllegalStateException("Invalid key signature")
         } else {
-            client.logger.info("ECDH server public key signature verified")
+            client.logger.info("ECDH v2 server public key signature verified")
         }
         return EcdhKeyPair.create(response.meta.keyVersion, response.meta.publicKey)
     }
 
-    fun verifyKeySignature(keyVersion: Int, key: String, keySignature: String): Boolean =
-        Signature.getInstance("SHA256WithRSA").run {
-            initVerify(verifyPublicKey)
-            update((CIPHER_SUITE_VERSION.toString() + keyVersion.toString() + key).toByteArray())
-            return verify(Base64.getDecoder().decode(keySignature))
-        }
-
     @Serializable
-    data class KeyRotateResponse(
+    internal data class KeyRotateResponse(
         /**
          * Valid time in seconds
          */

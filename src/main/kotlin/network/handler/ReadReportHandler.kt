@@ -29,17 +29,17 @@ object ReadReportHandler : EventListener {
     fun onOnline(event: BotOnlineEvent) {
         val (bot) = event
         bot as QQBot
-        if (!(bot.config["qq.auto_read_report.enabled"] ?: "true").toBoolean())
+        if (!bot.options.autoReadReportEnabled)
             return
         bot.client.synchronzier.readReportJob = bot.launch(CoroutineName("Read Report")) {
-            while (currentCoroutineContext()[Job]!!.isActive) {
+            while (!currentCoroutineContext()[Job]!!.isCancelled) {
                 delay(
                     Random.Default.nextLong(
-                        bot.config["qq.auto_read_report.interval.min"]?.toLong() ?: 60000,
-                        bot.config["qq.auto_read_report.interval.max"]?.toLong() ?: 2000000
+                        bot.options.autoReadReportIntervalMin,
+                        bot.options.autoReadReportIntervalMax
                     )
                 )
-                if ((bot.config["qq.auto_read_report.full"] ?: "false").toBoolean()) {
+                if (bot.options.autoReadReportFull) {
                     bot.client.synchronzier.reportAllGroupRead()
                     bot.client.synchronzier.reportAllFriendRead()
                 } else {

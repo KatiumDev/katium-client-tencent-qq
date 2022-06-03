@@ -54,6 +54,7 @@ class OicqPacketCodec(
     }
 
     fun encode(output: ByteBuf, packet: OicqPacket.Request, release: Boolean = true) {
+        ecdh.oicqSessionCount.incrementAndGet()
         output.run {
             val basePos = writerIndex()
             writeByte(0x02)
@@ -135,15 +136,19 @@ class OicqPacketCodec(
             if (release) {
                 reader.release()
             }
-            return (decoders[transportCommand]?.invoke(client, uin, command) ?: OicqPacket.Response.Buffered(
-                client,
-                uin,
-                command
-            ))
-                .apply {
-                    readBody(body)
-                    body.release()
-                }
+            try {
+                return (decoders[transportCommand]?.invoke(client, uin, command) ?: OicqPacket.Response.Buffered(
+                    client,
+                    uin,
+                    command
+                ))
+                    .apply {
+                        readBody(body)
+                        body.release()
+                    }
+            } finally {
+                ecdh.oicqSessionCount.decrementAndGet()
+            }
         }
 
 }
