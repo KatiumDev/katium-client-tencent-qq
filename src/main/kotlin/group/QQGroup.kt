@@ -42,7 +42,7 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
     ) else null
 
     override val members: Set<User>
-        get() = TODO("Not yet implemented")
+        get() = emptySet() // @TODO: get group members
 
     private val groupInfo = CoroutineLazy(bot) {
         val response = (bot.client.sendAndWait(PullGroupInfoRequest.create(bot.client, groupCode = id))

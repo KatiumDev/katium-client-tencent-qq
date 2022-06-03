@@ -24,22 +24,16 @@ import katium.client.qq.network.packet.chat.SendMessageResponse
 import katium.client.qq.network.pb.PbMessagePackets
 import katium.client.qq.user.QQContact
 import katium.core.chat.Chat
-import katium.core.chat.Chattable
+import katium.core.chat.ChatInfo
 import katium.core.event.MessagePreSendEvent
 import katium.core.message.MessageRef
 import katium.core.message.content.MessageContent
-import katium.core.user.User
 import katium.core.util.event.post
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
-class QQChat(override val bot: QQBot, id: Long, context: Chattable, val routingHeader: PbMessagePackets.RoutingHeader) :
+class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHeader: PbMessagePackets.RoutingHeader) :
     Chat(bot, QQLocalChatID(id), context) {
-
-    override val name: String
-        get() = "Unknown"
-    override val members: Set<User>
-        get() = TODO("Not yet implemented")
 
     override suspend fun sendMessage(content: MessageContent): MessageRef? {
         val client = bot.client
@@ -56,12 +50,13 @@ class QQChat(override val bot: QQBot, id: Long, context: Chattable, val routingH
             if (response.errorMessage != null) {
                 throw IllegalStateException(response.errorMessage)
             }
-            if(context is QQGroup) {
+            if (context is QQGroup) {
                 val group = context
-                for(i in 0..3) {
-                    val message = group.pullHistoryMessages(group.lastReadSequence.get() - 10, group.lastReadSequence.get() + 1)
-                        .find { message -> message.messageRandom == messageRandom }
-                    if(message != null) {
+                for (i in 0..3) {
+                    val message =
+                        group.pullHistoryMessages(group.lastReadSequence.get() - 10, group.lastReadSequence.get() + 1)
+                            .find { message -> message.messageRandom == messageRandom }
+                    if (message != null) {
                         return@let message.ref
                     }
                     delay(200)
@@ -73,11 +68,11 @@ class QQChat(override val bot: QQBot, id: Long, context: Chattable, val routingH
         }
     }
 
-    override suspend fun removeMessage(message: MessageRef) = if (this.contextContact != null) {
+    override suspend fun removeMessage(ref: MessageRef) = if (this.contextContact != null) {
         TODO()
     } else {
-        val message1 = message.message!! as QQMessage
-        (context as QQGroup).recallMessage(message1.sequence, message1.type)
+        val message = ref.message!! as QQMessage
+        (context as QQGroup).recallMessage(message.sequence, message.type)
     }
 
     suspend fun uploadImage(data: ByteArray) = if (this.contextContact != null) {

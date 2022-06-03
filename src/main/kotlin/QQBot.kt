@@ -19,6 +19,7 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.user.QQUser
 import katium.core.Bot
 import katium.core.chat.LocalChatID
+import katium.core.group.Group
 import katium.core.review.ReviewMessage
 import katium.core.user.Contact
 import kotlinx.coroutines.CoroutineStart
@@ -46,11 +47,11 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
         loopContinuation!!.resume(Unit)
     }
 
-    override val allContacts: Set<Contact>
-        get() = client.getFriendsSync().values.toSet()
+    override val allContacts: Set<Contact> get() = client.getFriendsSync().values.toSet()
+    override val allGroups: Set<Group> get() = client.getGroupsSync().values.toSet()
 
-    override val isConnected by client::isConnected
-    override val isOnline by client::isOnline
+    override val isConnected get() = client.isConnected
+    override val isOnline get() = client.isOnline
 
     override suspend fun getGroup(id: LocalChatID) = getGroup(id.asQQ.uin)
     override suspend fun getUser(id: LocalChatID) = getUser(id.asQQ.uin)
@@ -59,7 +60,6 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
     fun getGroupSync(id: Long) = runBlocking(coroutineContext) { getGroup(id) }
 
     suspend fun getGroup(id: Long) = client.getGroups()[id]
-
     suspend fun getUser(id: Long) = client.getFriends()[id]?.asUser ?: QQUser(this, id, "Unknown", false)
 
     override val reviewMessages: Set<ReviewMessage> by client::reviewMessages
