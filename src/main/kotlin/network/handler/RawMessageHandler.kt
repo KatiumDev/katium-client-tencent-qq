@@ -27,13 +27,13 @@ object RawMessageHandler : EventListener {
     @Subscribe
     suspend fun onMessage(event: QQReceivedRawMessageEvent) {
         val (_, client, message) = event
-        val decodedMessage = (client.messageDecoders[message.header.type]
+        val parsedMessage = (client.messageParsers[message.header.type]
             ?: throw UnsupportedOperationException("Unknown message type: ${message.header.type}"))
-            .decode(client, message)
+            .parse(client, message)
         if (message.header.fromUin == client.uin) {
-            client.bot.post(MessageSentEvent(decodedMessage))
+            client.bot.post(MessageSentEvent(parsedMessage))
         } else {
-            client.bot.post(MessageReceivedEvent(decodedMessage))
+            client.bot.post(MessageReceivedEvent(parsedMessage))
         }
     }
 
