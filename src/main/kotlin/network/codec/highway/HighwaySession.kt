@@ -77,7 +77,7 @@ class HighwaySession(val highway: Highway, val channel: SocketChannel) : AutoClo
         val bodySize = transaction.body.size
         val chunkOffset = transaction.chunkSize * chunk
         val chunkSize = min(bodySize - chunkOffset, transaction.chunkSize)
-        val chunkData = transaction.body.copyOfRange(chunkOffset, chunkSize)
+        val chunkData = transaction.body.copyOfRange(chunkOffset, chunkOffset + chunkSize)
         return sendAndWait(PbHighway.HighwayRequestHeader.newBuilder().apply {
             data = createDataHeader(command = "PicUp.DataUp", commandID = transaction.command)
             segment = PbHighway.HighwaySegmentHeader.newBuilder().apply {
