@@ -22,7 +22,7 @@ import katium.client.qq.network.pb.PbMessages
 object FriendMessageDecoder : MessageDecoder {
 
     override suspend fun decode(client: QQClient, message: PbMessages.Message): QQMessage {
-        val sender = client.bot.getUser(message.header.fromUin)!!
+        val sender = client.bot.getUser(message.header.fromUin)
         return QQMessage(
             bot = client.bot,
             context = sender.chat!!,
@@ -30,7 +30,6 @@ object FriendMessageDecoder : MessageDecoder {
             sender = sender,
             time = message.header.time * 1000L,
             sequence = message.header.sequence,
-            type = message.header.type,
             messageRandom = message.body.richText.attributes.random
         )
     }

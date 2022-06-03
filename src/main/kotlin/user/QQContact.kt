@@ -19,6 +19,8 @@ import com.google.common.hash.HashCode
 import com.google.common.hash.Hashing
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.codec.highway.HighwayTransaction
+import katium.client.qq.network.packet.chat.RecallMessagesRequest
+import katium.client.qq.network.packet.chat.RecallMessagesResponse
 import katium.client.qq.network.packet.chat.image.*
 import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.chat.Chat
@@ -89,5 +91,20 @@ class QQContact(override val asUser: QQUser) : Contact(asUser) {
             fileSize = size
         )
     ) as UploadGroupPictureResponse).result
+
+    suspend fun recallMessage(sequence: Int, random: Int, time: Long) {
+        val response = bot.client.sendAndWait(
+            RecallMessagesRequest.createFriend(
+                bot.client,
+                target = id,
+                sequence = sequence,
+                random = random,
+                time = time
+            )
+        ) as RecallMessagesResponse
+        if (response.errorMessage != null) {
+            throw IllegalStateException(response.errorMessage)
+        }
+    }
 
 }

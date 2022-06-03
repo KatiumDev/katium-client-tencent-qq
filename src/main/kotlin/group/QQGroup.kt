@@ -102,13 +102,13 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
         }
     }
 
-    suspend fun recallMessage(sequence: Int, messageType: Int) {
+    suspend fun recallMessage(sequence: Int, random: Int) {
         val response = bot.client.sendAndWait(
             RecallMessagesRequest.createGroup(
                 bot.client,
                 groupCode = id,
                 sequence = sequence,
-                messageType = messageType
+                random = random
             )
         ) as RecallMessagesResponse
         if (response.errorMessage != null) {

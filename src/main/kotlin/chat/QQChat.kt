@@ -38,20 +38,27 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
     override suspend fun sendMessage(content: MessageContent): MessageRef? {
         val client = bot.client
         return bot.post(MessagePreSendEvent(bot, this, content.simplest))?.let {
+            val isGroup = context is QQGroup
+            val messageSequence =
+                if (isGroup) client.allocGroupMessageSequenceID()
+                else client.allocFriendMessageSequenceID()
             val messageRandom = Random.Default.nextInt()
+            val time = if (isGroup) null else System.currentTimeMillis() / 1000
             val response = client.sendAndWait(
                 SendMessageRequest.create(
                     client,
+                    messageSequence = messageSequence,
                     routingHeader = routingHeader,
                     elements = client.messageEncoders.encode(this, it.content),
-                    messageRandom = messageRandom
+                    messageRandom = messageRandom,
+                    syncCookieTime = time
                 )
             ) as SendMessageResponse
             if (response.errorMessage != null) {
                 throw IllegalStateException(response.errorMessage)
             }
-            if (context is QQGroup) {
-                val group = context
+            if (isGroup) {
+                val group = context as QQGroup
                 for (i in 0..3) {
                     val message =
                         group.pullHistoryMessages(group.lastReadSequence.get() - 10, group.lastReadSequence.get() + 1)
@@ -62,17 +69,22 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
                     delay(200)
                 }
                 throw IllegalStateException("Unable to pull back message, messageRandom=$messageRandom")
+            } else {
+                val message = QQMessage(
+                    bot, this@QQChat, bot.selfInfo, it.content,
+                    time = time!! * 1000, sequence = messageSequence, messageRandom = messageRandom
+                )
+                message.ref
             }
-            val message = QQMessage(bot, this@QQChat, bot.selfInfo, it.content, System.currentTimeMillis(), 0, 0, 0)
-            message.ref
         }
     }
 
     override suspend fun removeMessage(ref: MessageRef) = if (this.contextContact != null) {
-        TODO()
+        val message = ref.message!! as QQMessage
+        (context as QQContact).recallMessage(message.sequence, message.messageRandom, message.time / 1000)
     } else {
         val message = ref.message!! as QQMessage
-        (context as QQGroup).recallMessage(message.sequence, message.type)
+        (context as QQGroup).recallMessage(message.sequence, message.messageRandom)
     }
 
     suspend fun uploadImage(data: ByteArray) = if (this.contextContact != null) {

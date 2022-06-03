@@ -215,8 +215,10 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
 
     val packetSequenceID = atomic(Random.Default.nextInt())
     val groupMessageSequenceID = atomic(Random.Default.nextInt(20000))
+    val friendMessageSequenceID = atomic(Random.Default.nextInt(20000))
     fun allocPacketSequenceID() = packetSequenceID.incrementAndGet()
     fun allocGroupMessageSequenceID() = groupMessageSequenceID.addAndGet(2)
+    fun allocFriendMessageSequenceID() = friendMessageSequenceID.incrementAndGet()
 
     fun send(packet: TransportPacket.Request) {
         println("sent ${packet.command}, ${packet.sequenceID}")

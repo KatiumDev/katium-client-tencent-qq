@@ -23,7 +23,7 @@ object GroupMessageDecoder : MessageDecoder {
 
     override suspend fun decode(client: QQClient, message: PbMessages.Message): QQMessage {
         val group = client.bot.getGroup(message.header.groupInfo.groupCode)!!.chat!!
-        val sender = client.bot.getUser(message.header.fromUin)!!
+        val sender = client.bot.getUser(message.header.fromUin)
         return QQMessage(
             bot = client.bot,
             context = group,
@@ -31,7 +31,6 @@ object GroupMessageDecoder : MessageDecoder {
             sender = sender,
             time = message.header.time * 1000L,
             sequence = message.header.sequence,
-            type = message.header.type,
             messageRandom = message.body.richText.attributes.random
         )
     }

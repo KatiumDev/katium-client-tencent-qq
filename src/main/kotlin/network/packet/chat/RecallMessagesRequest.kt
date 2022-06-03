@@ -24,12 +24,13 @@ import katium.core.util.netty.heapBuffer
 
 object RecallMessagesRequest {
 
-    fun createGroup(
+    fun createFriend(
         client: QQClient,
         sequenceID: Int = client.allocPacketSequenceID(),
-        groupCode: Long,
+        target: Long,
         sequence: Int,
-        messageType: Int
+        random: Int,
+        time: Long,
     ) =
         TransportPacket.Request.Buffered(
             client = client,
@@ -37,7 +38,59 @@ object RecallMessagesRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "PbMessageSvc.PbMsgWithDraw",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(createGroupRequest(groupCode, sequence, messageType).toByteArray())
+            body = ByteBufAllocator.DEFAULT.heapBuffer(
+                createFriendRequest(client, target, sequence, random, time).toByteArray()
+            )
+        )
+
+    fun createFriendRequest(
+        client: QQClient,
+        target: Long,
+        sequence: Int,
+        random: Int,
+        time: Long,
+    ): PbMessagePackets.RecallMessagesRequest = PbMessagePackets.RecallMessagesRequest.newBuilder()
+        .addFriend(
+            PbMessagePackets.RecallFriendMessagesRequest.newBuilder()
+                .setSubCommand(1)
+                .setLongMessageFlag(0)
+                .addMessages(
+                    PbMessagePackets.FriendMessageReference.newBuilder()
+                        .setFromUin(client.uin)
+                        .setToUin(target)
+                        .setTime(time)
+                        .setUid(0x0100000000000000 or (random.toLong() and 0xFFFFFFFF))
+                        .setSequence(sequence)
+                        .setRandom(random)
+                        .setRoutingHead(
+                            PbMessagePackets.RoutingHeader.newBuilder()
+                                .setFriend(PbMessagePackets.ToFriend.newBuilder().setToUin(target))
+                        )
+                )
+                .setReserved(ByteString.copyFrom(byteArrayOf(0x08, 0x00)))
+        )
+        .build()
+
+    fun createGroup(
+        client: QQClient,
+        sequenceID: Int = client.allocPacketSequenceID(),
+        groupCode: Long,
+        sequence: Int,
+        random: Int
+    ) =
+        TransportPacket.Request.Buffered(
+            client = client,
+            type = TransportPacket.Type.SIMPLE,
+            encryptType = TransportPacket.EncryptType.D2_KEY,
+            sequenceID = sequenceID,
+            command = "PbMessageSvc.PbMsgWithDraw",
+            body = ByteBufAllocator.DEFAULT.heapBuffer(
+                createGroupRequest(
+                    groupCode,
+                    sequence,
+                    random
+                ).toByteArray()
+            )
         )
 
     fun createGroupRequest(

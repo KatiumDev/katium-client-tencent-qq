@@ -24,6 +24,15 @@ import katium.core.util.netty.toArray
 class RecallMessagesResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
+    companion object {
+
+        val diagnosis = mapOf(
+            154 to "timeout",
+            1001 to "no permission"
+        )
+
+    }
+
     lateinit var response: PbMessagePackets.RecallMessagesResponse
         private set
 
@@ -35,16 +44,16 @@ class RecallMessagesResponse(val client: QQClient, packet: TransportPacket.Respo
 
         errorMessage = ""
         response.friendList
-            .filter { it.result != 0 }
+            .filter { it.result != 2 && it.result != 3 }
             .filter(PbMessagePackets.RecallFriendMessagesResponse::hasError)
             .forEach {
-                errorMessage += "friend: result=${it.result}, error=${it.error}"
+                errorMessage += "friend: result=${it.result}, error=${it.error}, diagnosis=${diagnosis[it.result]}"
             }
         response.groupList
             .filter { it.result != 0 }
             .filter(PbMessagePackets.RecallGroupMessagesResponse::hasError)
             .forEach {
-                errorMessage += "group: result=${it.result}, error=${it.error}"
+                errorMessage += "group: result=${it.result}, error=${it.error}, diagnosis=${diagnosis[it.result]}"
             }
         if (errorMessage!!.isEmpty()) errorMessage = null
     }
