@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.auth.LoginType
-import katium.client.qq.network.crypto.tea.QQTeaCipher
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.client.qq.network.codec.base.writeQQShortLengthString
 import katium.core.util.netty.buffer
 import katium.core.util.netty.toArray

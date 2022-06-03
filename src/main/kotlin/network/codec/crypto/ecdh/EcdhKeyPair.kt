@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.crypto.ecdh
+package katium.client.qq.network.codec.crypto.ecdh
 
 import com.google.common.hash.Hashing
-import katium.client.qq.network.crypto.tea.QQTeaCipher
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.KeyFactory
 import java.security.KeyPairGenerator

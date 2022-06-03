@@ -22,6 +22,6 @@ import katium.core.message.content.MessageContent
 
 interface MessageDecoder {
 
-    suspend fun parse(client: QQClient, message: PbMessages.Message, element: PbMessageElements.Element): MessageContent?
+    suspend fun decode(client: QQClient, message: PbMessages.Message, element: PbMessageElements.Element): MessageContent?
 
 }

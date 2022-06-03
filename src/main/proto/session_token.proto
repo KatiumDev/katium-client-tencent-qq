@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package katium.client.qq;
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "PbSessionToken";
+
+message SessionToken {
+  uint64 uin = 1;
+  bytes d2 = 2;
+  bytes d2Key = 3;
+  bytes tgt = 4;
+  bytes tgtgtKey = 5;
+  optional bytes t133 = 6;
+  optional bytes encryptedA1 = 7;
+  optional bytes wtSessionTicketKey = 8;
+  optional bytes srmToken = 9;
+}

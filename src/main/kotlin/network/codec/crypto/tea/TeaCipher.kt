@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.crypto.tea
+package katium.client.qq.network.codec.crypto.tea
 
 /**
  * https://github.com/lz1998/rs-qq/blob/master/rq-engine/src/crypto/qqtea.rs

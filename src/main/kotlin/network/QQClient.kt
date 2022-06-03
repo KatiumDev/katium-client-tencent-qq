@@ -16,6 +16,7 @@
 package katium.client.qq.network
 
 import com.google.common.hash.Hashing
+import com.google.protobuf.ByteString
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelInitializer
@@ -28,6 +29,8 @@ import katium.client.qq.group.QQGroup
 import katium.client.qq.network.auth.DeviceInfo
 import katium.client.qq.network.auth.LoginSigInfo
 import katium.client.qq.network.auth.ProtocolType
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
+import katium.client.qq.network.codec.crypto.tea.TeaCipher
 import katium.client.qq.network.codec.highway.Highway
 import katium.client.qq.network.codec.oicq.OicqPacketCodec
 import katium.client.qq.network.codec.packet.TransportPacket
@@ -40,9 +43,11 @@ import katium.client.qq.network.message.parser.MessageParsers
 import katium.client.qq.network.packet.chat.*
 import katium.client.qq.network.packet.login.LoginResponsePacket
 import katium.client.qq.network.packet.login.PasswordLoginPacket
+import katium.client.qq.network.packet.login.UpdateSigRequest
 import katium.client.qq.network.packet.meta.ClientRegisterPacket
 import katium.client.qq.network.packet.review.PullGroupSystemMessagesRequest
 import katium.client.qq.network.packet.review.PullGroupSystemMessagesResponse
+import katium.client.qq.network.pb.PbSessionToken
 import katium.client.qq.network.sso.SsoServerListManager
 import katium.client.qq.network.sync.Synchronizer
 import katium.client.qq.user.QQContact
@@ -66,6 +71,10 @@ import java.util.*
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
+import kotlin.io.path.readBytes
+import kotlin.io.path.writeBytes
 import kotlin.random.Random
 
 class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
@@ -88,13 +97,21 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     val currentServerAddress get() = serverAddresses[currentServerCounter]
     var retryTimes = 0
 
+    private fun selectServerAddresses() = if (bot.options.remoteServerAddress != null) {
+        mutableListOf(InetSocketAddress(bot.options.remoteServerAddress, bot.options.remoteServerPort!!))
+    } else {
+        runBlocking(coroutineContext) {
+            SsoServerListManager.fetchAddressesForConnection().toMutableList()
+        }
+    }
+
     val eventLoopGroup = NioEventLoopGroup()
     var channel: SocketChannel? = null
     val packetHandlers: MutableMap<Int, Continuation<TransportPacket.Response>> = mutableMapOf()
 
     val isConnected get() = channel?.isActive ?: false
-    val isOnline get() = isConnected && isClientRegistered
-    var isClientRegistered: Boolean = false
+    val isOnline get() = isConnected && isLoggedIn
+    var isLoggedIn: Boolean = false
 
     val deviceInfo = selectDeviceInfo()
     val version = selectClientVersion()
@@ -102,27 +119,6 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         @Suppress("DEPRECATION")
         if (bot.options.passwordMD5 != null) HexFormat.of().parseHex(bot.options.passwordMD5)
         else Hashing.md5().hashBytes(bot.options.password!!.toByteArray()).asBytes()
-    }
-
-    val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
-    val oicqCodec = OicqPacketCodec(this)
-    val highway = Highway(this)
-    var heartbeatJob: Job? = null
-    val synchronzier = Synchronizer(this)
-    val messageParsers = MessageParsers(this)
-    val messageDecoders = MessageDecoders(this)
-    val messageEncoders = MessageEncoders(this)
-
-    lateinit var reviewMessages: Set<ReviewMessage>
-    var cachedFriends = CoroutineLazy(this, ::pullFriends)
-    var cachedGroups = CoroutineLazy(this, ::pullGroups)
-
-    private fun selectServerAddresses() = if (bot.options.remoteServerAddress != null) {
-        mutableListOf(InetSocketAddress(bot.options.remoteServerAddress, bot.options.remoteServerPort!!))
-    } else {
-        runBlocking(coroutineContext) {
-            SsoServerListManager.fetchAddressesForConnection().toMutableList()
-        }
     }
 
     private fun selectDeviceInfo() = if (bot.options.deviceInfoFile != null) {
@@ -140,6 +136,67 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         logger.info("Using builtin client version info for ${bot.options.protocolType}")
         ProtocolType.valueOf(bot.options.protocolType).builtinVersion
     }
+
+    val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
+    val sessionFile = bot.dataPath.resolve("qq.session_token.dat")
+    val oicqCodec = OicqPacketCodec(this)
+    val highway = Highway(this)
+    var heartbeatJob: Job? = null
+    val synchronzier = Synchronizer(this)
+    val messageParsers = MessageParsers(this)
+    val messageDecoders = MessageDecoders(this)
+    val messageEncoders = MessageEncoders(this)
+
+    internal fun loadSession(): Boolean {
+        if (sessionFile.exists()) {
+            val session = PbSessionToken.SessionToken.parseFrom(sessionFile.readBytes())
+            if (session.uin != uin) {
+                logger.warn("Session cache found at ${sessionFile.absolutePathString()}, but uin is not matched")
+                return false
+            }
+            sig.d2 = session.d2.toByteArray().toUByteArray()
+            sig.d2KeyEncoded = session.d2Key.toByteArray().toUByteArray()
+            synchronized(sig) { sig.d2Key = TeaCipher.decodeByteKey(sig.d2KeyEncoded) }
+            sig.tgt = session.tgt.toByteArray().toUByteArray()
+            deviceInfo.tgtgtKey = session.tgtgtKey.toByteArray()
+            if (session.hasT133())
+                sig.t133 = session.t133.toByteArray().toUByteArray()
+            if (session.hasEncryptedA1())
+                sig.encryptedA1 = session.encryptedA1.toByteArray().toUByteArray()
+            if (session.hasWtSessionTicketKey()) {
+                oicqCodec.wtSessionTicketKey = session.wtSessionTicketKey.toByteArray()
+                oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(oicqCodec.wtSessionTicketKey!!.toUByteArray())
+            }
+            logger.info("Session cache loaded from ${sessionFile.absolutePathString()}")
+            return true
+        } else return false
+    }
+
+    internal fun writeSession() {
+        sessionFile.writeBytes(
+            PbSessionToken.SessionToken.newBuilder()
+                .setUin(uin)
+                .setD2(ByteString.copyFrom(sig.d2.toByteArray()))
+                .setD2Key(ByteString.copyFrom(sig.d2KeyEncoded.toByteArray()))
+                .setTgt(ByteString.copyFrom(sig.tgt.toByteArray()))
+                .setTgtgtKey(ByteString.copyFrom(deviceInfo.tgtgtKey))
+                .apply { if (sig.t133 != null) t133 = ByteString.copyFrom(sig.t133!!.toByteArray()) }
+                .apply {
+                    if (sig.encryptedA1 != null) encryptedA1 = ByteString.copyFrom(sig.encryptedA1!!.toByteArray())
+                }
+                .apply {
+                    if (oicqCodec.wtSessionTicketKey != null) wtSessionTicketKey =
+                        ByteString.copyFrom(oicqCodec.wtSessionTicketKey!!)
+                }
+                .build()
+                .toByteArray()
+        )
+        logger.info("Session cache wrote")
+    }
+
+    lateinit var reviewMessages: Set<ReviewMessage>
+    var cachedFriends = CoroutineLazy(this, ::pullFriends)
+    var cachedGroups = CoroutineLazy(this, ::pullGroups)
 
     // @TODO: reconnect on disconnected
     suspend fun connect() {
@@ -219,36 +276,46 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     suspend fun sendAndWaitOicq(packet: TransportPacket.Request) = sendAndWait(packet) as TransportPacket.Response.Oicq
 
     suspend fun login() {
-        sendAndWaitOicq(PasswordLoginPacket.create(this)).use {
-            val response = it.packet as LoginResponsePacket
-            if (response.success) {
-                registerClient()
-                notifyOnline()
-                pullSystemMessages()
-                startSyncMessages()
-                logger.info("Login succeeded")
-            } else {
-                throw RuntimeException("Login failed, $response")
-            }
+        if (bot.options.cacheSession && loadSession()) {
+            loginWithToken()
+        } else {
+            logger.info("Session cache not found or disabled")
+            loginWithPassword()
+        }
+        registerClient()
+        notifyOnline()
+        pullSystemMessages()
+        startSyncMessages()
+        logger.info("Login succeeded")
+    }
+
+    suspend fun loginWithToken() =
+        sendAndWaitOicq(UpdateSigRequest.create(this, mainSigMap = version.mainSigMap)).close()
+
+    suspend fun loginWithPassword() = sendAndWaitOicq(PasswordLoginPacket.create(this)).use {
+        val response = it.packet as LoginResponsePacket
+        if (!response.success) {
+            throw RuntimeException("Password login failed, $response")
         }
     }
 
     suspend fun registerClient() {
         runCatching {
             sendAndWait(ClientRegisterPacket.create(this))
-            isClientRegistered = true
+            isLoggedIn = true
         }.onFailure {
-            isClientRegistered = false
+            isLoggedIn = false
         }.getOrThrow()
     }
 
     internal suspend fun notifyOnline() {
-        isClientRegistered = true
+        isLoggedIn = true
+        if(bot.options.cacheSession) writeSession()
         bot.post(BotOnlineEvent(bot))
     }
 
     internal suspend fun notifyOffline() {
-        isClientRegistered = false
+        isLoggedIn = false
         bot.post(BotOfflineEvent(bot))
     }
 

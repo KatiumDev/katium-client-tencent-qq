@@ -39,6 +39,7 @@ class MessageDecoders(val client: QQClient) {
         decoders[1] = PlainTextDecoder
         decoders[4] = NotOnlineImageDecoder
         decoders[8] = CustomFaceDecoder
+        decoders[37] = QQServiceMessageDecoder
     }
 
     operator fun get(type: Int) = decoders[type]
@@ -52,7 +53,7 @@ class MessageDecoders(val client: QQClient) {
     }
 
     suspend fun decode(message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {
-        get(it)?.parse(client, message, it)
+        get(it)?.decode(client, message, it)
     }.toTypedArray()).simplest
 
 }

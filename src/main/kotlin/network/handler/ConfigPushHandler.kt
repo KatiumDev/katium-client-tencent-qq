@@ -51,23 +51,24 @@ object ConfigPushHandler : EventListener {
                         }
                     }
                     2 -> {
-                        val list = FileStorageConfigPushData(action.buffer.duplicate().readJceStruct())
-                        val response =
-                            PbCmd0x6ff.C501ResponseBody.parseFrom(list.bigDataChannel.buffer.toArray(release = false))
-                        client.highway.sigSession = response.body.sigSession.toByteArray()
-                        client.highway.sessionKey = response.body.sessionKey.toByteArray()
-                        response.body.addressesList.forEach {
-                            val addresses = it.addressesList.map { address ->
-                                InetSocketAddress(Highway.decodeIP(address.ip), address.port)
-                            }
-                            when (it.serviceType) {
-                                10 -> {
-                                    client.logger.info("Retrieved ${addresses.size} highway SSO addresses from ConfigPush")
-                                    client.highway.ssoAddresses.addAll(addresses)
+                        FileStorageConfigPushData(action.buffer.duplicate().readJceStruct()).use { list ->
+                            val response =
+                                PbCmd0x6ff.C501ResponseBody.parseFrom(list.bigDataChannel.buffer.toArray(release = false))
+                            client.highway.sigSession = response.body.sigSession.toByteArray()
+                            client.highway.sessionKey = response.body.sessionKey.toByteArray()
+                            response.body.addressesList.forEach {
+                                val addresses = it.addressesList.map { address ->
+                                    InetSocketAddress(Highway.decodeIP(address.ip), address.port)
                                 }
-                                21 -> {
-                                    client.logger.info("Retrieved ${addresses.size} highway other addresses from ConfigPush")
-                                    client.highway.otherAddresses.addAll(addresses)
+                                when (it.serviceType) {
+                                    10 -> {
+                                        client.logger.info("Retrieved ${addresses.size} highway SSO addresses from ConfigPush")
+                                        client.highway.ssoAddresses.addAll(addresses)
+                                    }
+                                    21 -> {
+                                        client.logger.info("Retrieved ${addresses.size} highway other addresses from ConfigPush")
+                                        client.highway.otherAddresses.addAll(addresses)
+                                    }
                                 }
                             }
                         }

@@ -35,9 +35,9 @@ class UpdateSigResponse(client: QQClient, uin: Int, command: Short) :
     override fun readBody(input: ByteBuf) {
         type = input.readShort().toInt()
         result = input.readByte().toInt()
-        if (result != 0) throw IllegalStateException("Unable to exchange_emp, type=$type, result=$result")
         input.skipBytes(2)
         val tlv = input.readTlvMap(2, release = false)
+        if (result != 0) throw IllegalStateException("Unable to exchange_emp, type=$type, result=$result, tlv=$tlv")
         when (type) {
             15 -> {
                 tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false).use {

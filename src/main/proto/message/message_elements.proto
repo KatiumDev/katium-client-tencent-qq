@@ -16,9 +16,9 @@ message Element {
   optional CustomFace customFace = 8;
   /*optional ElemFlags2 elemFlags2 = 9;
   //FunFace funFace = 10;
-  //SecretFileMsg secretFile = 11;
-  optional RichMsg richMsg = 12;
-  optional GroupFile groupFile = 13;
+  //SecretFileMsg secretFile = 11;*/
+  optional ServiceMessage serviceMessage = 12;
+  /*optional GroupFile groupFile = 13;
   //PubGroup pubGroup = 14;
   //MarketTrans marketTrans = 15;
   optional ExtraInfo extraInfo = 16;
@@ -41,9 +41,9 @@ message Element {
   //PubAccInfo? pubAccInfo = 33;
   //SmallEmoji? smallEmoji = 34;
   //FSJMessageElem? fsjMsgElem = 35;
-  //ArkAppElem? arkApp = 36;
+  //ArkAppElem? arkApp = 36;*/
   optional GeneralFlags generalFlags = 37;
-  //CustomFace? hcFlashPic = 38;
+  /*//CustomFace? hcFlashPic = 38;
   //DeliverGiftMsg? deliverGiftMsg = 39;
   //BitAppMsg? bitappMsg = 40;
   //OpenQQData? openQqData = 41;
@@ -146,6 +146,15 @@ message AnimationImageShow {
   optional bytes animationParam = 2;
 }
 
+message ServiceMessage {
+  bytes template = 1;
+  int32 serviceID = 2;
+  optional bytes resourceID = 3;
+  optional int32 random = 4;
+  optional int32 sequence = 5;
+  optional int32 flags = 6;
+}
+
 message AnonymousGroupMessage {
   optional int32 flags = 1;
   optional bytes id = 2;
@@ -154,4 +163,26 @@ message AnonymousGroupMessage {
   optional int32 expireTime = 5;
   optional int32 bubbleID = 6;
   optional bytes rankColor = 7;
+}
+
+message GeneralFlags {
+  optional int32 bubbleDiyTextId = 1;
+  optional int32 groupFlagNew = 2;
+  optional int64 uin = 3;
+  optional bytes rpId = 4;
+  optional int32 prpFold = 5;
+  optional int32 longTextFlag = 6;
+  optional string longTextResourceID = 7;
+  optional int32 groupType = 8;
+  optional int32 toUinFlag = 9;
+  optional int32 glamourLevel = 10;
+  optional int32 memberLevel = 11;
+  optional int64 groupRankSeq = 12;
+  optional int32 olympicTorch = 13;
+  optional bytes babyQGuideMsgCookie = 14;
+  optional int32 uin32ExpertFlag = 15;
+  optional int32 bubbleSubId = 16;
+  optional int64 pendantId = 17;
+  optional bytes rpIndex = 18;
+  optional bytes pbReserve = 19;
 }

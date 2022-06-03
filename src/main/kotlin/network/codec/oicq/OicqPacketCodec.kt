@@ -17,8 +17,8 @@ package katium.client.qq.network.codec.oicq
 
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.crypto.ecdh.EcdhKeyProvider
-import katium.client.qq.network.crypto.tea.QQTeaCipher
+import katium.client.qq.network.codec.crypto.ecdh.EcdhKeyProvider
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.client.qq.network.event.QQOicqDecodersInitializeEvent
 import katium.client.qq.network.packet.login.LoginResponsePacket
 import katium.client.qq.network.packet.login.UpdateSigResponse
@@ -37,6 +37,7 @@ class OicqPacketCodec(
 
     val randomKey = Random.Default.nextBytes(16).toUByteArray()
     val randomKeyCipher = QQTeaCipher(randomKey)
+    var wtSessionTicketKey: ByteArray? = null
     var wtSessionTicketKeyCipher: QQTeaCipher? = null
 
     val decoders: Map<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple> by lazy {

@@ -17,7 +17,7 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.auth.NetworkType
-import katium.client.qq.network.crypto.tea.QQTeaCipher
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.client.qq.network.pb.PbDeviceInfo
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use

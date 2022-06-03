@@ -30,7 +30,7 @@ import katium.client.qq.network.codec.taf.RequestDataV3
 import katium.client.qq.network.codec.taf.RequestPacket
 import katium.client.qq.network.codec.taf.unwrapUniRequestData
 import katium.client.qq.network.codec.taf.wrapUniRequestData
-import katium.client.qq.network.crypto.tea.QQTeaCipher
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
 import katium.core.util.okhttp.GlobalHttpClient

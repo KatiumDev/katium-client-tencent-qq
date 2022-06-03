@@ -22,7 +22,7 @@ import katium.client.qq.network.pb.PbMessages
 
 object NotOnlineImageDecoder : MessageDecoder {
 
-    override suspend fun parse(
+    override suspend fun decode(
         client: QQClient,
         message: PbMessages.Message,
         element: PbMessageElements.Element

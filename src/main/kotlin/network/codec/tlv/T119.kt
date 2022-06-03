@@ -19,8 +19,8 @@ import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.crypto.tea.QQTeaCipher
-import katium.client.qq.network.crypto.tea.TeaCipher
+import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
+import katium.client.qq.network.codec.crypto.tea.TeaCipher
 import katium.core.util.netty.buffer
 import katium.core.util.netty.toArray
 import katium.core.util.netty.use
@@ -70,7 +70,8 @@ fun TlvMap.applyT119(client: QQClient) {
         client.sig.pt4TokenMap = pt4TokenMap
     }
     if (0x134 in this) {
-        client.oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(this[0x134]!!.toArray(false).toUByteArray())
+        client.oicqCodec.wtSessionTicketKey = this[0x134]!!.toArray(false)
+        client.oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(client.oicqCodec.wtSessionTicketKey!!.toUByteArray())
     }
     client.sig.loginBitmap = 0uL
     if (0x16A in this) {

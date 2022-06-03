@@ -22,7 +22,7 @@ import katium.core.message.content.PlainText
 
 object PlainTextDecoder : MessageDecoder {
 
-    override suspend fun parse(client: QQClient, message: PbMessages.Message, element: PbMessageElements.Element) =
+    override suspend fun decode(client: QQClient, message: PbMessages.Message, element: PbMessageElements.Element) =
         PlainText(element.plainText.string)
 
 }

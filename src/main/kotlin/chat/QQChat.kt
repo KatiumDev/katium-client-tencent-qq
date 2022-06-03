@@ -30,6 +30,7 @@ import katium.core.message.MessageRef
 import katium.core.message.content.MessageContent
 import katium.core.util.event.post
 import kotlinx.coroutines.delay
+import kotlin.math.abs
 import kotlin.random.Random
 
 class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHeader: PbMessagePackets.RoutingHeader) :
@@ -43,15 +44,16 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
                 if (isGroup) client.allocGroupMessageSequenceID()
                 else client.allocFriendMessageSequenceID()
             val messageRandom = Random.Default.nextInt()
-            val time = if (isGroup) null else System.currentTimeMillis() / 1000
+            val time = System.currentTimeMillis() / 1000
+            println(client.messageEncoders.encode(this, it.content, withGeneralFlags = isGroup))
             val response = client.sendAndWait(
                 SendMessageRequest.create(
                     client,
                     messageSequence = messageSequence,
                     routingHeader = routingHeader,
-                    elements = client.messageEncoders.encode(this, it.content),
+                    elements = client.messageEncoders.encode(this, it.content, withGeneralFlags = isGroup),
                     messageRandom = messageRandom,
-                    syncCookieTime = time
+                    syncCookieTime = if (isGroup) null else time
                 )
             ) as SendMessageResponse
             if (response.errorMessage != null) {
@@ -59,23 +61,22 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
             }
             if (isGroup) {
                 val group = context as QQGroup
-                for (i in 0..3) {
+                for (i in 0..14) {
                     val message =
                         group.pullHistoryMessages(group.lastReadSequence.get() - 10, group.lastReadSequence.get() + 1)
                             .find { message -> message.messageRandom == messageRandom }
                     if (message != null) {
                         return@let message.ref
                     }
-                    delay(200)
+                    delay(100L * i)
                 }
-                throw IllegalStateException("Unable to pull back message, messageRandom=$messageRandom")
-            } else {
-                val message = QQMessage(
-                    bot, this@QQChat, bot.selfInfo, it.content,
-                    time = time!! * 1000, sequence = messageSequence, messageRandom = messageRandom
-                )
-                message.ref
+                client.logger.error("Unable to pull back message, sequence=$messageSequence, random=$messageRandom, content=$content")
             }
+            val message = QQMessage(
+                bot, this@QQChat, bot.selfInfo, it.content,
+                time = time * 1000, sequence = messageSequence, messageRandom = messageRandom
+            )
+            message.ref
         }
     }
 

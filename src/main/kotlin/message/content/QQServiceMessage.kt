@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.message.encoder
+package katium.client.qq.message.content
 
-import katium.client.qq.chat.QQChat
-import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
 import katium.core.message.content.MessageContent
 
-interface MessageEncoder<T : MessageContent> {
+class QQServiceMessage(
+    val id: Int,
+    val type: Type,
+    val content: String,
+    val resourceID: String = "",
+): MessageContent() {
 
-    suspend fun encode(client: QQClient, context: QQChat, message: T): Array<PbMessageElements.Element>
+    override fun concat(other: MessageContent) = null
 
-    suspend fun createGeneralFlags(
-        client: QQClient,
-        context: QQChat,
-        message: T
-    ): Array<PbMessageElements.GeneralFlags> = emptyArray()
+    override fun simplify() = null
+
+    override fun toString() = "[QQServiceMessage/$id/$type/$resourceID: $content]"
+
+    enum class Type {
+
+        URL_SHARE, XML, JSON, LONG_MESSAGE, UNKNOWN
+
+    }
 
 }

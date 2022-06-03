@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.crypto.ecdh
+package katium.client.qq.network.codec.crypto.ecdh
 
 import katium.client.qq.network.QQClient
 import katium.core.util.okhttp.GlobalHttpClient
@@ -80,10 +80,10 @@ class EcdhKeyProvider(val client: QQClient) {
 
     suspend fun updateFromKeyRotate() {
         val key = fetchFromKeyRotate()
-        client.logger.info("ECDH key v2 got")
+        client.logger.info("ECDH key v2 ready, waiting ${oicqSessionCount.value} oicq sessions to end")
         oicqSessionCount.loop {
             if (it == 0) {
-                client.logger.info("ECDH key v2 installed")
+                client.logger.info("ECDH key v2 configured")
                 keyPair = key
                 return
             }
