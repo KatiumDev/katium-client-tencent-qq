@@ -15,24 +15,23 @@
  */
 package katium.client.qq.network.message.parser
 
-import katium.client.qq.message.content.QQImage
+import katium.client.qq.message.QQMessage
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
 
-object NotOnlineImageParser : MessageParser {
+object GroupMessageParser : MessageParser {
 
-    override suspend fun parse(
-        client: QQClient,
-        message: PbMessages.Message,
-        element: PbMessageElements.Element
-    ) = element.notOnlineImage.run {
-        QQImage(
-            resourceKey = resourceID,
-            originUrl = origUrl,
-            md5 = pictureMd5,
-            width = if (hasPictureWidth()) pictureWidth else null,
-            height = if (hasPictureHeight()) pictureHeight else null
+    override suspend fun parse(client: QQClient, message: PbMessages.Message): QQMessage {
+        val group = client.bot.getGroup(message.header.groupInfo.groupCode)!!.chat!!
+        val sender = client.bot.getUser(message.header.fromUin)
+        return QQMessage(
+            bot = client.bot,
+            context = group,
+            content = client.messageDecoders.decode(message),
+            sender = sender,
+            time = message.header.time * 1000L,
+            sequence = message.header.sequence,
+            messageRandom = message.body.richText.attributes.random
         )
     }
 

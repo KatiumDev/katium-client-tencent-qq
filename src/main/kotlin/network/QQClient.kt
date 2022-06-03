@@ -108,10 +108,9 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     val oicqCodec = OicqPacketCodec(this)
     val highway = Highway(this)
     var heartbeatJob: Job? = null
-    var lastMessageTime = 0L
     val synchronzier = Synchronizer(this)
-    val messageDecoders = MessageDecoders(this)
     val messageParsers = MessageParsers(this)
+    val messageDecoders = MessageDecoders(this)
     val messageEncoders = MessageEncoders(this)
 
     lateinit var reviewMessages: Set<ReviewMessage>

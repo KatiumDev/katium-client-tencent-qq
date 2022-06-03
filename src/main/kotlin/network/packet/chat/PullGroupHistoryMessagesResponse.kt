@@ -19,7 +19,7 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.message.QQMessage
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.message.decoder.GroupMessageDecoder
+import katium.client.qq.network.message.parser.GroupMessageParser
 import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.util.netty.toArray
 import kotlinx.coroutines.CoroutineName
@@ -45,7 +45,7 @@ class PullGroupHistoryMessagesResponse(val client: QQClient, packet: TransportPa
         } else {
             runBlocking(client.coroutineContext + CoroutineName("Decode Group History Messages")) {
                 messages = response.messagesList.map {
-                    GroupMessageDecoder.decode(client, it)
+                    GroupMessageParser.parse(client, it)
                 }
             }
         }

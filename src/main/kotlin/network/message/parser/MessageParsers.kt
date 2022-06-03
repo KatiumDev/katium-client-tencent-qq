@@ -17,9 +17,6 @@ package katium.client.qq.network.message.parser
 
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageParsersInitializeEvent
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
-import katium.core.message.content.MessageChain
 import katium.core.util.event.post
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
@@ -28,31 +25,27 @@ class MessageParsers(val client: QQClient) {
 
     val parsers: Map<Int, MessageParser> by lazy {
         val parsers = mutableMapOf<Int, MessageParser>()
-        registerBuiltinParsers(parsers)
+        registerBuiltinDecoders(parsers)
         runBlocking(CoroutineName("Initialize Message Parsers")) {
             client.bot.post(QQMessageParsersInitializeEvent(client, parsers))
         }
         parsers.toMap()
     }
 
-    private fun registerBuiltinParsers(parsers: MutableMap<Int, MessageParser>) {
-        parsers[1] = PlainTextParser
-        parsers[4] = NotOnlineImageParser
-        parsers[8] = CustomFaceParser
+    private fun registerBuiltinDecoders(parsers: MutableMap<Int, MessageParser>) {
+        parsers[9] = FriendMessageParser
+        parsers[10] = FriendMessageParser
+        parsers[31] = FriendMessageParser
+        parsers[79] = FriendMessageParser
+        parsers[97] = FriendMessageParser
+        parsers[120] = FriendMessageParser
+        parsers[132] = FriendMessageParser
+        parsers[133] = FriendMessageParser
+        parsers[166] = FriendMessageParser
+        parsers[167] = FriendMessageParser
+        parsers[82] = GroupMessageParser
     }
 
     operator fun get(type: Int) = parsers[type]
-
-    operator fun get(element: PbMessageElements.Element): MessageParser? {
-        val fieldKeys = element.allFields.keys
-        if (fieldKeys.isEmpty()) return null
-        if (fieldKeys.size != 1) throw UnsupportedOperationException("Too many fields: $fieldKeys in $element")
-        return (get(fieldKeys.first().number)
-            ?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
-    }
-
-    suspend fun parse(message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {
-        get(it)?.parse(client, message, it)
-    }.toTypedArray()).simplest
 
 }

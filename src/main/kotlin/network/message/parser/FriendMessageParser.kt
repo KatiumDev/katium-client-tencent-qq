@@ -15,26 +15,22 @@
  */
 package katium.client.qq.network.message.parser
 
-import katium.client.qq.message.content.QQImage
+import katium.client.qq.message.QQMessage
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
 
-object CustomFaceParser : MessageParser {
+object FriendMessageParser : MessageParser {
 
-    override suspend fun parse(
-        client: QQClient,
-        message: PbMessages.Message,
-        element: PbMessageElements.Element
-    ) = element.customFace.run {
-        QQImage(
-            resourceKey = fileID.toString(),
-            originUrl = origUrl.substring(1), // remove `/` prefix
-            md5 = md5,
-            filePath = filePath,
-            size = size,
-            width = if (hasWidth()) width else null,
-            height = if (hasHeight()) height else null
+    override suspend fun parse(client: QQClient, message: PbMessages.Message): QQMessage {
+        val sender = client.bot.getUser(message.header.fromUin)
+        return QQMessage(
+            bot = client.bot,
+            context = sender.chat!!,
+            content = client.messageDecoders.decode(message),
+            sender = sender,
+            time = message.header.time * 1000L,
+            sequence = message.header.sequence,
+            messageRandom = message.body.richText.attributes.random
         )
     }
 
