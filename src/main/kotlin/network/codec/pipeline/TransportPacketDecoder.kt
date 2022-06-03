@@ -57,11 +57,16 @@ class TransportPacketDecoder(val client: QQClient) : MessageToMessageDecoder<Tra
     }
 
     override fun decode(ctx: ChannelHandlerContext, msg: TransportPacket.Response, out: MutableList<Any>) {
-        out.add(
-            if (msg is TransportPacket.Response.Buffered) {
-                decoders[msg.command]?.invoke(client, msg)?.apply { readBody(msg.body) } ?: msg
-            } else msg
-        )
+        try {
+            out.add(
+                if (msg is TransportPacket.Response.Buffered) {
+                    decoders[msg.command]?.invoke(client, msg)?.apply { readBody(msg.body) }?.also { msg.close() }
+                        ?: msg
+                } else msg
+            )
+        } catch (e: Throwable) {
+            throw RuntimeException("command=${msg.command}, sequence=${msg.sequenceID}", e)
+        }
     }
 
 }

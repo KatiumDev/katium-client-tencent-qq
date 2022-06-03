@@ -16,6 +16,7 @@
 package katium.client.qq.network.codec.jce
 
 import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 object JceConstants {
 
@@ -42,6 +43,6 @@ object JceConstants {
     const val TAG_STRUCT_END: UByte = 0u
 
     @JvmField
-    val DEFAULT_CHARSET: Charset = Charset.forName("GBK")
+    val DEFAULT_CHARSET: Charset = StandardCharsets.UTF_8
 
 }
