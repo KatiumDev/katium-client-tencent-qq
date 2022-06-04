@@ -24,6 +24,8 @@ interface MessageEncoder<T : MessageContent> {
 
     val shouldStandalone get() = false
 
+    val priority get() = 10
+
     suspend fun encode(client: QQClient, context: QQChat, message: T): Array<PbMessageElements.Element>
 
     suspend fun createGeneralFlags(

@@ -45,6 +45,9 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
                     mainParts = standaloneParts
                     standaloneParts = emptyArray()
                 }
+                if (mainParts.isEmpty())
+                    return null
+                mainParts.sortByDescending { part -> client.messageEncoders.getPriority(part) }
                 val isGroup = context is QQGroup
                 val messageSequence =
                     if (isGroup) client.allocGroupMessageSequenceID()

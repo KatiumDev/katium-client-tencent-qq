@@ -43,6 +43,7 @@ class MessageEncoders(val client: QQClient) {
         encoders[QQServiceMessage::class] = QQServiceMessageEncoder
         encoders[At::class] = AtEncoder
         encoders[AtAll::class] = AtAllEncoder
+        encoders[RefMessage::class] = RefMessageEncoder
     }
 
     operator fun get(type: KClass<out MessageContent>): MessageEncoder<*>? =
@@ -55,6 +56,8 @@ class MessageEncoders(val client: QQClient) {
         ?: FallbackEncoder) as MessageEncoder<MessageContent>
 
     fun shouldStandalone(content: MessageContent) = get(content).shouldStandalone
+
+    fun getPriority(content: MessageContent) = get(content).priority
 
     suspend fun encode(chat: QQChat, content: MessageContent, withGeneralFlags: Boolean = false) =
         (this[content].encode(client, chat, content) + (if (withGeneralFlags) createGeneralFlags(chat, content).map {

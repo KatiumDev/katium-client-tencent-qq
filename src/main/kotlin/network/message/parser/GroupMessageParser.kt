@@ -15,6 +15,7 @@
  */
 package katium.client.qq.network.message.parser
 
+import katium.client.qq.chat.QQChat
 import katium.client.qq.message.QQMessage
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.pb.PbMessages
@@ -27,7 +28,7 @@ object GroupMessageParser : MessageParser {
         return QQMessage(
             bot = client.bot,
             context = group,
-            content = client.messageDecoders.decode(message),
+            content = client.messageDecoders.decode(group as QQChat, message),
             sender = sender,
             time = message.header.time * 1000L,
             sequence = message.header.sequence,

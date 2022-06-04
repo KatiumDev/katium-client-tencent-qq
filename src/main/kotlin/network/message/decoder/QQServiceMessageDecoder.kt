@@ -15,6 +15,7 @@
  */
 package katium.client.qq.network.message.decoder
 
+import katium.client.qq.chat.QQChat
 import katium.client.qq.message.builder.QQJsonMessage
 import katium.client.qq.message.builder.QQXmlMessage
 import katium.client.qq.message.content.QQServiceMessage
@@ -30,6 +31,7 @@ object QQServiceMessageDecoder : MessageDecoder {
 
     override suspend fun decode(
         client: QQClient,
+        context: QQChat,
         message: PbMessages.Message,
         element: PbMessageElements.Element
     ) = element.serviceMessage.run {

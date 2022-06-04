@@ -16,15 +16,34 @@
 package katium.client.qq.message
 
 import katium.client.qq.QQBot
-import katium.core.message.Message
+import katium.client.qq.group.QQGroup
 import katium.core.message.MessageRef
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.runBlocking
 import java.lang.ref.SoftReference
 
-class QQMessageRef(override val bot: QQBot, message: Message?, val sequence: Int) : MessageRef(bot) {
+class QQMessageRef(
+    override val bot: QQBot,
+    message: QQMessage?,
+    val sequence: Int,
+    val contextGroupCode: Long?
+) : MessageRef(bot) {
 
-    private val messageRef = SoftReference(message)
+    private var messageRef = SoftReference(message)
 
-    override val message: Message?
-        get() = messageRef.get()
+    override val message: QQMessage?
+        get() {
+            if (messageRef.get() == null && contextGroupCode != null) {
+                runBlocking(bot.coroutineContext + CoroutineName("Refresh Group Message Ref")) {
+                    messageRef = SoftReference(
+                        bot.getGroup(contextGroupCode)!!.pullHistoryMessages(sequence - 5L, sequence + 5L)
+                            .find { it.sequence == sequence }!!
+                    )
+                }
+            }
+            return messageRef.get()
+        }
+
+    override fun toString() = "QQMessageRef($sequence in ${contextGroupCode ?: "C2C chat"})"
 
 }

@@ -49,9 +49,9 @@ message Element {
   //OpenQQData? openQqData = 41;
   //ApolloActMsg? apolloMsg = 42;
   //GroupPubAccountInfo? groupPubAccInfo = 43;
-  //BlessingMessage? blessMsg = 44;
-  optional SourceMsg srcMsg = 45;
-  //LolaMsg? lolaMsg = 46;
+  //BlessingMessage? blessMsg = 44;*/
+  optional SourceMessage source = 45;
+  /*//LolaMsg? lolaMsg = 46;
   //GroupBusinessMsg? groupBusinessMsg = 47;
   //WorkflowNotifyMsg? msgWorkflowNotify = 48;
   //PatsElem? patElem = 49;
@@ -185,4 +185,18 @@ message GeneralFlags {
   optional int64 pendantId = 17;
   optional bytes rpIndex = 18;
   optional bytes pbReserve = 19;
+}
+
+message SourceMessage {
+  repeated int32 originSequences = 1;
+  optional int64 senderUin = 2;
+  optional int32 time = 3;
+  optional int32 flag = 4;
+  repeated Element elements = 5;
+  optional int32 type = 6;
+  optional bytes richMessage = 7;
+  optional bytes pbReserve = 8;
+  optional bytes sourceMessage = 9;
+  optional int64 toUin = 10;
+  optional bytes troopName = 11;
 }

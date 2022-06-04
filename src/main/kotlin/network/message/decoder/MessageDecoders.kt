@@ -15,6 +15,7 @@
  */
 package katium.client.qq.network.message.decoder
 
+import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageDecodersInitializeEvent
 import katium.client.qq.network.pb.PbMessageElements
@@ -37,6 +38,7 @@ class MessageDecoders(val client: QQClient) {
         decoders[4] = NotOnlineImageDecoder
         decoders[8] = CustomFaceDecoder
         decoders[37] = QQServiceMessageDecoder
+        decoders[45] = RefMessageDecoder
     }
 
     operator fun get(type: Int) = decoders.getSync()[type]
@@ -49,8 +51,8 @@ class MessageDecoders(val client: QQClient) {
             ?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
     }
 
-    suspend fun decode(message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {
-        get(it)?.decode(client, message, it)
+    suspend fun decode(context: QQChat, message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {
+        get(it)?.decode(client, context, message, it)
     }.toTypedArray()).simplest
 
 }

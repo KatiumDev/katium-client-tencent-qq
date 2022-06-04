@@ -16,6 +16,7 @@
 package katium.client.qq.message
 
 import katium.client.qq.QQBot
+import katium.client.qq.group.QQGroup
 import katium.core.chat.Chat
 import katium.core.chat.ChatInfo
 import katium.core.message.Message
@@ -27,6 +28,6 @@ class QQMessage(
     val sequence: Int, val messageRandom: Int
 ) : Message(bot, context, sender, content, time) {
 
-    override val ref: MessageRef by lazy { QQMessageRef(bot, this, sequence) }
+    override val ref: MessageRef by lazy { QQMessageRef(bot, this, sequence, (contextGroup as? QQGroup)?.id) }
 
 }

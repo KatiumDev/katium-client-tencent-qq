@@ -15,6 +15,7 @@
  */
 package katium.client.qq.network.message.decoder
 
+import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
@@ -22,6 +23,6 @@ import katium.core.message.content.MessageContent
 
 interface MessageDecoder {
 
-    suspend fun decode(client: QQClient, message: PbMessages.Message, element: PbMessageElements.Element): MessageContent?
+    suspend fun decode(client: QQClient, context: QQChat, message: PbMessages.Message, element: PbMessageElements.Element): MessageContent?
 
 }
