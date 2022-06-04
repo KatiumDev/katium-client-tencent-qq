@@ -104,14 +104,6 @@ class ClientRegisterPacket(other: SimpleJceStruct) : SimpleJceStruct(other) {
     var extensionOnlineStatus: Long by number(38u)
     var batteryStatus: Int by number(39u)
 
-    override fun release() {
-        super.release()
-        deviceParam.release()
-        guid.release()
-        b769.release()
-        serverBuf.release()
-    }
-
     override fun toString() = "ClientRegisterPacket(uin=$uin, bid=$bid, connType=$connType, other='$other', " +
             "status=$status, onlinePush=$onlinePush, isOnline=$isOnline, isShowOnline=$isShowOnline, kickPC=$kickPC, " +
             "kickWeak=$kickWeak, timestamp=$timestamp, osVersionNumber=$osVersionNumber, networkType=$networkType, " +

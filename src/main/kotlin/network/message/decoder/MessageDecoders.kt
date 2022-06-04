@@ -19,19 +19,16 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageDecodersInitializeEvent
 import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.util.CoroutineLazy
 import katium.core.message.content.MessageChain
 import katium.core.util.event.post
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.runBlocking
 
 class MessageDecoders(val client: QQClient) {
 
-    val decoders: Map<Int, MessageDecoder> by lazy {
+    val decoders = CoroutineLazy(client) {
         val decoders = mutableMapOf<Int, MessageDecoder>()
         registerBuiltinParsers(decoders)
-        runBlocking(CoroutineName("Initialize Message Decoders")) {
-            client.bot.post(QQMessageDecodersInitializeEvent(client, decoders))
-        }
+        client.bot.post(QQMessageDecodersInitializeEvent(client, decoders))
         decoders.toMap()
     }
 
@@ -42,7 +39,7 @@ class MessageDecoders(val client: QQClient) {
         decoders[37] = QQServiceMessageDecoder
     }
 
-    operator fun get(type: Int) = decoders[type]
+    operator fun get(type: Int) = decoders.getSync()[type]
 
     operator fun get(element: PbMessageElements.Element): MessageDecoder? {
         val fieldKeys = element.allFields.keys

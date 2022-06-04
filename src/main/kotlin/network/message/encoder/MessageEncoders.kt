@@ -20,22 +20,19 @@ import katium.client.qq.message.content.QQServiceMessage
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageEncodersInitializeEvent
 import katium.client.qq.network.pb.PbMessageElements
+import katium.client.qq.util.CoroutineLazy
 import katium.core.message.content.*
 import katium.core.util.event.post
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.superclasses
 
 class MessageEncoders(val client: QQClient) {
 
-    val encoders: Map<KClass<out MessageContent>, MessageEncoder<*>> by lazy {
+    val encoders = CoroutineLazy(client) {
         val encoders = mutableMapOf<KClass<out MessageContent>, MessageEncoder<*>>()
         registerBuiltinEncoders(encoders)
-        runBlocking(CoroutineName("Initialize Message Encoders")) {
-            client.bot.post(QQMessageEncodersInitializeEvent(client, encoders))
-        }
+        client.bot.post(QQMessageEncodersInitializeEvent(client, encoders))
         encoders.toMap()
     }
 
@@ -49,13 +46,15 @@ class MessageEncoders(val client: QQClient) {
     }
 
     operator fun get(type: KClass<out MessageContent>): MessageEncoder<*>? =
-        encoders[type] ?: type.superclasses.filter { it.isSubclassOf(MessageContent::class) }.map {
+        encoders.getSync()[type] ?: type.superclasses.filter { it.isSubclassOf(MessageContent::class) }.map {
             @Suppress("UNCHECKED_CAST") get(it as KClass<out MessageContent>)
         }.firstOrNull()
 
     @Suppress("UNCHECKED_CAST")
     operator fun get(content: MessageContent) = (this[content::class]
         ?: FallbackEncoder) as MessageEncoder<MessageContent>
+
+    fun shouldStandalone(content: MessageContent) = get(content).shouldStandalone
 
     suspend fun encode(chat: QQChat, content: MessageContent, withGeneralFlags: Boolean = false) =
         (this[content].encode(client, chat, content) + (if (withGeneralFlags) createGeneralFlags(chat, content).map {

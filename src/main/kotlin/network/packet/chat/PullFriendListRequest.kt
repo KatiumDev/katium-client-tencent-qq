@@ -101,12 +101,6 @@ class PullFriendListRequest(other: SimpleJceStruct) : SimpleJceStruct(other) {
     var d6b: ByteBuf by byteBuf(17u)
     var snsTypeList: MutableList<Long> by field(18u) { mutableListOf(13580L, 13581L, 13582L) }
 
-    override fun release() {
-        super.release()
-        d50.release()
-        d6b.release()
-    }
-
     override fun toString() =
         "PullFriendListRequest(requestType=$requestType, reflush=$reflush, uin=$uin, " +
                 "friendStartIndex=$friendStartIndex, friendCount=$friendCount, " +

@@ -28,11 +28,6 @@ class RequestDataV3(other: SimpleJceStruct) : SimpleJceStruct(other) {
     operator fun get(key: String) = map[key]
     operator fun set(key: String, value: ByteBuf) = map.put(key, value)
 
-    override fun release() {
-        super.release()
-        map.values.forEach(ByteBuf::release)
-    }
-
     override fun toString() = "RequestDataV3($map)"
 
 }

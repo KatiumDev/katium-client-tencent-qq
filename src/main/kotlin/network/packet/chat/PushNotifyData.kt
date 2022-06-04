@@ -38,13 +38,6 @@ class PushNotifyData(other: SimpleJceStruct) : SimpleJceStruct(other) {
     var pingFlag: Long by number(12u)
     var serverIP: Int by number(13u)
 
-    override fun release() {
-        super.release()
-        notifyCookie.release()
-        messageInfo.release()
-        serverBuffer.release()
-    }
-
     override fun toString() = "PushNotifyData(uin=$uin, type=$type, service='$service', command='$command', " +
             "notifyCookie=$notifyCookie, messageType=$messageType, userActive=$userActive, generalFlag=$generalFlag, " +
             "boundUin=$boundUin, messageInfo=$messageInfo, messageControl='$messageControl', serverBuffer=$serverBuffer, " +

@@ -35,12 +35,6 @@ class FileStorageConfigPushData(other: SimpleJceStruct) : SimpleJceStruct(other)
     var domainIPChannel: SimpleJceStruct by struct(9u, SimpleJceStruct::class)
     var pttList: ByteBuf by byteBuf(10u)
 
-    override fun release() {
-        super.release()
-        bigDataChannel.release()
-        pttList.release()
-    }
-
     class Address(other: SimpleJceStruct) : SimpleJceStruct(other) {
 
         constructor() : this(SimpleJceStruct())
@@ -64,13 +58,6 @@ class FileStorageConfigPushData(other: SimpleJceStruct) : SimpleJceStruct(other)
         var sigUin: Long by number(3u)
         var connectFlag: Int by number(4u)
         var buffer: ByteBuf by byteBuf(5u)
-
-        override fun release() {
-            super.release()
-            sigSession.release()
-            keySession.release()
-            buffer.release()
-        }
 
     }
 

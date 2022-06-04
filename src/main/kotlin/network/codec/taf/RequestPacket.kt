@@ -34,11 +34,6 @@ class RequestPacket(other: SimpleJceStruct) : SimpleJceStruct(other) {
     var context: MutableMap<String, String> by map(9u)
     var status: MutableMap<String, String> by map(10u)
 
-    override fun release() {
-        super.release()
-        buffer.release()
-    }
-
     override fun toString() =
         "RequestPacket(version=$version, packetType=$packetType, messageType=$messageType, requestID=$requestID, " +
                 "servantName='$servantName', functionName='$functionName', buffer=$buffer, timeout=$timeout, " +

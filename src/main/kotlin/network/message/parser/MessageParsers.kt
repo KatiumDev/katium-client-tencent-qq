@@ -17,18 +17,15 @@ package katium.client.qq.network.message.parser
 
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageParsersInitializeEvent
+import katium.client.qq.util.CoroutineLazy
 import katium.core.util.event.post
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.runBlocking
 
 class MessageParsers(val client: QQClient) {
 
-    val parsers: Map<Int, MessageParser> by lazy {
+    val parsers = CoroutineLazy(client) {
         val parsers = mutableMapOf<Int, MessageParser>()
         registerBuiltinDecoders(parsers)
-        runBlocking(CoroutineName("Initialize Message Parsers")) {
-            client.bot.post(QQMessageParsersInitializeEvent(client, parsers))
-        }
+        client.bot.post(QQMessageParsersInitializeEvent(client, parsers))
         parsers.toMap()
     }
 
@@ -46,6 +43,6 @@ class MessageParsers(val client: QQClient) {
         parsers[82] = GroupMessageParser
     }
 
-    operator fun get(type: Int) = parsers[type]
+    operator fun get(type: Int) = parsers.getSync()[type]
 
 }

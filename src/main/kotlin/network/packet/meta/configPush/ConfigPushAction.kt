@@ -27,11 +27,6 @@ class ConfigPushAction(other: SimpleJceStruct) : SimpleJceStruct(other) {
     var buffer: ByteBuf by byteBuf(2u)
     var sequenceID: Long by number(3u)
 
-    override fun release() {
-        super.release()
-        buffer.release()
-    }
-
     override fun toString() = "ConfigPushAction(type=$type, buffer=$buffer, sequenceID=$sequenceID)"
 
 }

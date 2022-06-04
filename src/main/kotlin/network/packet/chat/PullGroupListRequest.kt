@@ -69,11 +69,6 @@ class PullGroupListRequest(other: SimpleJceStruct) : SimpleJceStruct(other) {
     var versionNumber: Long by number(7u, 1)
     var getLongGroupName: Byte by number(8u, 1)
 
-    override fun release() {
-        super.release()
-        cookies.release()
-    }
-
     override fun toString() = "PullGroupListRequest(uin=$uin, getMSFMessagesFlag=$getMSFMessagesFlag, " +
             "cookies=$cookies, groupInfo=$groupInfo, groupFlagExtension=$groupFlagExtension, version=$version, " +
             "companyID=$companyID, versionNumber=$versionNumber, getLongGroupName=$getLongGroupName)"

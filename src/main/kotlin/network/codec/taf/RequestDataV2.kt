@@ -29,13 +29,6 @@ class RequestDataV2(other: SimpleJceStruct) : SimpleJceStruct(other) {
     operator fun set(key1: String, key2: String, value: ByteBuf) =
         map.computeIfAbsent(key1) { mutableMapOf() }.put(key2, value)
 
-    override fun release() {
-        super.release()
-        map.values.forEach {
-            it.values.forEach(ByteBuf::release)
-        }
-    }
-
     override fun toString() = "RequestDataV2($map)"
 
 }

@@ -75,7 +75,28 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
         return data
     }
 
-    open fun release() {}
+    open fun release() {
+        fun release(tags: Collection<*>) {
+            tags.forEach { value ->
+                when (value) {
+                    is Map<*, *> -> {
+                        release(value.values)
+                    }
+                    is ByteBuf -> {
+                        value.release()
+                    }
+                    is Collection<*> -> {
+                        release(value)
+                    }
+                    is SimpleJceStruct -> {
+                        value.release()
+                    }
+                }
+            }
+        }
+        release(tags.values)
+    }
+
     operator fun unaryMinus() = release()
     override fun close() = release()
 

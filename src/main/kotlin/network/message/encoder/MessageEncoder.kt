@@ -22,6 +22,8 @@ import katium.core.message.content.MessageContent
 
 interface MessageEncoder<T : MessageContent> {
 
+    val shouldStandalone get() = false
+
     suspend fun encode(client: QQClient, context: QQChat, message: T): Array<PbMessageElements.Element>
 
     suspend fun createGeneralFlags(

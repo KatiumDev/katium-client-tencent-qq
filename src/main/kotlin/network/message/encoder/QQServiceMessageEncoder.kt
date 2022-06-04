@@ -25,6 +25,8 @@ import java.util.zip.DeflaterOutputStream
 
 object QQServiceMessageEncoder : MessageEncoder<QQServiceMessage> {
 
+    override val shouldStandalone: Boolean get() = true
+
     override suspend fun encode(
         client: QQClient,
         context: QQChat,
@@ -60,17 +62,17 @@ object QQServiceMessageEncoder : MessageEncoder<QQServiceMessage> {
         context: QQChat,
         message: QQServiceMessage
     ) = if (message.type == QQServiceMessage.Type.LONG_MESSAGE)
-            arrayOf(
-                PbMessageElements.GeneralFlags.newBuilder()
-                    .setLongTextFlag(1)
-                    .setLongTextResourceID(message.resourceID)
-                    .setPbReserve(ByteString.fromHex("7800F80100C80200"))
-                    .build()
-            )
-        else arrayOf(
+        arrayOf(
             PbMessageElements.GeneralFlags.newBuilder()
-                .setPbReserve(ByteString.fromHex("08097800C80100F00100F80100900200C80200980300A00320B00300C00300D00300E803008A04020803900480808010B80400C00400"))
+                .setLongTextFlag(1)
+                .setLongTextResourceID(message.resourceID)
+                .setPbReserve(ByteString.fromHex("7800F80100C80200"))
                 .build()
         )
+    else arrayOf(
+        PbMessageElements.GeneralFlags.newBuilder()
+            .setPbReserve(ByteString.fromHex("08097800C80100F00100F80100900200C80200980300A00320B00300C00300D00300E803008A04020803900480808010B80400C00400"))
+            .build()
+    )
 
 }

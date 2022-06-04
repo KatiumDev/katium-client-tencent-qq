@@ -35,11 +35,6 @@ class PullGroupListResponseData(other: SimpleJceStruct) : SimpleJceStruct(other)
     var troopListExtension: MutableSet<SimpleJceStruct> by set(9u)
     var groupInfoExtension: MutableSet<Long> by set(10u)
 
-    override fun release() {
-        super.release()
-        cookies.release()
-    }
-
     override fun toString() =
         "PullGroupListResponseData(uin=$uin, troopCount=$troopCount, result=$result, errorCode=$errorCode, " +
                 "cookies=$cookies, troopList=$troopList, troopListDelete=$troopListDelete, troopRank=$troopRank, " +

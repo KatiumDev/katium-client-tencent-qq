@@ -50,14 +50,6 @@ class PullFriendListResponseData(other: SimpleJceStruct) : SimpleJceStruct(other
     var getExtensionSnsResponseCode: Byte by number(25u)
     var subSrvResponseCode: SimpleJceStruct by struct(26u, SimpleJceStruct::class)
 
-    override fun release() {
-        super.release()
-        friends.forEach(SimpleJceStruct::release)
-        groups.forEach(SimpleJceStruct::release)
-        msfGroupInfo.forEach(SimpleJceStruct::release)
-        subSrvResponseCode.release()
-    }
-
     override fun toString() = "PullFriendListResponseData(requestType=$requestType, reflush=$reflush, " +
             "uin=$uin, friendStartIndex=$friendStartIndex, getFriendCount=$getFriendCount, " +
             "totalFriendsCount=$totalFriendsCount, friendCount=$friendCount, friends=$friends, " +
