@@ -14,24 +14,38 @@
  * limitations under the License.
  */
 @file:Suppress("FunctionName")
+@file:JvmName("QQServiceMessages")
 
 package katium.client.qq.message.builder
 
 import katium.client.qq.message.content.QQServiceMessage
 
-fun QQUrlShareMessage(url: String, title: String, description: String, image: String) = QQServiceMessage(
-    id = 1,
-    type = QQServiceMessage.Type.URL_SHARE,
-    content = "<?xml version=\"1.0\" encoding=\"utf-8\"?><msg templateID=\"12345\" action=\"web\" brief=\"[分享] $title\" serviceID=\"1\" url=\"$url\"><item layout=\"2\"><picture cover=\"$image\"/><title>$title</title><summary>$description</summary></item><source/></msg>",
-    resourceID = url
-)
+@JvmName("ofUrlShare")
+@JvmOverloads
+fun QQUrlShareMessage(url: String, title: String, description: String? = null, imageUrl: String? = null) =
+    QQServiceMessage(
+        id = 1,
+        type = QQServiceMessage.Type.URL_SHARE,
+        content = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                "<msg templateID=\"12345\" action=\"web\" brief=\"[分享] $title\" serviceID=\"1\" url=\"$url\">" +
+                "<item layout=\"2\">" +
+                (if (imageUrl != null) "<picture cover=\"$imageUrl\"/>" else "") +
+                "<title>$title</title>" +
+                (if (description != null) "<summary>$description</summary>" else "") +
+                "</item><source/></msg>",
+        resourceID = url
+    )
 
+@JvmName("ofXml")
+@JvmOverloads
 fun QQXmlMessage(xml: String, id: Int = 60) = QQServiceMessage(
     id = id,
     type = QQServiceMessage.Type.XML,
     content = xml
 )
 
+@JvmName("ofJson")
+@JvmOverloads
 fun QQJsonMessage(json: String, id: Int = 1) = QQServiceMessage(
     id = id,
     type = QQServiceMessage.Type.JSON,

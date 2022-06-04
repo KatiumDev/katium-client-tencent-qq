@@ -20,10 +20,7 @@ import katium.client.qq.message.content.QQServiceMessage
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageEncodersInitializeEvent
 import katium.client.qq.network.pb.PbMessageElements
-import katium.core.message.content.Image
-import katium.core.message.content.MessageChain
-import katium.core.message.content.MessageContent
-import katium.core.message.content.PlainText
+import katium.core.message.content.*
 import katium.core.util.event.post
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
@@ -47,6 +44,8 @@ class MessageEncoders(val client: QQClient) {
         encoders[PlainText::class] = PlainTextEncoder
         encoders[Image::class] = ImageEncoder
         encoders[QQServiceMessage::class] = QQServiceMessageEncoder
+        encoders[At::class] = AtEncoder
+        encoders[AtAll::class] = AtAllEncoder
     }
 
     operator fun get(type: KClass<out MessageContent>): MessageEncoder<*>? =
@@ -56,7 +55,7 @@ class MessageEncoders(val client: QQClient) {
 
     @Suppress("UNCHECKED_CAST")
     operator fun get(content: MessageContent) = (this[content::class]
-        ?: throw UnsupportedOperationException("No message encoder for ${content::class}")) as MessageEncoder<MessageContent>
+        ?: FallbackEncoder) as MessageEncoder<MessageContent>
 
     suspend fun encode(chat: QQChat, content: MessageContent, withGeneralFlags: Boolean = false) =
         (this[content].encode(client, chat, content) + (if (withGeneralFlags) createGeneralFlags(chat, content).map {

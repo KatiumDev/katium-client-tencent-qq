@@ -43,8 +43,8 @@ object QQServiceMessageEncoder : MessageEncoder<QQServiceMessage> {
         return if (message.id == 1) {
             arrayOf(
                 PbMessageElements.Element.newBuilder()
-                    .setPlainText(
-                        PbMessageElements.PlainText.newBuilder()
+                    .setText(
+                        PbMessageElements.Text.newBuilder()
                             .setString(message.resourceID)
                             .build()
                     )

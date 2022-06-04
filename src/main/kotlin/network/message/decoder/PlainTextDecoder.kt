@@ -15,14 +15,32 @@
  */
 package katium.client.qq.network.message.decoder
 
+import katium.client.qq.QQLocalChatID
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
+import katium.core.message.builder.AtAll
+import katium.core.message.content.At
 import katium.core.message.content.PlainText
+import java.io.DataInputStream
 
 object PlainTextDecoder : MessageDecoder {
 
     override suspend fun decode(client: QQClient, message: PbMessages.Message, element: PbMessageElements.Element) =
-        PlainText(element.plainText.string)
+        element.text.run {
+            if (!hasAttribute6Buf() || attribute6Buf.isEmpty) {
+                PlainText(string)
+            } else {
+                val uin = DataInputStream(attribute6Buf.newInput()).use {
+                    it.skip(7)
+                    it.readInt().toLong()
+                }
+                if (uin != 0L) {
+                    At(QQLocalChatID(uin))
+                } else {
+                    AtAll()
+                }
+            }
+        }
 
 }

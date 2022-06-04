@@ -6,7 +6,7 @@ option java_package = "katium.client.qq.network.pb";
 option java_outer_classname = "PbMessageElements";
 
 message Element {
-  optional PlainText plainText = 1;
+  optional Text text = 1;
   //optional Face face = 2;
   //optional OnlineImage onlineImage = 3;
   optional NotOnlineImage notOnlineImage = 4;
@@ -61,7 +61,7 @@ message Element {
   optional CommonElem commonElem = 53;*/
 }
 
-message PlainText {
+message Text {
   string string = 1;
   optional string link = 2;
   optional bytes attribute6Buf = 3;

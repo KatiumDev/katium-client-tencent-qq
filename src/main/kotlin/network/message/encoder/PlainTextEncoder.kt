@@ -28,8 +28,8 @@ object PlainTextEncoder : MessageEncoder<PlainText> {
         message: PlainText
     ) = arrayOf(
         PbMessageElements.Element.newBuilder()
-            .setPlainText(
-                PbMessageElements.PlainText.newBuilder()
+            .setText(
+                PbMessageElements.Text.newBuilder()
                     .setString(message.text)
             )
             .build()
