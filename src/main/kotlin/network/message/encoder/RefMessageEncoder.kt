@@ -16,15 +16,16 @@ object RefMessageEncoder : MessageEncoder<RefMessage> {
 
     override val priority get() = 15
 
+    override val maxCountOneMessage get() = 1
+
     override suspend fun encode(
-        client: QQClient, context: QQChat, message: RefMessage
+        client: QQClient, context: QQChat, message: RefMessage, isStandalone: Boolean
     ): Array<PbMessageElements.Element> {
         val ref = message.ref as QQMessageRef
         val msg = ref.message!!
         val content =
             msg.content.select { client.messageEncoders.shouldStandalone(it) }.let { (standaloneParts, mainParts) ->
-                if (mainParts.isNotEmpty()) mainParts else
-                    arrayOf(PlainText(standaloneParts.joinToString(separator = "") { it.asString() }))
+                if (mainParts.isNotEmpty()) mainParts else arrayOf(PlainText(standaloneParts.joinToString(separator = "") { it.asString() }))
             }
         return arrayOf(
             PbMessageElements.Element.newBuilder().setSource(
@@ -34,7 +35,11 @@ object RefMessageEncoder : MessageEncoder<RefMessage> {
                     .setRichMessage(ByteString.empty()).setPbReserve(ByteString.empty())
                     .setSourceMessage(ByteString.empty()).setTroopName(ByteString.empty())
             ).build()
-        ) + if (message is QuoteReply) AtEncoder.encode(client, context, At(msg.sender)) else emptyArray()
+        ) + (if (message is QuoteReply) AtEncoder.encode(
+            client, context, At(msg.sender), false
+        ) else emptyArray()) + (if (isStandalone && message !is QuoteReply) PlainTextEncoder.encode(
+            client, context, PlainText("^"), false
+        ) else emptyArray())
     }
 
 }

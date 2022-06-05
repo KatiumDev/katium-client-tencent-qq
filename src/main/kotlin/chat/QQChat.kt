@@ -19,6 +19,7 @@ import katium.client.qq.QQBot
 import katium.client.qq.QQLocalChatID
 import katium.client.qq.group.QQGroup
 import katium.client.qq.message.QQMessage
+import katium.client.qq.message.content.QQServiceMessage
 import katium.client.qq.network.packet.chat.SendMessageRequest
 import katium.client.qq.network.packet.chat.SendMessageResponse
 import katium.client.qq.network.pb.PbMessagePackets
@@ -36,7 +37,9 @@ import kotlin.random.Random
 class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHeader: PbMessagePackets.RoutingHeader) :
     Chat(bot, QQLocalChatID(id), context) {
 
-    override suspend fun sendMessage(content: MessageContent): MessageRef? {
+    override suspend fun sendMessage(content: MessageContent) = sendMessage(content, false)
+
+    private suspend fun sendMessage(content: MessageContent, isStandalone: Boolean): MessageRef? {
         val client = bot.client
         return bot.post(MessagePreSendEvent(bot, this, content.simplest))?.let {
             var (standaloneParts, mainParts) = it.content.select { part -> client.messageEncoders.shouldStandalone(part) }
@@ -47,7 +50,34 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
                 }
                 if (mainParts.isEmpty())
                     return null
-                mainParts.sortByDescending { part -> client.messageEncoders.getPriority(part) }
+                if (!isStandalone) {
+                    mainParts.sortByDescending { part -> client.messageEncoders.getPriority(part) }
+                    mainParts.mapNotNull { part -> client.messageEncoders.find(part::class) }
+                        .toSet()
+                        .filter { (_, encoder) -> encoder.maxCountOneMessage != null }
+                        .forEach { (type, encoder) ->
+                            var count = 0
+                            mainParts.filter { part -> type.isInstance(part) }
+                                .toSet()
+                                .forEach { part ->
+                                    count++
+                                    if (count > encoder.maxCountOneMessage!!) {
+                                        run { // Remove from mainParts
+                                            val oldParts = mainParts
+                                            mainParts = Array(mainParts.size - 1) { MessageChain.EMPTY }
+                                            var index = 0
+                                            oldParts.forEach { oldPart ->
+                                                if (oldPart != part) {
+                                                    mainParts[index] = oldPart
+                                                    index++
+                                                }
+                                            }
+                                        }
+                                        standaloneParts += part
+                                    }
+                                }
+                        }
+                }
                 val isGroup = context is QQGroup
                 val messageSequence =
                     if (isGroup) client.allocGroupMessageSequenceID()
@@ -62,10 +92,12 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
                         elements = client.messageEncoders.encode(
                             this,
                             MessageChain(*mainParts).simplest,
-                            withGeneralFlags = isGroup
+                            withGeneralFlags = isGroup,
+                            isStandalone = isStandalone,
                         ),
                         messageRandom = messageRandom,
-                        syncCookieTime = if (isGroup) null else time
+                        syncCookieTime = if (isGroup) null else time,
+                        forward = mainParts.any { part -> part is QQServiceMessage }
                     )
                 ) as SendMessageResponse
                 if (response.errorMessage != null) {
@@ -81,7 +113,7 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
                             )
                                 .find { message -> message.messageRandom == messageRandom }
                         if (message != null) {
-                            return@let message.ref
+                            return@runCatching message.ref
                         }
                         delay(100L * i)
                     }
@@ -93,7 +125,7 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
                 )
                 message.ref
             }.onSuccess {
-                standaloneParts.forEach { part -> sendMessage(part) }
+                standaloneParts.forEach { part -> sendMessage(part, true) }
             }.getOrThrow()
         }
     }

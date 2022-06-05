@@ -46,21 +46,29 @@ class MessageEncoders(val client: QQClient) {
         encoders[RefMessage::class] = RefMessageEncoder
     }
 
-    operator fun get(type: KClass<out MessageContent>): MessageEncoder<*>? =
-        encoders.getSync()[type] ?: type.superclasses.filter { it.isSubclassOf(MessageContent::class) }.map {
-            @Suppress("UNCHECKED_CAST") get(it as KClass<out MessageContent>)
-        }.firstOrNull()
+    fun find(type: KClass<out MessageContent>): Pair<KClass<out MessageContent>, MessageEncoder<*>>? {
+        val encoder = encoders.getSync()[type]
+        return if (encoder != null) {
+            type to encoder
+        } else {
+            type.superclasses.filter { it.isSubclassOf(MessageContent::class) }.map {
+                @Suppress("UNCHECKED_CAST") find(it as KClass<out MessageContent>)
+            }.firstOrNull()
+        }
+    }
+
+    operator fun get(type: KClass<out MessageContent>) = find(type)?.second
 
     @Suppress("UNCHECKED_CAST")
-    operator fun get(content: MessageContent) = (this[content::class]
-        ?: FallbackEncoder) as MessageEncoder<MessageContent>
+    operator fun get(content: MessageContent) =
+        (this[content::class] ?: FallbackEncoder) as MessageEncoder<MessageContent>
 
     fun shouldStandalone(content: MessageContent) = get(content).shouldStandalone
 
     fun getPriority(content: MessageContent) = get(content).priority
 
-    suspend fun encode(chat: QQChat, content: MessageContent, withGeneralFlags: Boolean = false) =
-        (this[content].encode(client, chat, content) + (if (withGeneralFlags) createGeneralFlags(chat, content).map {
+    suspend fun encode(chat: QQChat, content: MessageContent, withGeneralFlags: Boolean = false, isStandalone: Boolean = false) =
+        (this[content].encode(client, chat, content, isStandalone) + (if (withGeneralFlags) createGeneralFlags(chat, content).map {
             PbMessageElements.Element.newBuilder().setGeneralFlags(it).build()
         }.toTypedArray() else emptyArray())).toList()
 

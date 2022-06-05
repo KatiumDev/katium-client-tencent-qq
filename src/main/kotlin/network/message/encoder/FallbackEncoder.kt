@@ -8,17 +8,11 @@ import katium.core.message.content.MessageContent
 object FallbackEncoder : MessageEncoder<MessageContent> {
 
     override suspend fun encode(
-        client: QQClient,
-        context: QQChat,
-        message: MessageContent
+        client: QQClient, context: QQChat, message: MessageContent, isStandalone: Boolean
     ) = arrayOf(
-        PbMessageElements.Element.newBuilder()
-            .setText(
-                PbMessageElements.Text.newBuilder()
-                    .setString(message.asString())
-                    .build()
-            )
-            .build()
+        PbMessageElements.Element.newBuilder().setText(
+            PbMessageElements.Text.newBuilder().setString(message.asString()).build()
+        ).build()
     )
 
 }

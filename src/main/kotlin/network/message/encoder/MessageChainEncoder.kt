@@ -24,8 +24,9 @@ object MessageChainEncoder : MessageEncoder<MessageChain> {
     override suspend fun encode(
         client: QQClient,
         context: QQChat,
-        message: MessageChain
-    ) = message.parts.flatMap { client.messageEncoders.encode(context, it) }.toTypedArray()
+        message: MessageChain,
+        isStandalone: Boolean
+    ) = message.parts.flatMap { client.messageEncoders.encode(context, it, isStandalone) }.toTypedArray()
 
     override suspend fun createGeneralFlags(
         client: QQClient,
