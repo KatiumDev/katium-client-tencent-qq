@@ -26,6 +26,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import okio.IOException
 import java.net.Inet4Address
+import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import kotlin.coroutines.resume
@@ -35,13 +36,16 @@ class Highway(val client: QQClient) {
 
     companion object {
 
-        fun decodeIP(address: Int): InetAddress =
+        fun decodeIPv4(address: Int): InetAddress =
             Inet4Address.getByAddress("", Ints.toByteArray(address).reversedArray())
+
+        fun decodeIPv6(address: ByteArray): InetAddress =
+            Inet6Address.getByAddress("", address)
 
     }
 
-    lateinit var sigSession: ByteArray
-    lateinit var sessionKey: ByteArray
+    var sessionSig: ByteArray? = null
+    var sessionKey: ByteArray? = null
 
     val ssoAddresses = mutableListOf<InetSocketAddress>()
     val otherAddresses = mutableListOf<InetSocketAddress>()
@@ -53,18 +57,14 @@ class Highway(val client: QQClient) {
     suspend fun connect(address: InetSocketAddress): SocketChannel {
         lateinit var channel: SocketChannel
         suspendCancellableCoroutine<Unit> { continuation ->
-            Bootstrap()
-                .channel(NioSocketChannel::class.java)
-                .group(client.eventLoopGroup)
+            Bootstrap().channel(NioSocketChannel::class.java).group(client.eventLoopGroup)
                 .option(ChannelOption.TCP_NODELAY, client.bot.options.highwayTcpNoDelay)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, client.bot.options.highwayConnectTimeout)
                 .handler(object : ChannelInitializer<SocketChannel>() {
                     override fun initChannel(ch: SocketChannel) {
                         channel = ch
                     }
-                })
-                .connect(address)
-                .addListener {
+                }).connect(address).addListener {
                     if (it.isSuccess) {
                         continuation.resume(Unit)
                     } else {
@@ -89,8 +89,7 @@ class Highway(val client: QQClient) {
 
     suspend fun upload(
         transaction: HighwayTransaction,
-        threadCount: Int = if (transaction.body.size > client.bot.options.highwayParallelUploadMinSize)
-            client.bot.options.highwayParallelThreads else 1
+        threadCount: Int = if (transaction.body.size > client.bot.options.highwayParallelUploadMinSize) client.bot.options.highwayParallelThreads else 1
     ) {
         val chunkCount = (transaction.body.size + transaction.chunkSize) / transaction.chunkSize
         assert(chunkCount != 0)
@@ -103,8 +102,7 @@ class Highway(val client: QQClient) {
                             it.sendEcho()
                             while (true) {
                                 val chunk = currentChunk.getAndIncrement()
-                                if (chunk >= chunkCount)
-                                    break
+                                if (chunk >= chunkCount) break
                                 val (response, _) = it.sendChunk(transaction, chunk)
                                 if (response.errorCode != 0) {
                                     throw IllegalStateException("Highway upload failed: ${response.errorCode}")

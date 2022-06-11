@@ -19,6 +19,7 @@ import com.google.common.hash.Hashing
 import com.google.protobuf.ByteString
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
+import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
@@ -26,6 +27,7 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import katium.client.qq.QQBot
 import katium.client.qq.group.QQGroup
+import katium.client.qq.message.QQMessage
 import katium.client.qq.network.auth.DeviceInfo
 import katium.client.qq.network.auth.LoginSigInfo
 import katium.client.qq.network.auth.ProtocolType
@@ -47,6 +49,8 @@ import katium.client.qq.network.packet.login.UpdateSigRequest
 import katium.client.qq.network.packet.meta.ClientRegisterPacket
 import katium.client.qq.network.packet.review.PullGroupSystemMessagesRequest
 import katium.client.qq.network.packet.review.PullGroupSystemMessagesResponse
+import katium.client.qq.network.pb.PbLongMessages
+import katium.client.qq.network.pb.PbMultiMessages
 import katium.client.qq.network.pb.PbSessionToken
 import katium.client.qq.network.sso.SsoServerListManager
 import katium.client.qq.network.sync.Synchronizer
@@ -59,15 +63,24 @@ import katium.core.review.ReviewMessage
 import katium.core.util.event.post
 import katium.core.util.event.register
 import katium.core.util.netty.EmptyByteBuf
+import katium.core.util.netty.heapBuffer
+import katium.core.util.netty.toArray
+import katium.core.util.netty.use
+import katium.core.util.okhttp.GlobalHttpClient
+import katium.core.util.okhttp.await
+import katium.core.util.okhttp.expected
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import okhttp3.Request
 import okio.IOException
+import java.io.ByteArrayInputStream
 import java.io.Closeable
 import java.io.File
 import java.net.InetSocketAddress
 import java.util.*
+import java.util.zip.GZIPInputStream
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -116,8 +129,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     val deviceInfo = selectDeviceInfo()
     val version = selectClientVersion()
     val passwordMD5: ByteArray by lazy {
-        @Suppress("DEPRECATION")
-        if (bot.options.passwordMD5 != null) HexFormat.of().parseHex(bot.options.passwordMD5)
+        @Suppress("DEPRECATION") if (bot.options.passwordMD5 != null) HexFormat.of().parseHex(bot.options.passwordMD5)
         else Hashing.md5().hashBytes(bot.options.password!!.toByteArray()).asBytes()
     }
 
@@ -159,10 +171,8 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
             synchronized(sig) { sig.d2Key = TeaCipher.decodeByteKey(sig.d2KeyEncoded) }
             sig.tgt = session.tgt.toByteArray()
             deviceInfo.tgtgtKey = session.tgtgtKey.toByteArray()
-            if (session.hasT133())
-                sig.t133 = session.t133.toByteArray()
-            if (session.hasEncryptedA1())
-                sig.encryptedA1 = session.encryptedA1.toByteArray()
+            if (session.hasT133()) sig.t133 = session.t133.toByteArray()
+            if (session.hasEncryptedA1()) sig.encryptedA1 = session.encryptedA1.toByteArray()
             if (session.hasWtSessionTicketKey()) {
                 oicqCodec.wtSessionTicketKey = session.wtSessionTicketKey.toByteArray()
                 oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(oicqCodec.wtSessionTicketKey!!.toUByteArray())
@@ -173,23 +183,15 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     }
 
     internal fun writeSession() {
-        sessionFile.writeBytes(
-            PbSessionToken.SessionToken.newBuilder()
-                .setUin(uin)
-                .setD2(ByteString.copyFrom(sig.d2))
-                .setD2Key(ByteString.copyFrom(sig.d2KeyEncoded.toByteArray()))
-                .setTgt(ByteString.copyFrom(sig.tgt))
-                .setTgtgtKey(ByteString.copyFrom(deviceInfo.tgtgtKey))
-                .apply { if (sig.t133 != null) t133 = ByteString.copyFrom(sig.t133!!) }
-                .apply {
-                    if (sig.encryptedA1 != null) encryptedA1 = ByteString.copyFrom(sig.encryptedA1!!)
-                }
-                .apply {
-                    if (oicqCodec.wtSessionTicketKey != null) wtSessionTicketKey =
-                        ByteString.copyFrom(oicqCodec.wtSessionTicketKey!!)
-                }
-                .build()
-                .toByteArray()
+        sessionFile.writeBytes(PbSessionToken.SessionToken.newBuilder().setUin(uin).setD2(ByteString.copyFrom(sig.d2))
+            .setD2Key(ByteString.copyFrom(sig.d2KeyEncoded.toByteArray())).setTgt(ByteString.copyFrom(sig.tgt))
+            .setTgtgtKey(ByteString.copyFrom(deviceInfo.tgtgtKey))
+            .apply { if (sig.t133 != null) t133 = ByteString.copyFrom(sig.t133!!) }.apply {
+                if (sig.encryptedA1 != null) encryptedA1 = ByteString.copyFrom(sig.encryptedA1!!)
+            }.apply {
+                if (oicqCodec.wtSessionTicketKey != null) wtSessionTicketKey =
+                    ByteString.copyFrom(oicqCodec.wtSessionTicketKey!!)
+            }.build().toByteArray()
         )
         logger.info("Session cache wrote")
     }
@@ -209,11 +211,8 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
             logger.info("Trying connect to $currentServerAddress...(retry $retryTimes, server $currentServerCounter/${serverAddresses.size})")
             try {
                 suspendCancellableCoroutine<Unit> { continuation ->
-                    Bootstrap()
-                        .channel(NioSocketChannel::class.java)
-                        .group(eventLoopGroup)
-                        .option(ChannelOption.TCP_NODELAY, true)
-                        .handler(object : ChannelInitializer<SocketChannel>() {
+                    Bootstrap().channel(NioSocketChannel::class.java).group(eventLoopGroup)
+                        .option(ChannelOption.TCP_NODELAY, true).handler(object : ChannelInitializer<SocketChannel>() {
                             override fun initChannel(ch: SocketChannel) {
                                 channel = ch
                                 this@QQClient.initChannel()
@@ -221,9 +220,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
                                     bot.post(QQChannelInitializeEvent(this@QQClient))
                                 }
                             }
-                        })
-                        .connect(currentServerAddress)
-                        .addListener {
+                        }).connect(currentServerAddress).addListener {
                             if (it.isSuccess) {
                                 continuation.resume(Unit)
                             } else {
@@ -244,8 +241,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     }
 
     private fun initChannel() {
-        channel!!.pipeline()
-            .addLast("RequestPacketEncoder", RequestPacketEncoder(this))
+        channel!!.pipeline().addLast("RequestPacketEncoder", RequestPacketEncoder(this))
             .addLast("ResponsePacketDecoder", ResponsePacketDecoder(this))
             .addLast("TransportPacketDecoder", TransportPacketDecoder(this))
             .addLast("InboundPacketHandler", InboundPacketHandler(this))
@@ -327,15 +323,20 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     }
 
     suspend fun pullSystemMessages() {
-        val safeMessages = (sendAndWait(PullGroupSystemMessagesRequest.create(this, suspicious = false))
-                as PullGroupSystemMessagesResponse).messages
-        val suspiciousMessages = (sendAndWait(PullGroupSystemMessagesRequest.create(this, suspicious = true))
-                as PullGroupSystemMessagesResponse).messages
+        val safeMessages = (sendAndWait(
+            PullGroupSystemMessagesRequest.create(
+                this, suspicious = false
+            )
+        ) as PullGroupSystemMessagesResponse).messages
+        val suspiciousMessages = (sendAndWait(
+            PullGroupSystemMessagesRequest.create(
+                this, suspicious = true
+            )
+        ) as PullGroupSystemMessagesResponse).messages
         reviewMessages = (safeMessages + suspiciousMessages).toSet()
     }
 
-    fun startSyncMessages() =
-        send(PullMessagesRequest.create(this))
+    fun startSyncMessages() = send(PullMessagesRequest.create(this))
 
     suspend fun getFriends() = cachedFriends.get()
 
@@ -348,19 +349,13 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         while (friends.size < totalCount) {
             val response = (sendAndWait(
                 PullFriendListRequest.create(
-                    this,
-                    friends = friends.size.toShort() to 150,
-                    groups = 0.toShort() to 0
+                    this, friends = friends.size.toShort() to 150, groups = 0.toShort() to 0
                 )
             ) as PullFriendListResponse).response
             totalCount = response.totalFriendsCount.toInt()
-            friends += response.friends
-                .asSequence()
-                .map { PullFriendListResponseData.Friend(it) }
-                .map { QQUser(bot = bot, id = it.uin, name = it.nickName, isContact = true) }
-                .map(QQUser::asContact)
-                .requireNoNulls()
-                .associateBy { it.id }
+            friends += response.friends.asSequence().map { PullFriendListResponseData.Friend(it) }
+                .map { QQUser(bot = bot, id = it.uin, name = it.nickName, isContact = true) }.map(QQUser::asContact)
+                .requireNoNulls().associateBy { it.id }
         }
         logger.info("Got ${friends.size} friends")
         return friends.toMap()
@@ -377,22 +372,48 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         do {
             val response = (sendAndWait(
                 PullGroupListRequest.create(
-                    this,
-                    cookies = cookies
+                    this, cookies = cookies
                 )
             ) as PullGroupListResponse).response
             cookies = response.cookies
             cookies.retain()
-            groups += response.troopList
-                .asSequence()
-                .map { PullGroupListResponseData.Troop(it) }
-                .map { QQGroup(bot = bot, id = it.groupCode, name = it.groupName, isContact = true) }
-                .requireNoNulls()
+            groups += response.troopList.asSequence().map { PullGroupListResponseData.Troop(it) }
+                .map { QQGroup(bot = bot, id = it.groupCode, name = it.groupName, isContact = true) }.requireNoNulls()
                 .associateBy { it.id }
         } while (cookies.isReadable)
         cookies.release()
         logger.info("Got ${groups.size} groups")
         return groups.toMap()
+    }
+
+    suspend fun downloadMultiMessages(url: String, key: UByteArray): List<QQMessage> {
+        val httpResponse = GlobalHttpClient.newCall(
+            Request.Builder().get().url(url).build()
+        ).await().expected(200).body.bytes()
+
+        PooledByteBufAllocator.DEFAULT.heapBuffer(httpResponse).use { reader ->
+            if (reader.readByte().toInt() != 40) {
+                throw IllegalStateException("Unexpected multi messages thumb data: ${reader.getByte(0)}")
+            }
+            val headerSize = reader.readInt()
+            val bodySize = reader.readInt()
+            reader.skipBytes(headerSize)
+            val body = PbLongMessages.LongMessagesResponse.parseFrom(
+                QQTeaCipher(key).decrypt(reader.readRetainedSlice(bodySize)).toArray(release = true)
+            )
+            if (body.downloadCount != 1) {
+                throw IllegalStateException("Wrong long messages download response size: ${body.downloadCount}")
+            } else {
+                val content = withContext(Dispatchers.IO) {
+                    GZIPInputStream(ByteArrayInputStream(body.getDownload(0).content.toByteArray())).readAllBytes()
+                }
+                val messages = mutableListOf<QQMessage>()
+                for (message in PbMultiMessages.MultiMessagesHighwayBody.parseFrom(content).messageList) {
+                    messages += messageParsers.parsers.get()[message.header.type]!!.parse(this, message)
+                }
+                return messages.toList()
+            }
+        }
     }
 
 }

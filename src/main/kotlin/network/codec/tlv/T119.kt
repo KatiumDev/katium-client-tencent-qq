@@ -17,7 +17,7 @@ package katium.client.qq.network.codec.tlv
 
 import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.client.qq.network.codec.crypto.tea.TeaCipher
@@ -95,12 +95,12 @@ fun TlvMap.applyT119(client: QQClient) {
     if (0x322 in this) client.sig.deviceToken = this[0x322]!!.toArray(false)
 
     @Suppress("DEPRECATION")
-    val key = Hashing.md5().hashBytes(ByteBufAllocator.DEFAULT.buffer {
+    val key = Hashing.md5().hashBytes(PooledByteBufAllocator.DEFAULT.buffer {
         writeBytes(client.passwordMD5)
         writeInt(0) // ByteArray(4)
         writeInt(client.uin.toInt())
     }.toArray(true)).asBytes().toUByteArray()
-    QQTeaCipher(key).decrypt(ByteBufAllocator.DEFAULT.buffer(client.sig.encryptedA1!!)).use {
+    QQTeaCipher(key).decrypt(PooledByteBufAllocator.DEFAULT.buffer(client.sig.encryptedA1!!)).use {
         if (it.readableBytes() > 51 + 16) {
             it.skipBytes(51)
             client.deviceInfo.tgtgtKey = ByteArray(16)

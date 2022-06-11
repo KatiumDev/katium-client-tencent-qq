@@ -16,7 +16,7 @@
 package katium.client.qq.network.packet.chat
 
 import io.netty.buffer.ByteBuf
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 import katium.client.qq.network.codec.packet.TransportPacket
@@ -62,7 +62,7 @@ class PullFriendListRequest(other: SimpleJceStruct) : SimpleJceStruct(other) {
                         getGroupInfo = if (groups.second <= 0) 0 else 1
                         groupStartIndex = groups.first.toByte()
                         groupCount = groups.second.toByte()
-                        d50 = ByteBufAllocator.DEFAULT.heapBuffer(
+                        d50 = PooledByteBufAllocator.DEFAULT.heapBuffer(
                             PbD50.D50Request.newBuilder()
                                 .setAppID(1002)
                                 .setMusicSwitch(1)

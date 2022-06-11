@@ -28,12 +28,8 @@ interface MessageEncoder<T : MessageContent> {
 
     val maxCountOneMessage: Int? get() = null
 
-    suspend fun encode(client: QQClient, context: QQChat, message: T, isStandalone: Boolean): Array<PbMessageElements.Element>
-
-    suspend fun createGeneralFlags(
-        client: QQClient,
-        context: QQChat,
-        message: T
-    ): Array<PbMessageElements.GeneralFlags> = emptyArray()
+    suspend fun encode(
+        client: QQClient, context: QQChat, message: T, withGeneralFlags: Boolean, isStandalone: Boolean
+    ): Array<PbMessageElements.Element>
 
 }

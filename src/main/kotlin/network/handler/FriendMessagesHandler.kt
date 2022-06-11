@@ -41,12 +41,10 @@ object FriendMessagesHandler : EventListener {
             val data = packet.data
             client.send(
                 PullMessagesRequest.create(
-                    client,
-                    syncCookies = ByteString.copyFrom(data.notifyCookie.toArray(release = false))
+                    client, syncCookies = ByteString.copyFrom(data.notifyCookie.toArray(release = false))
                 )
             )
-        }
-        if (packet is PullMessagesResponse) {
+        } else if (packet is PullMessagesResponse) {
             val response = packet.response
             if (response.result != 0) { // Retry if error
                 client.launch(CoroutineName("Retry Pull Messages")) {
@@ -66,14 +64,9 @@ object FriendMessagesHandler : EventListener {
             }
             val isInitialSync = synchronzier.friendInitialSync.getAndSet(false)
             if (response.messagesList.isEmpty()) return
-            val messages = response.messagesList.asSequence()
-                .filterNot { it.messagesList.isEmpty() }
-                .flatMap { pair ->
-                    pair.messagesList.asSequence()
-                        .filter { it.header.time > pair.lastReadTime }
-                }
-                .toList()
-                .also {
+            val messages = response.messagesList.asSequence().filterNot { it.messagesList.isEmpty() }.flatMap { pair ->
+                    pair.messagesList.asSequence().filter { it.header.time > pair.lastReadTime }
+                }.toList().also {
                     // Delete messages
                     if (it.isNotEmpty()) {
                         client.send(DeleteMessagesRequest.create(client, items = it.map {
@@ -86,12 +79,9 @@ object FriendMessagesHandler : EventListener {
                             }.build()
                         }))
                     }
-                }
-                .filter {
+                }.filter {
                     synchronzier.writePullMessagesCache(
-                        it.header.uid,
-                        it.header.sequence,
-                        it.header.time
+                        it.header.uid, it.header.sequence, it.header.time
                     )
                 }
             synchronzier.recordUnreadFriendMessages(response.messagesList.map(PbMessagePackets.UinPairMessage::getPeerUin))

@@ -15,7 +15,7 @@
  */
 package katium.client.qq.network.packet.chat
 
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbMessagePackets
@@ -36,7 +36,7 @@ object PullGroupHistoryMessagesRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "MessageSvc.PbGetGroupMsg",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(createRequest(groupCode, beginSequence, endSequence).toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(createRequest(groupCode, beginSequence, endSequence).toByteArray())
         )
 
     fun createRequest(

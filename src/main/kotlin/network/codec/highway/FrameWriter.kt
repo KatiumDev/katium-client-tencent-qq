@@ -17,11 +17,9 @@ package katium.client.qq.network.codec.highway
 
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.pb.PbHighway
-import katium.core.util.netty.writeUBytes
 
 fun ByteBuf.writeHighwayFrame(
-    header: PbHighway.HighwayRequestHeader,
-    body: UByteArray?
+    header: PbHighway.HighwayRequestHeader, body: ByteArray?
 ) {
     writeByte(40)
     val headerBytes = header.toByteArray()
@@ -29,7 +27,7 @@ fun ByteBuf.writeHighwayFrame(
     writeInt(body?.size ?: 0)
     writeBytes(headerBytes)
     if (body != null) {
-        writeUBytes(body)
+        writeBytes(body)
     }
     writeByte(41)
 }

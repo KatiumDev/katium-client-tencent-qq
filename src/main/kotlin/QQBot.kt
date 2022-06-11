@@ -44,8 +44,12 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
         client.close()
     }
 
+    @Synchronized
     override fun stop() {
-        loopContinuation!!.resume(Unit)
+        if(loopContinuation != null) {
+            loopContinuation!!.resume(Unit)
+            loopContinuation = null
+        }
     }
 
     override val allContacts: Set<Contact> get() = client.getFriendsSync().values.toSet()

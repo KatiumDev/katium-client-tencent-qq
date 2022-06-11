@@ -28,6 +28,7 @@ import katium.client.qq.network.packet.review.PullGroupSystemMessagesResponse
 import katium.core.util.event.post
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.resumeWithException
 
 class TransportPacketDecoder(val client: QQClient) : MessageToMessageDecoder<TransportPacket.Response>() {
 
@@ -54,6 +55,8 @@ class TransportPacketDecoder(val client: QQClient) : MessageToMessageDecoder<Tra
         decoders["friendlist.getFriendGroupList"] = ::PullFriendListResponse
         decoders["friendlist.GetTroopListReqV2"] = ::PullGroupListResponse
         decoders["OidbSvc.0x88d_0"] = ::PullGroupInfoResponse
+        decoders["MultiMsg.ApplyUp"] = ::MultiMessagesUploadResponse
+        decoders["MultiMsg.ApplyDown"] = ::MultiMessagesDownloadResponse
     }
 
     override fun decode(ctx: ChannelHandlerContext, msg: TransportPacket.Response, out: MutableList<Any>) {
@@ -65,6 +68,7 @@ class TransportPacketDecoder(val client: QQClient) : MessageToMessageDecoder<Tra
                 } else msg
             )
         } catch (e: Throwable) {
+            client.packetHandlers[msg.sequenceID]?.resumeWithException(e)
             throw RuntimeException("command=${msg.command}, sequence=${msg.sequenceID}", e)
         }
     }

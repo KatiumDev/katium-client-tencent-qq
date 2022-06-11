@@ -15,24 +15,28 @@
  */
 package katium.client.qq.network.message.decoder
 
+import com.google.common.hash.HashCode
 import katium.client.qq.chat.QQChat
+import katium.client.qq.group.QQGroup
 import katium.client.qq.message.content.QQImage
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
-import katium.core.message.content.MessageContent
+import java.util.*
 
 object CustomFaceDecoder : MessageDecoder {
 
     override suspend fun decode(
-        client: QQClient,
-        context: QQChat,
-        message: PbMessages.Message,
-        element: PbMessageElements.Element
+        client: QQClient, context: QQChat, message: PbMessages.Message, element: PbMessageElements.Element
     ) = element.customFace.run {
+        val url = if (hasOrigUrl() && origUrl.isNotEmpty()) {
+            "https://${if(context.context is QQGroup) "gchat" else "c2cpicdw"}.qpic.cn$origUrl"
+        } else {
+            context.resolveImageUrl(HashCode.fromBytes(md5.toByteArray()), size)
+        }
         QQImage(
             resourceKey = fileID.toString(),
-            originUrl = origUrl.substring(1), // remove `/` prefix
+            contentUrl = url,
             md5 = md5,
             filePath = filePath,
             size = size,

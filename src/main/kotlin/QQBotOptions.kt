@@ -73,4 +73,9 @@ class QQBotOptions(config: Map<String, String>) {
     val highwayParallelUploadMinSize = config["qq.highway.parallel_upload.min_size"]?.toInt() ?: (3 * 1024 * 1024)
     val highwayParallelThreads = config["qq.highway.parallel_upload.threads"]?.toInt() ?: 5
 
+    /**
+     * Chat
+     */
+    val maxForwardMessageLength = config["qq.chat.max_forward_message_length"]?.toInt() ?: 200
+
 }

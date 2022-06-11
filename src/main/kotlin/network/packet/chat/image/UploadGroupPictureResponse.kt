@@ -54,7 +54,7 @@ class UploadGroupPictureResponse(val client: QQClient, packet: TransportPacket.R
                     resourceKey = uploadResponse.fileID2.toString(),
                     uploadServers = uploadResponse.uploadIPList.mapIndexed { index, ip ->
                         InetSocketAddress(
-                            Highway.decodeIP(ip),
+                            Highway.decodeIPv4(ip),
                             uploadResponse.getUploadPort(index)
                         )
                     },

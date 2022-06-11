@@ -54,11 +54,12 @@ object ConfigPushHandler : EventListener {
                         FileStorageConfigPushData(action.buffer.duplicate().readJceStruct()).use { list ->
                             val response =
                                 PbCmd0x6ff.C501ResponseBody.parseFrom(list.bigDataChannel.buffer.toArray(release = false))
-                            client.highway.sigSession = response.body.sigSession.toByteArray()
+                            client.highway.sessionSig = response.body.sigSession.toByteArray()
                             client.highway.sessionKey = response.body.sessionKey.toByteArray()
+                            client.logger.info("Retrieved highway session key and sig from ConfigPush")
                             response.body.addressesList.forEach {
                                 val addresses = it.addressesList.map { address ->
-                                    InetSocketAddress(Highway.decodeIP(address.ip), address.port)
+                                    InetSocketAddress(Highway.decodeIPv4(address.ip), address.port)
                                 }
                                 when (it.serviceType) {
                                     10 -> {

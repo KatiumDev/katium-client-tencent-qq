@@ -16,7 +16,7 @@
 package katium.client.qq.network.packet.chat
 
 import com.google.protobuf.ByteString
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbMessagePackets
@@ -36,7 +36,7 @@ object PullMessagesRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "MessageSvc.PbGetMsg",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(createRequest(client, syncFlag, syncCookies).toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(createRequest(client, syncFlag, syncCookies).toByteArray())
         )
 
     fun createRequest(

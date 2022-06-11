@@ -22,6 +22,7 @@ import katium.client.qq.QQLocalChatID
 import katium.client.qq.chat.QQChat
 import katium.client.qq.message.QQMessage
 import katium.client.qq.network.codec.highway.HighwayTransaction
+import katium.client.qq.network.message.parser.GroupMessageParser
 import katium.client.qq.network.packet.chat.*
 import katium.client.qq.network.packet.chat.image.ImageUploadResult
 import katium.client.qq.network.packet.chat.image.UploadGroupPictureRequest
@@ -55,6 +56,9 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
     var lastReadSequence =
         CoroutineLazy(bot) { if (isContact) groupInfo.get().groupCurrentMessageSequence.toLong() else 0L }
 
+    var groupUin =
+        CoroutineLazy(bot) { groupInfo.get().groupUin }
+
     suspend fun uploadImage(data: ByteArray, depth: Int = 0): ImageUploadResult {
         if (depth >= 5) throw IllegalStateException("Unable to upload image")
         @Suppress("DEPRECATION")
@@ -67,8 +71,8 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
             bot.client.highway.upload(
                 HighwayTransaction(
                     command = 2,
-                    ticket = query.uploadKey!!.toByteArray().toUByteArray(),
-                    body = data.toUByteArray()
+                    ticket = query.uploadKey!!.toByteArray(),
+                    body = data
                 )
             )
             uploadImage(data, depth = depth + 1)
@@ -98,7 +102,9 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
         if (response.errorMessage != null) {
             throw IllegalStateException(response.errorMessage)
         } else {
-            return response.messages
+            return response.response.messagesList.map {
+                GroupMessageParser.parse(bot.client, it)
+            }
         }
     }
 

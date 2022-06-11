@@ -17,7 +17,7 @@ package katium.client.qq.network.packet.chat.image
 
 import com.google.common.hash.HashCode
 import com.google.protobuf.ByteString
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbCmd0x352
@@ -38,7 +38,7 @@ object QueryFriendImageRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "LongConn.OffPicUp",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(createRequest(client, target, md5, fileSize).toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(createRequest(client, target, md5, fileSize).toByteArray())
         )
 
     fun createRequest(

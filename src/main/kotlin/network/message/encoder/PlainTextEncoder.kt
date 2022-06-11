@@ -23,7 +23,7 @@ import katium.core.message.content.PlainText
 object PlainTextEncoder : MessageEncoder<PlainText> {
 
     override suspend fun encode(
-        client: QQClient, context: QQChat, message: PlainText, isStandalone: Boolean
+        client: QQClient, context: QQChat, message: PlainText, withGeneralFlags: Boolean, isStandalone: Boolean
     ) = arrayOf(
         PbMessageElements.Element.newBuilder().setText(
             PbMessageElements.Text.newBuilder().setString(message.text)

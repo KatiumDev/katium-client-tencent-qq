@@ -34,20 +34,11 @@ class PullGroupHistoryMessagesResponse(val client: QQClient, packet: TransportPa
     var errorMessage: String? = null
         private set
 
-    lateinit var messages: Collection<QQMessage>
-        private set
-
     override fun readBody(input: ByteBuf) {
         response = PbMessagePackets.PullGroupHistoryMessagesResponse.parseFrom(input.toArray(release = false))
 
         if (response.result != 0) {
             errorMessage = "result: ${response.result}, errorMessage: ${response.error}"
-        } else {
-            runBlocking(client.coroutineContext + CoroutineName("Decode Group History Messages")) {
-                messages = response.messagesList.map {
-                    GroupMessageParser.parse(client, it)
-                }
-            }
         }
     }
 

@@ -19,7 +19,7 @@ object RefMessageEncoder : MessageEncoder<RefMessage> {
     override val maxCountOneMessage get() = 1
 
     override suspend fun encode(
-        client: QQClient, context: QQChat, message: RefMessage, isStandalone: Boolean
+        client: QQClient, context: QQChat, message: RefMessage, withGeneralFlags: Boolean, isStandalone: Boolean
     ): Array<PbMessageElements.Element> {
         val ref = message.ref as QQMessageRef
         val msg = ref.message!!
@@ -35,11 +35,10 @@ object RefMessageEncoder : MessageEncoder<RefMessage> {
                     .setRichMessage(ByteString.empty()).setPbReserve(ByteString.empty())
                     .setSourceMessage(ByteString.empty()).setTroopName(ByteString.empty())
             ).build()
-        ) + (if (message is QuoteReply) AtEncoder.encode(
-            client, context, At(msg.sender), false
-        ) else emptyArray()) + (if (isStandalone && message !is QuoteReply) PlainTextEncoder.encode(
-            client, context, PlainText("^"), false
-        ) else emptyArray())
+        ) + (if (message is QuoteReply) client.messageEncoders.encode(context, At(msg.sender))
+            .toTypedArray() else emptyArray()) + (if (isStandalone && message !is QuoteReply) client.messageEncoders.encode(
+            context, PlainText("^")
+        ).toTypedArray() else emptyArray())
     }
 
 }

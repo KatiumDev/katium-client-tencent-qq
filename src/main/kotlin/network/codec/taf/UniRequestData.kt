@@ -16,10 +16,10 @@
 package katium.client.qq.network.codec.taf
 
 import io.netty.buffer.ByteBuf
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.core.util.netty.buffer
 
-fun ByteBuf.wrapUniRequestData(release: Boolean = true): ByteBuf = ByteBufAllocator.DEFAULT.buffer {
+fun ByteBuf.wrapUniRequestData(release: Boolean = true): ByteBuf = PooledByteBufAllocator.DEFAULT.buffer {
     writeByte(0x0A)
     writeBytes(this@wrapUniRequestData)
     writeByte(0x0B)

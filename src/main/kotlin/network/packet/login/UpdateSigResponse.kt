@@ -36,24 +36,25 @@ class UpdateSigResponse(client: QQClient, uin: Int, command: Short) :
         type = input.readShort().toInt()
         result = input.readByte().toInt()
         input.skipBytes(2)
-        val tlv = input.readTlvMap(2, release = false)
-        if (result != 0) throw IllegalStateException("Unable to exchange_emp, type=$type, result=$result, tlv=$tlv")
-        when (type) {
-            15 -> {
-                tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false).use {
-                    it.applyT119R(client)
+        input.readTlvMap(2, release = false).use { tlv ->
+            if (result != 0) throw IllegalStateException("Unable to exchange_emp, type=$type, result=$result, tlv=$tlv")
+            when (type) {
+                15 -> {
+                    tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false).use {
+                        it.applyT119R(client)
+                    }
                 }
-            }
-            11 -> {
-                @Suppress("DEPRECATION")
-                tlv[0x119]!!.readT119(
-                    Hashing.md5().hashBytes(client.sig.d2KeyEncoded.toByteArray()).asBytes(),
-                    release = false
-                ).use {
-                    it.applyT119(client)
+                11 -> {
+                    @Suppress("DEPRECATION")
+                    tlv[0x119]!!.readT119(
+                        Hashing.md5().hashBytes(client.sig.d2KeyEncoded.toByteArray()).asBytes(),
+                        release = false
+                    ).use {
+                        it.applyT119(client)
+                    }
                 }
+                else -> throw UnsupportedOperationException("Unknown exchange_emp response type: $type")
             }
-            else -> throw UnsupportedOperationException("Unknown exchange_emp response type: $type")
         }
     }
 

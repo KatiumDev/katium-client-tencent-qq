@@ -31,7 +31,7 @@ object NotOnlineImageDecoder : MessageDecoder {
     ) = element.notOnlineImage.run {
         QQImage(
             resourceKey = resourceID,
-            originUrl = origUrl,
+            contentUrl = "https://c2cpicdw.qpic.cn/$origUrl",
             md5 = pictureMd5,
             width = if (hasPictureWidth()) pictureWidth else null,
             height = if (hasPictureHeight()) pictureHeight else null

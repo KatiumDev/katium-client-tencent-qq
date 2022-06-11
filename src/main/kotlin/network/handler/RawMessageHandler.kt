@@ -18,13 +18,14 @@ package katium.client.qq.network.handler
 import katium.client.qq.network.event.QQReceivedRawMessageEvent
 import katium.core.event.MessageReceivedEvent
 import katium.core.event.MessageSentEvent
+import katium.core.util.event.AsyncMode
 import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
 
 object RawMessageHandler : EventListener {
 
-    @Subscribe
+    @Subscribe(async = AsyncMode.ASYNC)
     suspend fun onMessage(event: QQReceivedRawMessageEvent) {
         val (_, client, message) = event
         val parsedMessage = (client.messageParsers[message.header.type]

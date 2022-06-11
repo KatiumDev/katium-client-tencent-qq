@@ -37,7 +37,7 @@ class MessageDecoders(val client: QQClient) {
         decoders[1] = PlainTextDecoder
         decoders[4] = NotOnlineImageDecoder
         decoders[8] = CustomFaceDecoder
-        decoders[37] = QQServiceMessageDecoder
+        decoders[12] = QQServiceDecoder
         decoders[45] = RefMessageDecoder
     }
 
@@ -47,8 +47,8 @@ class MessageDecoders(val client: QQClient) {
         val fieldKeys = element.allFields.keys
         if (fieldKeys.isEmpty()) return null
         if (fieldKeys.size != 1) throw UnsupportedOperationException("Too many fields: $fieldKeys in $element")
-        return (get(fieldKeys.first().number)
-            ?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
+        return get(fieldKeys.first().number) ?: FallbackDecoder
+            //?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
     }
 
     suspend fun decode(context: QQChat, message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {

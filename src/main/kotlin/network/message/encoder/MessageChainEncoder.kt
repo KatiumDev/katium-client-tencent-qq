@@ -22,16 +22,8 @@ import katium.core.message.content.MessageChain
 object MessageChainEncoder : MessageEncoder<MessageChain> {
 
     override suspend fun encode(
-        client: QQClient,
-        context: QQChat,
-        message: MessageChain,
-        isStandalone: Boolean
-    ) = message.parts.flatMap { client.messageEncoders.encode(context, it, isStandalone) }.toTypedArray()
-
-    override suspend fun createGeneralFlags(
-        client: QQClient,
-        context: QQChat,
-        message: MessageChain
-    ) = message.parts.flatMap { client.messageEncoders.createGeneralFlags(context, it) }.toTypedArray()
+        client: QQClient, context: QQChat, message: MessageChain, withGeneralFlags: Boolean, isStandalone: Boolean
+    ) = message.parts.flatMap { client.messageEncoders.encode(context, it, withGeneralFlags, isStandalone) }
+        .toTypedArray()
 
 }

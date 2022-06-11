@@ -31,8 +31,7 @@ import kotlin.math.min
 class HighwaySession(val highway: Highway, val channel: SocketChannel) : AutoCloseable {
 
     init {
-        channel.pipeline()
-            .addLast("HighwayFrameEncoder", HighwayFrameEncoder())
+        channel.pipeline().addLast("HighwayFrameEncoder", HighwayFrameEncoder())
             .addLast("HighwayFrameDecoder", HighwayFrameDecoder())
             .addLast("HighwayResponseHandler", HighwayResponseHandler(this))
     }
@@ -51,21 +50,17 @@ class HighwaySession(val highway: Highway, val channel: SocketChannel) : AutoClo
     }
 
     fun createDataHeader(
-        command: String,
-        flag: Int = 4096,
-        commandID: Int,
-        locale: Int = 2052
-    ): PbHighway.HighwayDataHeader =
-        PbHighway.HighwayDataHeader.newBuilder().apply {
-            version = 1
-            uin = highway.client.uin.toString()
-            this.command = command
-            sequence = highway.allocSequenceID()
-            appID = appID
-            this.flag = flag
-            this.commandID = commandID
-            localeID = locale
-        }.build()
+        command: String, flag: Int = 4096, commandID: Int, locale: Int = 2052
+    ): PbHighway.HighwayDataHeader = PbHighway.HighwayDataHeader.newBuilder().apply {
+        version = 1
+        uin = highway.client.uin.toString()
+        this.command = command
+        sequence = highway.allocSequenceID()
+        appID = appID
+        this.flag = flag
+        this.commandID = commandID
+        localeID = locale
+    }.build()
 
     suspend fun sendEcho() {
         sendAndWait(PbHighway.HighwayRequestHeader.newBuilder().apply {
@@ -84,10 +79,9 @@ class HighwaySession(val highway: Highway, val channel: SocketChannel) : AutoClo
                 fileSize = bodySize.toLong()
                 dataOffset = chunkOffset.toLong()
                 dataLength = chunkSize
-                serviceTicket = ByteString.copyFrom(transaction.ticket.toByteArray())
-                @Suppress("DEPRECATION")
-                md5 = ByteString.copyFrom(
-                    Hashing.md5().hashBytes(chunkData.toByteArray()).asBytes()
+                serviceTicket = ByteString.copyFrom(transaction.ticket)
+                @Suppress("DEPRECATION") md5 = ByteString.copyFrom(
+                    Hashing.md5().hashBytes(chunkData).asBytes()
                 )
                 fileMd5 = ByteString.copyFrom(transaction.bodyMd5)
             }.build()

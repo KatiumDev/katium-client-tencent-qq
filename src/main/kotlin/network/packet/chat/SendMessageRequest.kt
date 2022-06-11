@@ -16,7 +16,7 @@
 package katium.client.qq.network.packet.chat
 
 import com.google.protobuf.ByteString
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbMessageElements
@@ -46,7 +46,7 @@ object SendMessageRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "MessageSvc.PbSendMsg",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(
                 createRequest(
                     messageSequence,
                     packageNumber, packageIndex, divideSequence,

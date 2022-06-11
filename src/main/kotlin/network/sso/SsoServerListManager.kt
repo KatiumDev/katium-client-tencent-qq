@@ -17,7 +17,7 @@ package katium.client.qq.network.sso
 
 import com.google.common.net.InetAddresses
 import io.netty.bootstrap.Bootstrap
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.nio.NioEventLoopGroup
@@ -73,7 +73,7 @@ object SsoServerListManager {
                 .build()
         ).await().expected(200)
         lateinit var records: List<SsoServerRecord>
-        CIPHER.decrypt(ByteBufAllocator.DEFAULT.buffer(response.body.bytes()))
+        CIPHER.decrypt(PooledByteBufAllocator.DEFAULT.buffer(response.body.bytes()))
             .skipBytes(4)
             .use {
                 RequestPacket(
@@ -100,7 +100,7 @@ object SsoServerListManager {
         ).dump()
     )
 
-    fun buildRequestPayload() = CIPHER.encrypt(ByteBufAllocator.DEFAULT.buffer {
+    fun buildRequestPayload() = CIPHER.encrypt(PooledByteBufAllocator.DEFAULT.buffer {
         buildRequestPacket().dump().use {
             writeWithIntLength(it)
         }

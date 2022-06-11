@@ -15,7 +15,7 @@
  */
 package katium.client.qq.network.packet.chat
 
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbDeleteMessages
@@ -34,7 +34,7 @@ object DeleteMessagesRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "MessageSvc.PbDeleteMsg",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(createRequest(items).toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(createRequest(items).toByteArray())
         )
 
     fun createRequest(items: Collection<PbDeleteMessages.MessageItem>): PbDeleteMessages.DeleteMessagesRequest =

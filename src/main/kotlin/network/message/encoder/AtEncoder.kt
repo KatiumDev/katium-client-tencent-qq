@@ -1,7 +1,7 @@
 package katium.client.qq.network.message.encoder
 
 import com.google.protobuf.ByteString
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.pb.PbMessageElements
@@ -11,15 +11,16 @@ import katium.core.util.netty.toArray
 
 object AtEncoder : MessageEncoder<At> {
 
-    override suspend fun encode(client: QQClient, context: QQChat, message: At, isStandalone: Boolean) = message.run {
+    override suspend fun encode(
+        client: QQClient, context: QQChat, message: At, withGeneralFlags: Boolean, isStandalone: Boolean
+    ) = message.run {
         val targetUser = client.bot.getUser(target)
-        if (context.context !is Group) throw UnsupportedOperationException("AT user in non-group chat")
         val text = "@${targetUser.name}" // @TODO: use group nick when At
         arrayOf(
             PbMessageElements.Element.newBuilder().setText(
                 PbMessageElements.Text.newBuilder().setString(text).setAttribute6Buf(
                     ByteString.copyFrom(
-                        ByteBufAllocator.DEFAULT.heapBuffer().writeShort(1) // constant
+                        PooledByteBufAllocator.DEFAULT.heapBuffer().writeShort(1) // constant
                             .writeShort(0) // start pos
                             .writeShort(text.length).writeByte(0) // flag
                             .writeInt(targetUser.id.toInt()) // uin

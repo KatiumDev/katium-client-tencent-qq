@@ -16,16 +16,40 @@
 package katium.client.qq.test.util
 
 import katium.client.qq.util.CoroutineLazy
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class CoroutineLazyTest {
 
     @Test
-    fun `Test Coroutine Lazy`() {
+    fun `value permitting`() {
+        runBlocking {
+            coroutineScope {
+                val permitted = atomic(false)
+                val lazy = CoroutineLazy(this) {
+                    if (permitted.value) {
+                        throw IllegalStateException("Permitted")
+                    } else {
+                        permitted.value = true
+                        "hello"
+                    }
+                }
+                for (i in 0..1000) {
+                    launch {
+                        assertEquals("hello", lazy.get())
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `coroutine test`() {
         runBlocking {
             coroutineScope {
                 val lazy = CoroutineLazy(this) {

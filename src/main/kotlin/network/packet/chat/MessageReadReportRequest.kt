@@ -15,7 +15,7 @@
  */
 package katium.client.qq.network.packet.chat
 
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbMessagesReadReport
@@ -34,7 +34,7 @@ object MessageReadReportRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "PbMessageSvc.PbMsgReadedReport",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(report.toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(report.toByteArray())
         )
 
 }

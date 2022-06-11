@@ -16,10 +16,9 @@
 package katium.client.qq.network.message.encoder
 
 import katium.client.qq.chat.QQChat
-import katium.client.qq.message.content.QQServiceMessage
+import katium.client.qq.message.content.QQService
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageEncodersInitializeEvent
-import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.util.CoroutineLazy
 import katium.core.message.content.*
 import katium.core.util.event.post
@@ -40,10 +39,11 @@ class MessageEncoders(val client: QQClient) {
         encoders[MessageChain::class] = MessageChainEncoder
         encoders[PlainText::class] = PlainTextEncoder
         encoders[Image::class] = ImageEncoder
-        encoders[QQServiceMessage::class] = QQServiceMessageEncoder
+        encoders[QQService::class] = QQServiceEncoder
         encoders[At::class] = AtEncoder
         encoders[AtAll::class] = AtAllEncoder
         encoders[RefMessage::class] = RefMessageEncoder
+        encoders[Forward::class] = ForwardEncoder
     }
 
     fun find(type: KClass<out MessageContent>): Pair<KClass<out MessageContent>, MessageEncoder<*>>? {
@@ -67,12 +67,16 @@ class MessageEncoders(val client: QQClient) {
 
     fun getPriority(content: MessageContent) = get(content).priority
 
-    suspend fun encode(chat: QQChat, content: MessageContent, withGeneralFlags: Boolean = false, isStandalone: Boolean = false) =
-        (this[content].encode(client, chat, content, isStandalone) + (if (withGeneralFlags) createGeneralFlags(chat, content).map {
-            PbMessageElements.Element.newBuilder().setGeneralFlags(it).build()
-        }.toTypedArray() else emptyArray())).toList()
-
-    suspend fun createGeneralFlags(chat: QQChat, content: MessageContent) =
-        this[content].createGeneralFlags(client, chat, content).toList()
+    suspend fun encode(
+        chat: QQChat, content: MessageContent, withGeneralFlags: Boolean = false, isStandalone: Boolean = false
+    ) = this[content].encode(
+        client, chat, content, withGeneralFlags, isStandalone
+    ).run {
+        if (withGeneralFlags) {
+            sortedBy { if (it.hasGeneralFlags()) 0 else 1 }
+        } else {
+            filterNot { it.hasGeneralFlags() }
+        }
+    }
 
 }

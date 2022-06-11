@@ -27,15 +27,15 @@ import java.util.*
 object ImageEncoder : MessageEncoder<Image> {
 
     override suspend fun encode(
-        client: QQClient, context: QQChat, message: Image, isStandalone: Boolean
-    ): Array<PbMessageElements.Element> {
+        client: QQClient, context: QQChat, message: Image, withGeneralFlags: Boolean, isStandalone: Boolean
+    ) = run {
         val resourceKey = if (message is QQImage) message.resourceKey
         else context.uploadImage(message.contentBytes!!).resourceKey!!
 
         @Suppress("DEPRECATION") val md5 = if (message is QQImage) message.md5
         else ByteString.copyFrom(Hashing.md5().hashBytes(message.contentBytes!!).asBytes())
         if (context.contextContact != null) {
-            return arrayOf(
+            arrayOf(
                 PbMessageElements.Element.newBuilder()
                     .setNotOnlineImage(PbMessageElements.NotOnlineImage.newBuilder().setFilePath(resourceKey)
                         .setResourceID(resourceKey).setOldPictureMd5(false).setPictureMd5(md5)
@@ -46,7 +46,7 @@ object ImageEncoder : MessageEncoder<Image> {
                         }).build()
             )
         } else {
-            return arrayOf(
+            arrayOf(
                 PbMessageElements.Element.newBuilder().setCustomFace(
                     PbMessageElements.CustomFace.newBuilder()
                         //.setFilePath("{${UUID.nameUUIDFromBytes(md5.toByteArray())}}.png".uppercase())

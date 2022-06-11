@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package katium.client.qq.packet;
+
+option java_package = "katium.client.qq.network.pb";
+option java_outer_classname = "PbMultiMessages";
+
+import "message/messages.proto";
+
+message MultiMessagesRequest {
+  int32 subCommand = 1;
+  int32 termType = 2;
+  int32 platformType = 3;
+  int32 networkType = 4;
+  string buildVersion = 5;
+  repeated MultiMessagesUploadRequest upload = 6;
+  repeated MultiMessagesDownloadRequest download = 7;
+  int32 buType = 8;
+  int32 channelType = 9;
+}
+
+message MultiMessagesResponse {
+  int32 subCommand = 1;
+  repeated MultiMessagesUploadResponse upload = 2;
+  repeated MultiMessagesDownloadResponse download = 3;
+}
+
+message MultiMessagesUploadRequest {
+  int64 toUin = 1;
+  int64 size = 2;
+  bytes md5 = 3;
+  int32 type = 4;
+  int32 applyId = 5;
+}
+
+message MultiMessagesUploadResponse {
+  int32 result = 1;
+  string resourceID = 2;
+  bytes ukey = 3;
+  repeated int32 ip = 4;
+  repeated int32 port = 5;
+  int64 blockSize = 6;
+  int64 offset = 7;
+  int32 applyId = 8;
+  bytes key = 9;
+  bytes sig = 10;
+  ExtensionInfo extensionInfo = 11;
+  repeated bytes ipv6 = 12;
+  repeated int32 ipv6Port = 13;
+}
+
+message MultiMessagesDownloadRequest {
+  bytes resourceID = 1;
+  int32 type = 2;
+  int64 fromUin = 3;
+  optional int32 applyID = 4;
+  bytes key = 5;
+  bytes sig = 6;
+}
+
+message MultiMessagesDownloadResponse {
+  int32 result = 1;
+  bytes thumbDownPara = 2;
+  bytes key = 3;
+  repeated int32 ip = 4;
+  repeated int32 port = 5;
+  bytes resourceID = 6;
+  ExtensionInfo extensionInfo = 7;
+  repeated bytes ipv6 = 8;
+  repeated int32 ipv6Port = 9;
+}
+
+message ExtensionInfo {
+  int32 channelType = 1;
+}
+
+message MultiMessagesHighwayItem {
+  optional string fileName = 1;
+  optional MultiMessagesHighwayNew buffer = 2;
+}
+
+message MultiMessagesHighwayNew {
+  repeated katium.client.qq.message.Message message = 1;
+}
+
+message MultiMessagesHighwayBody {
+  repeated katium.client.qq.message.Message message = 1;
+  repeated MultiMessagesHighwayItem item = 2;
+}

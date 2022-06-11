@@ -16,7 +16,7 @@
 package katium.client.qq.network.codec.jce
 
 import io.netty.buffer.ByteBuf
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.core.util.netty.EmptyByteBuf
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -70,7 +70,7 @@ open class SimpleJceStruct(override val tags: MutableMap<UByte, Any>) : JceStruc
         number(tag, T::class, defaultValue)
 
     fun dump(release: Boolean = true): ByteBuf {
-        val data = ByteBufAllocator.DEFAULT.heapBuffer().writeJcePureStruct(this)
+        val data = PooledByteBufAllocator.DEFAULT.heapBuffer().writeJcePureStruct(this)
         if (release) release()
         return data
     }

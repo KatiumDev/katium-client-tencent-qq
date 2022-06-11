@@ -16,7 +16,7 @@
 package katium.client.qq.network.packet.chat
 
 import com.google.protobuf.ByteString
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbMessagePackets
@@ -38,7 +38,7 @@ object RecallMessagesRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "PbMessageSvc.PbMsgWithDraw",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(
                 createFriendRequest(client, target, sequence, random, time).toByteArray()
             )
         )
@@ -84,7 +84,7 @@ object RecallMessagesRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "PbMessageSvc.PbMsgWithDraw",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(
                 createGroupRequest(
                     groupCode,
                     sequence,

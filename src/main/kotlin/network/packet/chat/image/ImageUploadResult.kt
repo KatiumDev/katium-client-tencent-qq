@@ -23,5 +23,6 @@ data class ImageUploadResult(
     val isExists: Boolean = false,
     val resourceKey: String? = null,
     val uploadServers: Collection<InetSocketAddress> = emptyList(),
-    val uploadKey: ByteString? = null
+    val uploadKey: ByteString? = null,
+    val contentUrl: String? = null,
 )

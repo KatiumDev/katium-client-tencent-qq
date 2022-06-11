@@ -16,7 +16,7 @@
 package katium.client.qq.network.packet.meta
 
 import io.netty.buffer.ByteBuf
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.jce.SimpleJceStruct
 import katium.client.qq.network.codec.packet.TransportPacket
@@ -52,7 +52,7 @@ class ClientRegisterPacket(other: SimpleJceStruct) : SimpleJceStruct(other) {
                 "SvcReqRegister" to ClientRegisterPacket().apply {
                     uin = client.uin
                     osVersionNumber = client.deviceInfo.version.sdk.toLong()
-                    guid = ByteBufAllocator.DEFAULT.buffer(client.deviceInfo.guid)
+                    guid = PooledByteBufAllocator.DEFAULT.buffer(client.deviceInfo.guid)
                     deviceName = client.deviceInfo.model
                     deviceType = client.deviceInfo.model
                     osVersionString = client.deviceInfo.version.release
@@ -96,7 +96,7 @@ class ClientRegisterPacket(other: SimpleJceStruct) : SimpleJceStruct(other) {
     var vendorOSName: String by string(31u)
     var osIdfa: String by string(32u)
     var b769: ByteBuf by field(33u) {
-        ByteBufAllocator.DEFAULT.heapBuffer(HexFormat.of().parseHex("0A04082E10000A05089B021000"))
+        PooledByteBufAllocator.DEFAULT.heapBuffer(HexFormat.of().parseHex("0A04082E10000A05089B021000"))
     }
     var isSetStatus: Byte by number(34u, 0)
     var serverBuf: ByteBuf by byteBuf(35u)

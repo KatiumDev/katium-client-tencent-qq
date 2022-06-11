@@ -48,7 +48,8 @@ class QueryFriendImageResponse(val client: QQClient, packet: TransportPacket.Res
             } else if (uploadResponse.fileExists) {
                 ImageUploadResult(
                     isExists = true,
-                    resourceKey = uploadResponse.uploadResourceID.toStringUtf8()
+                    resourceKey = uploadResponse.uploadResourceID.toStringUtf8(),
+                    contentUrl = "https://c2cpicdw.qpic.cn/${uploadResponse.originalDownPara.toStringUtf8()}"
                 )
             } else {
                 ImageUploadResult(
@@ -56,7 +57,7 @@ class QueryFriendImageResponse(val client: QQClient, packet: TransportPacket.Res
                     resourceKey = uploadResponse.uploadResourceID.toStringUtf8(),
                     uploadServers = uploadResponse.uploadIPList.mapIndexed { index, ip ->
                         InetSocketAddress(
-                            Highway.decodeIP(ip),
+                            Highway.decodeIPv4(ip),
                             uploadResponse.getUploadPort(index)
                         )
                     },

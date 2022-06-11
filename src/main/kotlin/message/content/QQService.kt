@@ -17,7 +17,7 @@ package katium.client.qq.message.content
 
 import katium.core.message.content.MessageContent
 
-class QQServiceMessage(
+class QQService(
     val id: Int,
     val type: Type,
     val content: String,
@@ -28,7 +28,7 @@ class QQServiceMessage(
 
     override fun simplify() = null
 
-    override fun toString() = "[QQServiceMessage/$id/$type/$resourceID: $content]"
+    override fun toString() = "[QQService/$id/$type/$resourceID: $content]"
 
     enum class Type {
 

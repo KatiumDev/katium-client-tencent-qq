@@ -52,8 +52,8 @@ class QQContact(override val asUser: QQUser) : Contact(asUser) {
                 bot.client.highway.upload(
                     HighwayTransaction(
                         command = 1,
-                        ticket = query.uploadKey!!.toByteArray().toUByteArray(),
-                        body = data.toUByteArray()
+                        ticket = query.uploadKey!!.toByteArray(),
+                        body = data
                     )
                 )
             }.recoverCatching {
@@ -62,8 +62,8 @@ class QQContact(override val asUser: QQUser) : Contact(asUser) {
                     bot.client.highway.upload(
                         HighwayTransaction(
                             command = 2,
-                            ticket = groupQuery.uploadKey!!.toByteArray().toUByteArray(),
-                            body = data.toUByteArray()
+                            ticket = groupQuery.uploadKey!!.toByteArray(),
+                            body = data
                         )
                     )
                 }

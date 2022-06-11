@@ -15,7 +15,7 @@
  */
 package katium.client.qq.network.packet.review
 
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbSystemMessages
@@ -29,7 +29,7 @@ object PullGroupSystemMessagesRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "ProfileService.Pb.ReqSystemMsgNew.Group",
-            body = ByteBufAllocator.DEFAULT.heapBuffer(
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(
                 PbSystemMessages.PullSystemMessagesRequest.newBuilder()
                     .setMessageType(100)
                     .setVersion(1000)

@@ -27,7 +27,7 @@ import java.util.*
 
 class QQImage(
     val resourceKey: String,
-    originUrl: String,
+    override val contentUrl: String,
     val md5: ByteString,
     val size: Int? = null,
     val filePath: String = "${HexFormat.of().formatHex(md5.toByteArray()).uppercase()}.jpg",
@@ -39,7 +39,7 @@ class QQImage(
         runBlocking(CoroutineName("Download QQ Chat Image")) {
             GlobalHttpClient.newCall(
                 Request.Builder()
-                    .url(contentUrl)
+                    .url(this@QQImage.contentUrl)
                     .get()
                     .build()
             )
@@ -49,8 +49,6 @@ class QQImage(
                 .bytes()
         }
     }
-
-    override val contentUrl = "https://c2cpicdw.qpic.cn/$originUrl"
 
     override fun toString() = "[QQImage($resourceKey, $contentUrl)]"
 

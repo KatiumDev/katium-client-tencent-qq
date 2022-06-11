@@ -16,7 +16,7 @@
 package katium.client.qq.network.packet.chat
 
 import com.google.protobuf.ByteString
-import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oidb.writeOidbPacket
 import katium.client.qq.network.codec.packet.TransportPacket
@@ -35,7 +35,7 @@ object PullGroupInfoRequest {
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "OidbSvc.0x88d_0",
-            body = ByteBufAllocator.DEFAULT.heapBuffer()
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer()
                 .writeOidbPacket(client, 2189, 0, createRequest(client, groupCode).toByteString())
         )
 
