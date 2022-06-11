@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import io.netty.buffer.ByteBuf
 import kotlin.math.min
 
-fun ByteBuf.writeT128(
+context(TlvWriterContext) fun ByteBuf.writeT128(
     guidFromFileNull: Boolean = false,
     guidAvailable: Boolean = true,
     guidChanged: Boolean = false,

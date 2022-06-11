@@ -17,6 +17,6 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 
-context(TlvWriterContext) fun ByteBuf.writeT10A(tgt: ByteArray) = writeTlv(0x10A) {
-    writeBytes(tgt)
+context(TlvWriterContext) fun ByteBuf.writeT104(t104: ByteArray) = writeTlv(0x104) {
+    writeBytes(t104)
 }

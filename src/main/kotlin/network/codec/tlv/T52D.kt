@@ -18,6 +18,6 @@ package katium.client.qq.network.codec.tlv
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.pb.PbDeviceInfo
 
-fun ByteBuf.writeT52D(androidDeviceInfo: PbDeviceInfo.DeviceInfo) = writeTlv(0x52D) {
+context(TlvWriterContext) fun ByteBuf.writeT52D(androidDeviceInfo: PbDeviceInfo.DeviceInfo) = writeTlv(0x52D) {
     writeBytes(androidDeviceInfo.toByteArray())
 }

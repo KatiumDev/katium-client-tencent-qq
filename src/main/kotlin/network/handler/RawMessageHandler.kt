@@ -19,9 +19,9 @@ import katium.client.qq.network.event.QQReceivedRawMessageEvent
 import katium.core.event.MessageReceivedEvent
 import katium.core.event.MessageSentEvent
 import katium.core.util.event.AsyncMode
-import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
+import java.util.*
 
 object RawMessageHandler : EventListener {
 

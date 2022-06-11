@@ -25,6 +25,7 @@ class OicqPacket private constructor() {
         val client: QQClient
         val uin: Int
         val command: Short
+        val subCommand: Short
 
         override fun close() {
         }
@@ -43,7 +44,8 @@ class OicqPacket private constructor() {
             override val client: QQClient,
             override val uin: Int = client.uin.toInt(),
             override val command: Short,
-            override val encryption: EncryptType
+            override val encryption: EncryptType,
+            override val subCommand: Short,
         ) : Request
 
         open class Buffered(
@@ -51,9 +53,9 @@ class OicqPacket private constructor() {
             uin: Int = client.uin.toInt(),
             command: Short,
             encryption: EncryptType,
+            subCommand: Short,
             val body: ByteBuf
-        ) :
-            Simple(client, uin, command, encryption) {
+        ) : Simple(client, uin, command, encryption, subCommand) {
 
             operator fun component2() = body
 
@@ -77,11 +79,21 @@ class OicqPacket private constructor() {
         abstract class Simple(
             override val client: QQClient,
             override val uin: Int,
-            override val command: Short
-        ) : Response
+            override val command: Short,
+            override val subCommand: Short,
+        ) : Response {
 
-        open class Buffered(client: QQClient, uin: Int, command: Short) :
-            Simple(client, uin, command) {
+            constructor(other: Buffered) : this(
+                client = other.client,
+                uin = other.uin,
+                command = other.command,
+                subCommand = other.subCommand,
+            )
+
+        }
+
+        open class Buffered(client: QQClient, uin: Int, command: Short, subCommand: Short) :
+            Simple(client, uin, command, subCommand) {
 
             lateinit var body: ByteBuf
 

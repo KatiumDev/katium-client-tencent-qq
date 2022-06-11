@@ -35,15 +35,13 @@ class InboundPacketHandler(val client: QQClient) : ChannelInboundHandlerAdapter(
             if (handler != null) {
                 handler.resume(msg)
                 client.packetHandlers.remove(msg.sequenceID)
-                msg.close()
-            } else {
-                client.bot.launch {
-                    try {
-                        client.bot.post(QQPacketReceivedEvent(client, msg))
-                        msg.close()
-                    } catch (e: Throwable) {
-                        throw RuntimeException("command=${msg.command}, sequence=${msg.sequenceID}", e)
-                    }
+            }
+            client.bot.launch {
+                try {
+                    client.bot.post(QQPacketReceivedEvent(client, msg))
+                    msg.close()
+                } catch (e: Throwable) {
+                    throw RuntimeException("command=${msg.command}, sequence=${msg.sequenceID}", e)
                 }
             }
         } catch (e: Throwable) {

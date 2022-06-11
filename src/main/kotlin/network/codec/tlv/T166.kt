@@ -17,6 +17,6 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeT166(imageType: Int) = writeTlv(0x166) {
+context(TlvWriterContext) fun ByteBuf.writeT166(imageType: Int) = writeTlv(0x166) {
     writeByte(imageType)
 }

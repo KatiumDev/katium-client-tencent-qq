@@ -24,13 +24,13 @@ import katium.client.qq.network.packet.chat.PullMessagesResponse
 import katium.client.qq.network.packet.chat.PushNotifyPacket
 import katium.client.qq.network.pb.PbDeleteMessages
 import katium.client.qq.network.pb.PbMessagePackets
-import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
 import katium.core.util.netty.toArray
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.*
 
 object FriendMessagesHandler : EventListener {
 
@@ -65,25 +65,25 @@ object FriendMessagesHandler : EventListener {
             val isInitialSync = synchronzier.friendInitialSync.getAndSet(false)
             if (response.messagesList.isEmpty()) return
             val messages = response.messagesList.asSequence().filterNot { it.messagesList.isEmpty() }.flatMap { pair ->
-                    pair.messagesList.asSequence().filter { it.header.time > pair.lastReadTime }
-                }.toList().also {
-                    // Delete messages
-                    if (it.isNotEmpty()) {
-                        client.send(DeleteMessagesRequest.create(client, items = it.map {
-                            PbDeleteMessages.MessageItem.newBuilder().apply {
-                                fromUin = it.header.fromUin
-                                toUin = it.header.toUin
-                                type = 187
-                                sequence = it.header.sequence
-                                uid = it.header.uid
-                            }.build()
-                        }))
-                    }
-                }.filter {
-                    synchronzier.writePullMessagesCache(
-                        it.header.uid, it.header.sequence, it.header.time
-                    )
+                pair.messagesList.asSequence().filter { it.header.time > pair.lastReadTime }
+            }.toList().also {
+                // Delete messages
+                if (it.isNotEmpty()) {
+                    client.send(DeleteMessagesRequest.create(client, items = it.map {
+                        PbDeleteMessages.MessageItem.newBuilder().apply {
+                            fromUin = it.header.fromUin
+                            toUin = it.header.toUin
+                            type = 187
+                            sequence = it.header.sequence
+                            uid = it.header.uid
+                        }.build()
+                    }))
                 }
+            }.filter {
+                synchronzier.writePullMessagesCache(
+                    it.header.uid, it.header.sequence, it.header.time
+                )
+            }
             synchronzier.recordUnreadFriendMessages(response.messagesList.map(PbMessagePackets.UinPairMessage::getPeerUin))
             if (isInitialSync) return
             for (message in messages.map { QQReceivedRawMessageEvent(client, it) }) {

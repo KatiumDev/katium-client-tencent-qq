@@ -13,10 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.codec.tlv
+package katium.client.qq.test.network
 
-import io.netty.buffer.ByteBuf
+import katium.client.qq.network.codec.highway.Highway
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
-context(TlvWriterContext) fun ByteBuf.writeT10A(tgt: ByteArray) = writeTlv(0x10A) {
-    writeBytes(tgt)
+class HighwayTest {
+
+    @Test
+    fun `decode IPv4 address`() {
+        assertEquals("1.2.3.4", Highway.decodeIPv4(0x04030201).hostAddress)
+        assertEquals("1.2.3.5", Highway.decodeIPv4(0x05030201).hostAddress)
+    }
+
 }

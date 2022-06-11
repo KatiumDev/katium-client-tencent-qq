@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import io.netty.buffer.ByteBuf
 import kotlin.math.min
 
-fun ByteBuf.writeT202(wifiBSSIDMD5: ByteArray, wifiSSID: ByteArray) = writeTlv(0x202) {
+context(TlvWriterContext) fun ByteBuf.writeT202(wifiBSSIDMD5: ByteArray, wifiSSID: ByteArray) = writeTlv(0x202) {
     run {
         val length = min(wifiBSSIDMD5.size, 16)
         writeShort(length)

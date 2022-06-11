@@ -19,7 +19,7 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.network.auth.NetworkType
 import kotlin.math.min
 
-fun ByteBuf.writeT124(
+context(TlvWriterContext) fun ByteBuf.writeT124(
     osType: ByteArray,
     osVersion: ByteArray,
     networkType: NetworkType = NetworkType.WIFI,

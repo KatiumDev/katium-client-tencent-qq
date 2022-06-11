@@ -24,7 +24,7 @@ import katium.core.util.netty.buffer
 import katium.core.util.netty.toArray
 import kotlin.random.Random
 
-fun ByteBuf.writeT106(
+context(TlvWriterContext) fun ByteBuf.writeT106(
     uin: Long,
     salt: Int = 0,
     appID: Int = 16,

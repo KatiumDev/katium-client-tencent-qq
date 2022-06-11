@@ -19,8 +19,8 @@ import katium.client.qq.chat.QQChat
 import katium.client.qq.message.content.QQService
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageEncodersInitializeEvent
-import katium.client.qq.util.CoroutineLazy
 import katium.core.message.content.*
+import katium.core.util.CoroutineLazy
 import katium.core.util.event.post
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf

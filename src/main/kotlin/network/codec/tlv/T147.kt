@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import io.netty.buffer.ByteBuf
 import kotlin.math.min
 
-fun ByteBuf.writeT147(appID: Int = 16, apkVersionName: String, apkSignatureMD5: ByteArray) = writeTlv(0x147) {
+context(TlvWriterContext) fun ByteBuf.writeT147(appID: Int = 16, apkVersionName: String, apkSignatureMD5: ByteArray) = writeTlv(0x147) {
     writeInt(appID)
     run {
         val bytes = apkVersionName.toByteArray()

@@ -20,8 +20,8 @@ import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageDecodersInitializeEvent
 import katium.client.qq.network.pb.PbMessageElements
 import katium.client.qq.network.pb.PbMessages
-import katium.client.qq.util.CoroutineLazy
 import katium.core.message.content.MessageChain
+import katium.core.util.CoroutineLazy
 import katium.core.util.event.post
 
 class MessageDecoders(val client: QQClient) {
@@ -48,11 +48,12 @@ class MessageDecoders(val client: QQClient) {
         if (fieldKeys.isEmpty()) return null
         if (fieldKeys.size != 1) throw UnsupportedOperationException("Too many fields: $fieldKeys in $element")
         return get(fieldKeys.first().number) ?: FallbackDecoder
-            //?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
+        //?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
     }
 
-    suspend fun decode(context: QQChat, message: PbMessages.Message) = MessageChain(*message.body.richText.elementsList.mapNotNull {
-        get(it)?.decode(client, context, message, it)
-    }.toTypedArray()).simplest
+    suspend fun decode(context: QQChat, message: PbMessages.Message) =
+        MessageChain(*message.body.richText.elementsList.mapNotNull {
+            get(it)?.decode(client, context, message, it)
+        }.toTypedArray()).simplest
 
 }

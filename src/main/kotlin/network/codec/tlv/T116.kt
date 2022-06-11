@@ -17,7 +17,7 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeT116(miscBitmap: Int, subSigMap: Int, appIDs: LongArray = longArrayOf(1600000226L)) = writeTlv(0x116) {
+context(TlvWriterContext) fun ByteBuf.writeT116(miscBitmap: Int, subSigMap: Int, appIDs: LongArray = longArrayOf(1600000226L)) = writeTlv(0x116) {
     writeByte(0) // version
     writeInt(miscBitmap)
     writeInt(subSigMap)

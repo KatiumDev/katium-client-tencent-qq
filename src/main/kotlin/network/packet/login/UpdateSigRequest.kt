@@ -23,13 +23,13 @@ import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.tlv.*
 import java.util.*
 
-class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: Int) :
-    OicqPacket.Request.Simple(
-        client = client,
-        uin = client.uin.toInt(),
-        command = 0x0810,
-        encryption = OicqPacket.EncryptType.ECDH
-    ) {
+class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: Int) : OicqPacket.Request.Simple(
+    client = client,
+    uin = client.uin.toInt(),
+    command = 0x0810,
+    encryption = OicqPacket.EncryptType.ECDH,
+    subCommand = 11,
+) {
 
     companion object {
 
@@ -46,20 +46,14 @@ class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: In
     }
 
     override fun writeBody(output: ByteBuf) {
-        output.apply {
-            writeShort(11)
-            writeShort(17) // TLV count
-
+        output.writeTlvMap {
             writeT100(
-                subAppID = 100,
-                ssoVersion = client.version.ssoVersion,
-                mainSigMap = mainSigMap
+                subAppID = 100, ssoVersion = client.version.ssoVersion, mainSigMap = mainSigMap
             )
             writeT10A(tgt = client.sig.tgt)
             writeT116(miscBitmap = client.version.miscBitMap, subSigMap = client.version.subSigMap)
             writeT108(ksid = client.sig.ksid)
-            @Suppress("DEPRECATION")
-            writeT144(
+            @Suppress("DEPRECATION") writeT144(
                 imei = client.deviceInfo.IMEI.toByteArray(),
                 deviceInfo = client.deviceInfo.toProtoBufDeviceInfo(),
                 osType = client.deviceInfo.osType.toByteArray(),
@@ -75,8 +69,7 @@ class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: In
             writeT142(apkID = client.version.apkID.toByteArray())
             writeT154(sequenceID = sequenceID)
             writeT141(
-                simInfo = client.deviceInfo.simInfo.toByteArray(),
-                apn = client.deviceInfo.apn.toByteArray()
+                simInfo = client.deviceInfo.simInfo.toByteArray(), apn = client.deviceInfo.apn.toByteArray()
             )
             writeT8()
             writeT147(
@@ -84,15 +77,13 @@ class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: In
                 apkSignatureMD5 = HexFormat.of().parseHex(client.version.signature)
             )
             writeT177(
-                buildTime = client.version.buildTime,
-                sdkVersion = client.version.sdkVersion.toByteArray()
+                buildTime = client.version.buildTime, sdkVersion = client.version.sdkVersion.toByteArray()
             )
             writeT187(macAddress = client.deviceInfo.macAddress.toByteArray())
             writeT188(androidID = client.deviceInfo.androidID.toByteArray())
             writeT194(imsiMD5 = HexFormat.of().parseHex(client.deviceInfo.IMSIMD5))
             writeT511()
-            @Suppress("DEPRECATION")
-            writeT202(
+            @Suppress("DEPRECATION") writeT202(
                 wifiBSSIDMD5 = Hashing.md5().hashBytes(client.deviceInfo.wifiBSSID.toByteArray()).asBytes(),
                 wifiSSID = client.deviceInfo.wifiSSID.toByteArray()
             )

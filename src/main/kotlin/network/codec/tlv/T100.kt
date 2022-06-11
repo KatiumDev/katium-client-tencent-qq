@@ -17,7 +17,7 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeT100(
+context(TlvWriterContext) fun ByteBuf.writeT100(
     appID: Int = 16,
     subAppID: Int,
     appClientVersion: Int = 0,

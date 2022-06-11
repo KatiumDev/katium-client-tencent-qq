@@ -24,15 +24,16 @@ import katium.client.qq.network.packet.login.LoginResponsePacket
 import katium.client.qq.network.packet.login.UpdateSigResponse
 import katium.core.util.event.post
 import katium.core.util.netty.buffer
+import katium.core.util.netty.toArray
 import katium.core.util.netty.use
 import katium.core.util.netty.writeUBytes
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
+import java.util.*
 import kotlin.random.Random
 
 class OicqPacketCodec(
-    val client: QQClient,
-    val ecdh: EcdhKeyProvider = EcdhKeyProvider(client)
+    val client: QQClient, val ecdh: EcdhKeyProvider = EcdhKeyProvider(client)
 ) {
 
     val randomKey = Random.Default.nextBytes(16).toUByteArray()
@@ -40,8 +41,8 @@ class OicqPacketCodec(
     var wtSessionTicketKey: ByteArray? = null
     var wtSessionTicketKeyCipher: QQTeaCipher? = null
 
-    val decoders: Map<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple> by lazy {
-        val decoders = mutableMapOf<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple>()
+    val decoders: Map<String, (OicqPacket.Response.Buffered) -> OicqPacket.Response.Simple> by lazy {
+        val decoders = mutableMapOf<String, (OicqPacket.Response.Buffered) -> OicqPacket.Response.Simple>()
         registerBuiltinDecoders(decoders)
         runBlocking(CoroutineName("Initialize OICQ Packet Decoders")) {
             client.bot.post(QQOicqDecodersInitializeEvent(this@OicqPacketCodec, decoders))
@@ -49,7 +50,7 @@ class OicqPacketCodec(
         decoders.toMap()
     }
 
-    private fun registerBuiltinDecoders(decoders: MutableMap<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple>) {
+    private fun registerBuiltinDecoders(decoders: MutableMap<String, (OicqPacket.Response.Buffered) -> OicqPacket.Response.Simple>) {
         decoders["wtlogin.login"] = ::LoginResponsePacket
         decoders["wtlogin.exchange_emp"] = ::UpdateSigResponse
     }
@@ -75,6 +76,10 @@ class OicqPacketCodec(
             writeInt(2)
             writeInt(0)
             writeInt(0)
+            val body = alloc().buffer {
+                writeShort(packet.subCommand.toInt())
+                packet.writeBody(this)
+            }
             when (packet.encryption) {
                 OicqPacket.EncryptType.ECDH -> {
                     writeByte(0x02)
@@ -84,9 +89,7 @@ class OicqPacketCodec(
                     writeShort(ecdh.serverKeyVersion)
                     writeShort(ecdh.clientPublicKeyEncoded.size)
                     writeBytes(ecdh.clientPublicKeyEncoded)
-                    ecdh.shareKeyTeaCipher.encrypt(alloc().buffer {
-                        packet.writeBody(this)
-                    }).use {
+                    ecdh.shareKeyTeaCipher.encrypt(body).use {
                         writeBytes(it)
                     }
                 }
@@ -96,9 +99,7 @@ class OicqPacketCodec(
                     writeUBytes(randomKey)
                     writeShort(0x01_02)
                     writeShort(0x0000)
-                    randomKeyCipher.encrypt(alloc().buffer {
-                        packet.writeBody(this)
-                    }).use {
+                    randomKeyCipher.encrypt(body).use {
                         writeBytes(it)
                     }
                 }
@@ -137,16 +138,12 @@ class OicqPacketCodec(
             if (release) {
                 reader.release()
             }
+            val subCommand = body.readShort()
             try {
-                return (decoders[transportCommand]?.invoke(client, uin, command) ?: OicqPacket.Response.Buffered(
-                    client,
-                    uin,
-                    command
-                ))
-                    .apply {
-                        readBody(body)
-                        body.release()
-                    }
+                val buffered = OicqPacket.Response.Buffered(client, uin, command, subCommand)
+                buffered.body = body
+                return (decoders[transportCommand]?.invoke(buffered)?.apply { readBody(body) }
+                    ?.also { buffered.close() }) ?: buffered
             } finally {
                 ecdh.oicqSessionCount.decrementAndGet()
             }

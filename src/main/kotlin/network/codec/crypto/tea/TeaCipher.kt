@@ -21,8 +21,6 @@ package katium.client.qq.network.codec.crypto.tea
  * https://github.com/mamoe/mirai/blob/master/mirai-core/src/commonMain/kotlin/utils/crypto/TEA.kt
  * https://github.com/takayama-lily/oicq/blob/main/lib/core/tea.ts
  */
-@Suppress("OPT_IN_IS_NOT_ENABLED")
-@OptIn(ExperimentalUnsignedTypes::class)
 class TeaCipher(val key: UIntArray) {
 
     companion object {

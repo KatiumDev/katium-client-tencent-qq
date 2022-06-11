@@ -17,7 +17,7 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeT1(uin: Int, ip: ByteArray) = writeTlv(0x01) {
+context(TlvWriterContext) fun ByteBuf.writeT1(uin: Int, ip: ByteArray) = writeTlv(0x01) {
     if(ip.size != 4) throw IllegalArgumentException("IP must be 4 bytes")
     writeShort(1) // IP version
     writeInt(kotlin.random.Random.Default.nextInt())

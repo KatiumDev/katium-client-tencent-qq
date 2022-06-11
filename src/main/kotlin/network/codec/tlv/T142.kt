@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import io.netty.buffer.ByteBuf
 import kotlin.math.min
 
-fun ByteBuf.writeT142(apkID: ByteArray) = writeTlv(0x142) {
+context(TlvWriterContext) fun ByteBuf.writeT142(apkID: ByteArray) = writeTlv(0x142) {
     writeShort(0) // version
     val length = min(apkID.size, 32)
     writeShort(length)

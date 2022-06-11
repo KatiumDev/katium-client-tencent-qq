@@ -23,33 +23,29 @@ import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.tlv.*
 import java.util.*
 
-class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
-    OicqPacket.Request.Simple(
-        client = client,
-        uin = client.uin.toInt(),
-        command = 0x0810,
-        encryption = OicqPacket.EncryptType.ECDH
-    ) {
+class PasswordLoginPacket(client: QQClient, val sequenceID: Int) : OicqPacket.Request.Simple(
+    client = client,
+    uin = client.uin.toInt(),
+    command = 0x0810,
+    encryption = OicqPacket.EncryptType.ECDH,
+    subCommand = 9
+) {
 
     companion object {
 
-        fun create(client: QQClient, sequenceID: Int = client.allocPacketSequenceID()) =
-            TransportPacket.Request.Oicq(
-                client = client,
-                type = TransportPacket.Type.LOGIN,
-                encryptType = TransportPacket.EncryptType.EMPTY_KEY,
-                sequenceID = sequenceID,
-                command = "wtlogin.login",
-                packet = PasswordLoginPacket(client, sequenceID)
-            )
+        fun create(client: QQClient, sequenceID: Int = client.allocPacketSequenceID()) = TransportPacket.Request.Oicq(
+            client = client,
+            type = TransportPacket.Type.LOGIN,
+            encryptType = TransportPacket.EncryptType.EMPTY_KEY,
+            sequenceID = sequenceID,
+            command = "wtlogin.login",
+            packet = PasswordLoginPacket(client, sequenceID)
+        )
 
     }
 
     override fun writeBody(output: ByteBuf) {
-        output.apply {
-            writeShort(9)
-            writeShort(if (client.bot.options.allowSlider) 0x17 else 0x16)
-
+        output.writeTlvMap {
             writeT18(uin = client.uin.toInt())
             writeT1(uin = client.uin.toInt(), ip = client.deviceInfo.ipAddress.map(Int::toByte).toByteArray())
             writeT106(
@@ -91,8 +87,7 @@ class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
             }*/
             writeT154(sequenceID = sequenceID)
             writeT141(
-                simInfo = client.deviceInfo.simInfo.toByteArray(),
-                apn = client.deviceInfo.apn.toByteArray()
+                simInfo = client.deviceInfo.simInfo.toByteArray(), apn = client.deviceInfo.apn.toByteArray()
             )
             writeT8()
             writeT511()
@@ -102,14 +97,12 @@ class PasswordLoginPacket(client: QQClient, val sequenceID: Int) :
             if (client.bot.options.allowSlider) {
                 writeT191()
             }
-            @Suppress("DEPRECATION")
-            writeT202(
+            @Suppress("DEPRECATION") writeT202(
                 wifiBSSIDMD5 = Hashing.md5().hashBytes(client.deviceInfo.wifiBSSID.toByteArray()).asBytes(),
                 wifiSSID = client.deviceInfo.wifiSSID.toByteArray()
             )
             writeT177(
-                buildTime = client.version.buildTime,
-                sdkVersion = client.version.sdkVersion.toByteArray()
+                buildTime = client.version.buildTime, sdkVersion = client.version.sdkVersion.toByteArray()
             )
             writeT516()
             writeT521()

@@ -43,7 +43,6 @@ import katium.client.qq.network.message.decoder.MessageDecoders
 import katium.client.qq.network.message.encoder.MessageEncoders
 import katium.client.qq.network.message.parser.MessageParsers
 import katium.client.qq.network.packet.chat.*
-import katium.client.qq.network.packet.login.LoginResponsePacket
 import katium.client.qq.network.packet.login.PasswordLoginPacket
 import katium.client.qq.network.packet.login.UpdateSigRequest
 import katium.client.qq.network.packet.meta.ClientRegisterPacket
@@ -56,10 +55,10 @@ import katium.client.qq.network.sso.SsoServerListManager
 import katium.client.qq.network.sync.Synchronizer
 import katium.client.qq.user.QQContact
 import katium.client.qq.user.QQUser
-import katium.client.qq.util.CoroutineLazy
 import katium.core.event.BotOfflineEvent
 import katium.core.event.BotOnlineEvent
 import katium.core.review.ReviewMessage
+import katium.core.util.CoroutineLazy
 import katium.core.util.event.post
 import katium.core.util.event.register
 import katium.core.util.netty.EmptyByteBuf
@@ -96,6 +95,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     val uin by bot::uin
 
     init {
+        bot.register(LoginResponseHandler)
         bot.register(HeartbeatHandler)
         bot.register(ConfigPushHandler)
         bot.register(SidTicketExpiredHandler)
@@ -210,7 +210,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
             }
             logger.info("Trying connect to $currentServerAddress...(retry $retryTimes, server $currentServerCounter/${serverAddresses.size})")
             try {
-                suspendCancellableCoroutine<Unit> { continuation ->
+                suspendCancellableCoroutine { continuation ->
                     Bootstrap().channel(NioSocketChannel::class.java).group(eventLoopGroup)
                         .option(ChannelOption.TCP_NODELAY, true).handler(object : ChannelInitializer<SocketChannel>() {
                             override fun initChannel(ch: SocketChannel) {
@@ -271,36 +271,24 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
 
     suspend fun sendAndWaitOicq(packet: TransportPacket.Request) = sendAndWait(packet) as TransportPacket.Response.Oicq
 
-    suspend fun login() {
-        if (bot.options.cacheSession && loadSession()) {
-            loginWithToken()
-        } else {
-            logger.info("Session cache not found or disabled")
-            loginWithPassword()
-        }
-        registerClient()
-        notifyOnline()
-        pullSystemMessages()
-        startSyncMessages()
-        logger.info("Login succeeded")
+    suspend fun login() = if (bot.options.cacheSession && loadSession()) {
+        loginWithToken()
+    } else {
+        logger.info("Session cache not found or disabled")
+        loginWithPassword()
     }
 
     suspend fun loginWithToken() {
         if (oicqCodec.ecdh.v2Waiters != null) {
             logger.info("Token login requires ECDH v2, waiting...")
-            suspendCoroutine<Unit> {
+            suspendCoroutine {
                 oicqCodec.ecdh.v2Waiters!!.add(it)
             }
         }
-        sendAndWaitOicq(UpdateSigRequest.create(this, mainSigMap = version.mainSigMap)).close()
+        send(UpdateSigRequest.create(this, mainSigMap = version.mainSigMap))
     }
 
-    suspend fun loginWithPassword() = sendAndWaitOicq(PasswordLoginPacket.create(this)).use {
-        val response = it.packet as LoginResponsePacket
-        if (!response.success) {
-            throw RuntimeException("Password login failed, $response")
-        }
-    }
+    fun loginWithPassword() = send(PasswordLoginPacket.create(this))
 
     suspend fun registerClient() {
         runCatching {

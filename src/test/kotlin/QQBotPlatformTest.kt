@@ -13,10 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.network.codec.tlv
+package katium.client.qq.test
 
-import io.netty.buffer.ByteBuf
+import katium.client.qq.QQBotPlatform
+import katium.core.BotPlatform
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
-context(TlvWriterContext) fun ByteBuf.writeT10A(tgt: ByteArray) = writeTlv(0x10A) {
-    writeBytes(tgt)
+class QQBotPlatformTest {
+
+    @Test
+    fun `can lookup`() {
+        assertEquals(QQBotPlatform, BotPlatform.lookup.resolve("qq"))
+    }
+
 }

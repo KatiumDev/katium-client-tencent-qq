@@ -22,7 +22,7 @@ import katium.core.event.BotEvent
 
 class QQOicqDecodersInitializeEvent(
     val codec: OicqPacketCodec,
-    val decoders: MutableMap<String, (QQClient, Int, Short) -> OicqPacket.Response.Simple>
+    val decoders: MutableMap<String, (OicqPacket.Response.Buffered) -> OicqPacket.Response.Simple>
 ) : BotEvent(codec.client.bot) {
 
     val client by codec::client

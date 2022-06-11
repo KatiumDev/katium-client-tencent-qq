@@ -60,3 +60,35 @@ fun ByteBuf.readTlvMap(tagSize: Int = 2, release: Boolean = true): TlvMap {
     }
     return TlvMap(map)
 }
+
+fun ByteBuf.writeTlvMap(tlv: TlvMap, tagSize: Int = 2, release: Boolean = true): ByteBuf {
+    when (tagSize) {
+        1 -> writeByte(tlv.size)
+        2 -> writeShort(tlv.size)
+        4 -> writeInt(tlv.size)
+        else -> throw UnsupportedOperationException("Unsupported tag size: $tagSize")
+    }
+    with(TlvWriterContext.IGNORE) {
+        tlv.forEach { (type, data) ->
+            writeTlv(type.toInt()) { writeBytes(data) }
+        }
+    }
+    if (release) tlv.release()
+    return this
+}
+
+inline fun ByteBuf.writeTlvMap(
+    tagSize: Int = 2, crossinline writer: context(TlvWriterContext, ByteBuf) () -> Unit
+): ByteBuf {
+    val sizeOffset = writerIndex()
+    writeZero(tagSize)
+    val context = TlvWriterContext()
+    writer(context, this)
+    when (tagSize) {
+        1 -> setByte(sizeOffset, context.tlvCount.value)
+        2 -> setShort(sizeOffset, context.tlvCount.value)
+        4 -> setIndex(sizeOffset, context.tlvCount.value)
+        else -> throw UnsupportedOperationException("Unsupported tag size: $tagSize")
+    }
+    return this
+}

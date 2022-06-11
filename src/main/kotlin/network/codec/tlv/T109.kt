@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeT109(androidID: ByteArray) = writeTlv(0x109) {
+context(TlvWriterContext) fun ByteBuf.writeT109(androidID: ByteArray) = writeTlv(0x109) {
     @Suppress("DEPRECATION")
     writeBytes(Hashing.md5().hashBytes(androidID).asBytes())
 }

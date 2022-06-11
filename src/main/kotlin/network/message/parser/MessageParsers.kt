@@ -17,7 +17,7 @@ package katium.client.qq.network.message.parser
 
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageParsersInitializeEvent
-import katium.client.qq.util.CoroutineLazy
+import katium.core.util.CoroutineLazy
 import katium.core.util.event.post
 
 class MessageParsers(val client: QQClient) {

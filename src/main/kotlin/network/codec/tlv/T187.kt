@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeT187(macAddress: ByteArray) = writeTlv(0x187) {
+context(TlvWriterContext) fun ByteBuf.writeT187(macAddress: ByteArray) = writeTlv(0x187) {
     @Suppress("DEPRECATION")
     writeBytes(Hashing.md5().hashBytes(macAddress).asBytes())
 }

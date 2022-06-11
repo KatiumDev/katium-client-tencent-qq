@@ -19,7 +19,7 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.network.packet.login.LoginExtraData
 import katium.core.util.netty.buffer
 
-fun ByteBuf.writeT525(buffer: ByteBuf, release: Boolean = true) = writeTlv(0x525) {
+context(TlvWriterContext) fun ByteBuf.writeT525(buffer: ByteBuf, release: Boolean = true) = writeTlv(0x525) {
     writeShort(1)
     writeBytes(buffer)
     if (release) {
@@ -27,6 +27,6 @@ fun ByteBuf.writeT525(buffer: ByteBuf, release: Boolean = true) = writeTlv(0x525
     }
 }
 
-fun ByteBuf.writeT525(loginExtraData: Array<LoginExtraData>) = writeT525(alloc().buffer {
-    writeT536(loginExtraData)
+context(TlvWriterContext) fun ByteBuf.writeT525(loginExtraData: Array<LoginExtraData>) = writeT525(alloc().buffer {
+    TlvWriterContext.exempt { writeT536(loginExtraData) }
 })

@@ -17,7 +17,7 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeT107(
+context(TlvWriterContext) fun ByteBuf.writeT107(
     pictureType: Int,
     captchaType: Int = 0,
     pictureSize: Int = 0,

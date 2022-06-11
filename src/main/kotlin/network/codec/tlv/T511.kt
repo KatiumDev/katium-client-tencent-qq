@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.codec.base.writeQQShortLengthString
 
-fun ByteBuf.writeT511(
+context(TlvWriterContext) fun ByteBuf.writeT511(
     domains: Array<String> = arrayOf(
         "tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
         "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",

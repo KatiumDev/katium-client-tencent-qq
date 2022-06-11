@@ -17,7 +17,7 @@ package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
 
-fun ByteBuf.writeT18(appID: Int = 16, uin: Int) = writeTlv(0x18) {
+context(TlvWriterContext) fun ByteBuf.writeT18(appID: Int = 16, uin: Int) = writeTlv(0x18) {
     writeShort(1) // ping version
     writeInt(1536) // SSO version
     writeInt(appID)

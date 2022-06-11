@@ -22,6 +22,7 @@ import katium.core.chat.LocalChatID
 import katium.core.group.Group
 import katium.core.review.ReviewMessage
 import katium.core.user.Contact
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -36,9 +37,9 @@ class QQBot(config: Map<String, String>) : Bot(QQBotPlatform, QQLocalChatID(conf
     val client = QQClient(this)
 
     var loopContinuation: Continuation<Unit>? = null
-    override val loopJob = launch(start = CoroutineStart.LAZY) {
+    override val loopJob = launch(CoroutineName("Main Loop"), start = CoroutineStart.LAZY) {
         client.connect()
-        suspendCoroutine<Unit> {
+        suspendCoroutine {
             loopContinuation = it
         }
         client.close()

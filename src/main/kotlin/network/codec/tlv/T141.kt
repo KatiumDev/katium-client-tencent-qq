@@ -18,7 +18,7 @@ package katium.client.qq.network.codec.tlv
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.auth.NetworkType
 
-fun ByteBuf.writeT141(simInfo: ByteArray, networkType: NetworkType = NetworkType.WIFI, apn: ByteArray) =
+context(TlvWriterContext) fun ByteBuf.writeT141(simInfo: ByteArray, networkType: NetworkType = NetworkType.WIFI, apn: ByteArray) =
     writeTlv(0x141) {
         writeShort(1) // version
         writeShort(simInfo.size)

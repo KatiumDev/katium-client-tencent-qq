@@ -17,28 +17,23 @@ package katium.client.qq.network.packet.login
 
 import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
-import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oicq.OicqPacket
 import katium.client.qq.network.codec.tlv.applyT119
 import katium.client.qq.network.codec.tlv.applyT119R
 import katium.client.qq.network.codec.tlv.readT119
 import katium.client.qq.network.codec.tlv.readTlvMap
 
-class UpdateSigResponse(client: QQClient, uin: Int, command: Short) :
-    OicqPacket.Response.Simple(client, uin, command) {
+class UpdateSigResponse(other: OicqPacket.Response.Buffered) : OicqPacket.Response.Simple(other) {
 
-    var type: Int = 0
-        private set
     var result: Int = 0
         private set
 
     override fun readBody(input: ByteBuf) {
-        type = input.readShort().toInt()
         result = input.readByte().toInt()
         input.skipBytes(2)
         input.readTlvMap(2, release = false).use { tlv ->
-            if (result != 0) throw IllegalStateException("Unable to exchange_emp, type=$type, result=$result, tlv=$tlv")
-            when (type) {
+            if (result != 0) throw IllegalStateException("Unable to exchange_emp, subCommand=$subCommand, result=$result, tlv=$tlv")
+            when (subCommand.toInt()) {
                 15 -> {
                     tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false).use {
                         it.applyT119R(client)
@@ -53,7 +48,7 @@ class UpdateSigResponse(client: QQClient, uin: Int, command: Short) :
                         it.applyT119(client)
                     }
                 }
-                else -> throw UnsupportedOperationException("Unknown exchange_emp response type: $type")
+                else -> throw UnsupportedOperationException("Unknown exchange_emp response subCommand: $subCommand")
             }
         }
     }

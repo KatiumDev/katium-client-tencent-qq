@@ -17,7 +17,6 @@ package katium.client.qq.network.packet.login
 
 import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
-import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.base.readQQShortLengthString
 import katium.client.qq.network.codec.oicq.OicqPacket
 import katium.client.qq.network.codec.tlv.applyT119
@@ -27,8 +26,7 @@ import katium.core.util.netty.readUByte
 import katium.core.util.netty.toArray
 import kotlin.random.Random
 
-class LoginResponsePacket(client: QQClient, uin: Int, command: Short) :
-    OicqPacket.Response.Simple(client, uin, command) {
+class LoginResponsePacket(other: OicqPacket.Response.Buffered) : OicqPacket.Response.Simple(other) {
 
     var success: Boolean = false
         private set
@@ -42,21 +40,19 @@ class LoginResponsePacket(client: QQClient, uin: Int, command: Short) :
         private set
     var errorMessage: String? = null
         private set
+    var deviceLock: Boolean = false
+        private set
 
     override fun readBody(input: ByteBuf) {
         input.run {
-            skipBytes(2) // sub command
             val type = readUByte().toUInt()
             skipBytes(2)
             val tlv = readTlvMap(2, release = false)
+            @Suppress("DEPRECATION")
             if (0x402 in tlv) {
                 client.sig.dpwd = Random.Default.nextBytes(16)
                 client.sig.t402 = tlv[0x402]!!.toArray(release = false)
-                @Suppress("DEPRECATION")
-                client.sig.g =
-                    Hashing.md5()
-                        .hashBytes(client.deviceInfo.guid + client.sig.dpwd!! + client.sig.t402!!)
-                        .asBytes()
+                client.sig.g = Hashing.md5().hashBytes(client.deviceInfo.guid + client.sig.dpwd!! + client.sig.t402!!).asBytes()
             }
             when (type) {
                 0x00u -> {
@@ -136,7 +132,12 @@ class LoginResponsePacket(client: QQClient, uin: Int, command: Short) :
                 0xA1u, 0xA2u -> errorMessage = "Too many SMS requests($type)"
                 0xA3u -> errorMessage = "Wrong device lock verification code(163)"
                 0xB4u -> errorMessage = "Fallback(180), ECDH error"
-                0xCCu -> TODO("Device lock") // @TODO: https://cs.github.com/Mrs4s/MiraiGo/blob/master/client/decoders.go#L146
+                0xCCu -> {
+                    errorMessage = "Device lock(204)"
+                    deviceLock = true
+                    client.sig.t104 = tlv[0x104]!!.toArray(false)
+                    client.sig.randomSeed = tlv[0x403]!!.toArray(false)
+                }
                 0xEDu -> errorMessage = "Account not enabled(237)"
                 else -> throw IllegalStateException("Unknown login response type: $type")
             }

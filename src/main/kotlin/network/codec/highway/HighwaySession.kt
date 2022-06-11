@@ -73,20 +73,16 @@ class HighwaySession(val highway: Highway, val channel: SocketChannel) : AutoClo
         val chunkOffset = transaction.chunkSize * chunk
         val chunkSize = min(bodySize - chunkOffset, transaction.chunkSize)
         val chunkData = transaction.body.copyOfRange(chunkOffset, chunkOffset + chunkSize)
-        return sendAndWait(PbHighway.HighwayRequestHeader.newBuilder().apply {
-            data = createDataHeader(command = "PicUp.DataUp", commandID = transaction.command)
-            segment = PbHighway.HighwaySegmentHeader.newBuilder().apply {
-                fileSize = bodySize.toLong()
-                dataOffset = chunkOffset.toLong()
-                dataLength = chunkSize
-                serviceTicket = ByteString.copyFrom(transaction.ticket)
-                @Suppress("DEPRECATION") md5 = ByteString.copyFrom(
-                    Hashing.md5().hashBytes(chunkData).asBytes()
-                )
-                fileMd5 = ByteString.copyFrom(transaction.bodyMd5)
-            }.build()
-            extensionInfo = ByteString.empty()
-        }.build() to chunkData)
+        @Suppress("DEPRECATION") return sendAndWait(
+            PbHighway.HighwayRequestHeader.newBuilder()
+                .setData(createDataHeader(command = "PicUp.DataUp", commandID = transaction.command)).setSegment(
+                    PbHighway.HighwaySegmentHeader.newBuilder().setFileSize(bodySize.toLong())
+                        .setDataOffset(chunkOffset.toLong()).setDataLength(chunkSize)
+                        .setServiceTicket(ByteString.copyFrom(transaction.ticket))
+                        .setMd5(ByteString.copyFrom(Hashing.md5().hashBytes(chunkData).asBytes()))
+                        .setFileMd5(ByteString.copyFrom(transaction.bodyMd5))
+                ).setExtensionInfo(ByteString.empty()).build() to chunkData
+        )
     }
 
 }

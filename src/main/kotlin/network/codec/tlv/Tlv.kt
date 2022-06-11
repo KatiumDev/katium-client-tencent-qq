@@ -16,6 +16,35 @@
 package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
+import kotlinx.atomicfu.atomic
+
+class TlvWriterContext {
+
+    companion object {
+
+        @JvmField
+        val IGNORE = TlvWriterContext()
+
+        inline fun <T> exempt(crossinline block: context(TlvWriterContext) () -> T) = with(IGNORE, block)
+
+    }
+
+    val tlvCount = atomic(0)
+
+    fun recordTlvWrite() = tlvCount.incrementAndGet()
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is TlvWriterContext) return false
+        if (tlvCount != other.tlvCount) return false
+        return true
+    }
+
+    override fun hashCode() = tlvCount.hashCode()
+
+    override fun toString() = "TlvWriterContext(count=$tlvCount)"
+
+}
 
 /**
  * https://cs.github.com/Mrs4s/MiraiGo/tree/master/internal/tlv
@@ -23,11 +52,14 @@ import io.netty.buffer.ByteBuf
  * https://github.com/takayama-lily/oicq/blob/main/lib/core/tlv.ts
  * https://github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/protocol/packet/Tlv.kt
  */
-inline fun ByteBuf.writeTlv(command: Int, crossinline writer: ByteBuf.() -> Unit): ByteBuf {
-    writeShort(command)
+context(TlvWriterContext) inline fun ByteBuf.writeTlv(type: Int, crossinline writer: ByteBuf.() -> Unit): ByteBuf {
+    recordTlvWrite()
+    writeShort(type)
     writeZero(2)
     val pos = writerIndex()
+    val currentTlvCount = tlvCount.value
     writer()
+    if (currentTlvCount != tlvCount.value) throw IllegalStateException("Nested TLV without context switching detected")
     setShort(pos - 2, writerIndex() - pos)
     return this
 }

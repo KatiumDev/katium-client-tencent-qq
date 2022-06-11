@@ -18,9 +18,9 @@ package katium.client.qq.network.handler
 import katium.client.qq.network.event.QQPacketReceivedEvent
 import katium.client.qq.network.event.QQReceivedRawMessageEvent
 import katium.client.qq.network.packet.chat.PushGroupMessagesPacket
-import katium.core.util.event.EventListener
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
+import java.util.*
 
 object GroupMessagesHandler : EventListener {
 
