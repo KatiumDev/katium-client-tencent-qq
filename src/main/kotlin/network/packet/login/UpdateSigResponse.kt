@@ -32,23 +32,23 @@ class UpdateSigResponse(other: OicqPacket.Response.Buffered) : OicqPacket.Respon
         result = input.readByte().toInt()
         input.skipBytes(2)
         input.readTlvMap(2, release = false).use { tlv ->
-            if (result != 0) throw IllegalStateException("Unable to exchange_emp, subCommand=$subCommand, result=$result, tlv=$tlv")
-            when (subCommand.toInt()) {
-                15 -> {
-                    tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false).use {
-                        it.applyT119R(client)
+            when (result) {
+                0 -> when (subCommand.toInt()) {
+                    15 -> {
+                        tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false).use {
+                            it.applyT119R(client)
+                        }
                     }
-                }
-                11 -> {
-                    @Suppress("DEPRECATION")
-                    tlv[0x119]!!.readT119(
-                        Hashing.md5().hashBytes(client.sig.d2KeyEncoded.toByteArray()).asBytes(),
-                        release = false
-                    ).use {
-                        it.applyT119(client)
+                    11 -> {
+                        @Suppress("DEPRECATION") tlv[0x119]!!.readT119(
+                            Hashing.md5().hashBytes(client.sig.d2KeyEncoded.toByteArray()).asBytes(), release = false
+                        ).use {
+                            it.applyT119(client)
+                        }
                     }
+                    else -> throw UnsupportedOperationException("Unknown exchange_emp response subCommand: $subCommand")
                 }
-                else -> throw UnsupportedOperationException("Unknown exchange_emp response subCommand: $subCommand")
+                else -> throw IllegalStateException("Unable to exchange_emp, subCommand=$subCommand, result=$result, tlv=$tlv")
             }
         }
     }

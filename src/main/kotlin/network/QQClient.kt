@@ -44,6 +44,8 @@ import katium.client.qq.network.message.encoder.MessageEncoders
 import katium.client.qq.network.message.parser.MessageParsers
 import katium.client.qq.network.packet.chat.*
 import katium.client.qq.network.packet.login.PasswordLoginPacket
+import katium.client.qq.network.packet.login.SmsRequestPacket
+import katium.client.qq.network.packet.login.SmsSubmitPacket
 import katium.client.qq.network.packet.login.UpdateSigRequest
 import katium.client.qq.network.packet.meta.ClientRegisterPacket
 import katium.client.qq.network.packet.review.PullGroupSystemMessagesRequest
@@ -95,14 +97,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     val uin by bot::uin
 
     init {
-        bot.register(LoginResponseHandler)
-        bot.register(HeartbeatHandler)
-        bot.register(ConfigPushHandler)
-        bot.register(SidTicketExpiredHandler)
-        bot.register(FriendMessagesHandler)
-        bot.register(GroupMessagesHandler)
-        bot.register(RawMessageHandler)
-        bot.register(ReadReportHandler)
+        QQClientHandler.lookup.services.forEach { bot.register(it) }
     }
 
     val serverAddresses = selectServerAddresses()
@@ -288,7 +283,20 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         send(UpdateSigRequest.create(this, mainSigMap = version.mainSigMap))
     }
 
-    fun loginWithPassword() = send(PasswordLoginPacket.create(this))
+    fun loginWithPassword() {
+        logger.info("Logging in with password...")
+        send(PasswordLoginPacket.create(this))
+    }
+
+    fun requestSms() {
+        logger.info("Requesting SMS code for login...")
+        send(SmsRequestPacket.create(this))
+    }
+
+    fun submitSms(code: String) {
+        logger.info("Submitting SMS code for login...")
+        send(SmsSubmitPacket.create(this, code = code))
+    }
 
     suspend fun registerClient() {
         runCatching {

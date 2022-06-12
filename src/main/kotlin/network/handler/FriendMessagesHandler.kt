@@ -32,7 +32,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
 
-object FriendMessagesHandler : EventListener {
+object FriendMessagesHandler : QQClientHandler {
+
+    override val id: String get() = "friend_messages_handler"
 
     @Subscribe
     suspend fun onPacket(event: QQPacketReceivedEvent) {

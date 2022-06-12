@@ -22,7 +22,9 @@ import katium.core.util.event.Subscribe
 import katium.core.util.event.post
 import java.util.*
 
-object GroupMessagesHandler : EventListener {
+object GroupMessagesHandler : QQClientHandler {
+
+    override val id: String get() = "group_messages_handler"
 
     @Subscribe
     suspend fun onPacket(event: QQPacketReceivedEvent) {

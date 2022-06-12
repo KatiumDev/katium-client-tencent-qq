@@ -24,6 +24,10 @@ class QQBotOptions(config: Map<String, String>) {
     val cacheSession = config["qq.login.cache_session"]?.toBoolean() ?: true
     val password = config["qq.login.password.plain"] ?: config["qq.login.password"]
     val passwordMD5 = config["qq.login.password.md5"]
+    val interactiveLogin = config["qq.login.interactive"]?.toBoolean() ?: true
+    val loginSolutionProvider = config["qq.login.solution.provider"]
+    val loginSolutionSelector = config["qq.login.solution.selector"]
+    val loginSmsProvider = config["qq.login.solution.sms_provider"]
 
     /**
      * Remote server

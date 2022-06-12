@@ -46,15 +46,15 @@ object BotTests {
 
         })
         bot.start()
+        bot.launch {
+            delay(2400)
+            bot.stop()
+            throw IllegalStateException("Bot test timeout")
+        }
         runBlocking {
             println("waiting for bot online")
             bot.eventBus.await(BotOnlineEvent::class)
             println("bot online, test starting")
-            bot.launch {
-                delay(240000)
-                bot.stop()
-                throw IllegalStateException("Bot test timeout")
-            }
         }
     }
 

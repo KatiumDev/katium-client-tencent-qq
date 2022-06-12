@@ -42,17 +42,19 @@ class LoginResponsePacket(other: OicqPacket.Response.Buffered) : OicqPacket.Resp
         private set
     var deviceLock: Boolean = false
         private set
+    var smsSent: Boolean = false
+        private set
 
     override fun readBody(input: ByteBuf) {
         input.run {
             val type = readUByte().toUInt()
             skipBytes(2)
             val tlv = readTlvMap(2, release = false)
-            @Suppress("DEPRECATION")
-            if (0x402 in tlv) {
+            @Suppress("DEPRECATION") if (0x402 in tlv) {
                 client.sig.dpwd = Random.Default.nextBytes(16)
                 client.sig.t402 = tlv[0x402]!!.toArray(release = false)
-                client.sig.g = Hashing.md5().hashBytes(client.deviceInfo.guid + client.sig.dpwd!! + client.sig.t402!!).asBytes()
+                client.sig.g =
+                    Hashing.md5().hashBytes(client.deviceInfo.guid + client.sig.dpwd!! + client.sig.t402!!).asBytes()
             }
             when (type) {
                 0x00u -> {
@@ -72,22 +74,8 @@ class LoginResponsePacket(other: OicqPacket.Response.Buffered) : OicqPacket.Resp
                     tlv[0x119]!!.readT119(client.deviceInfo.tgtgtKey, release = false).use {
                         it.applyT119(client)
                     }
-                    if (0x149 in tlv) {
-                        success = false
-                        tlv[0x149]!!.apply {
-                            skipBytes(2)
-                            errorMessage = "Other device login(0 with T149), ${readQQShortLengthString()}"
-                        }
-                    }
-                    if (0x146 in tlv) {
-                        success = false
-                        tlv[0x146]!!.apply {
-                            skipBytes(4)
-                            errorMessage = "Other device login(0 with T146), ${readQQShortLengthString()}"
-                        }
-                    }
                 }
-                0x01u -> errorMessage = "Wrong password"
+                0x01u -> errorMessage = "Wrong password(1)"
                 0x02u -> {
                     errorMessage = "Need captcha(2)"
                     client.sig.t104 = tlv[0x104]!!.toArray(false)
@@ -123,13 +111,17 @@ class LoginResponsePacket(other: OicqPacket.Response.Buffered) : OicqPacket.Resp
                     if (0x17B in tlv) {
                         errorMessage += ", SMS needed error(T17B)"
                         client.sig.t104 = tlv[0x104]!!.toArray(false)
+                        smsSent = true
                     }
                     if (0x204 in tlv) { // QR code
                         errorMessage += ", with QR code(T204)"
                         verifyUrl = String(tlv[0x204]!!.toArray(false))
                     }
                 }
-                0xA1u, 0xA2u -> errorMessage = "Too many SMS requests($type)"
+                0xA1u, 0xA2u -> {
+                    errorMessage = "Too many SMS requests($type)"
+                    smsSent = true
+                }
                 0xA3u -> errorMessage = "Wrong device lock verification code(163)"
                 0xB4u -> errorMessage = "Fallback(180), ECDH error"
                 0xCCu -> {
@@ -139,7 +131,23 @@ class LoginResponsePacket(other: OicqPacket.Response.Buffered) : OicqPacket.Resp
                     client.sig.randomSeed = tlv[0x403]!!.toArray(false)
                 }
                 0xEDu -> errorMessage = "Account not enabled(237)"
-                else -> throw IllegalStateException("Unknown login response type: $type")
+                else -> {
+                    if (0x149 in tlv) {
+                        success = false
+                        tlv[0x149]!!.apply {
+                            skipBytes(2)
+                            errorMessage = "Other login error($type with T149), ${readQQShortLengthString()}"
+                        }
+                    }
+                    if (0x146 in tlv) {
+                        success = false
+                        tlv[0x146]!!.apply {
+                            skipBytes(4)
+                            errorMessage = "Other login error($type with T146), ${readQQShortLengthString()}"
+                        }
+                    }
+                    throw IllegalStateException("Unknown login response type: $type")
+                }
             }
             tlv.release()
         }

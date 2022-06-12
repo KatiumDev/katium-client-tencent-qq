@@ -23,7 +23,9 @@ import katium.core.util.event.Subscribe
 import katium.core.util.event.post
 import java.util.*
 
-object RawMessageHandler : EventListener {
+object RawMessageHandler : QQClientHandler {
+
+    override val id: String get() = "raw_messages_decoder"
 
     @Subscribe(async = AsyncMode.ASYNC)
     suspend fun onMessage(event: QQReceivedRawMessageEvent) {

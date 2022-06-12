@@ -31,7 +31,9 @@ import kotlinx.coroutines.launch
 import java.net.InetSocketAddress
 import java.util.*
 
-object ConfigPushHandler : EventListener {
+object ConfigPushHandler : QQClientHandler {
+
+    override val id: String get() = "config_push_handler"
 
     @Subscribe
     fun onPacket(event: QQPacketReceivedEvent) {

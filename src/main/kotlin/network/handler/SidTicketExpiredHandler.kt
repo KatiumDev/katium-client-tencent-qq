@@ -22,7 +22,9 @@ import katium.client.qq.network.packet.meta.SidTicketExpiredResponse
 import katium.core.util.event.Subscribe
 import java.util.*
 
-object SidTicketExpiredHandler : EventListener {
+object SidTicketExpiredHandler : QQClientHandler {
+
+    override val id: String get() = "sig_ticket_updater"
 
     @Subscribe
     suspend fun onPacket(event: QQPacketReceivedEvent) {

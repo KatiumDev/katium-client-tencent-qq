@@ -23,7 +23,9 @@ import katium.core.util.event.Subscribe
 import kotlinx.coroutines.*
 import java.util.*
 
-object HeartbeatHandler : EventListener {
+object HeartbeatHandler : QQClientHandler {
+
+    override val id: String get() = "heartbeat_handler"
 
     @Subscribe
     fun onOnline(event: BotOnlineEvent) {

@@ -23,7 +23,9 @@ import kotlinx.coroutines.*
 import java.util.*
 import kotlin.random.Random
 
-object ReadReportHandler : EventListener {
+object ReadReportHandler : QQClientHandler {
+
+    override val id: String get() = "read_reporter"
 
     @Subscribe
     fun onOnline(event: BotOnlineEvent) {
