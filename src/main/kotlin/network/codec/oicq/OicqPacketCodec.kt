@@ -30,6 +30,7 @@ import katium.core.util.netty.writeUBytes
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.runBlocking
 import java.util.*
+import kotlin.properties.Delegates
 import kotlin.random.Random
 
 class OicqPacketCodec(
@@ -38,7 +39,9 @@ class OicqPacketCodec(
 
     val randomKey = Random.Default.nextBytes(16).toUByteArray()
     val randomKeyCipher = QQTeaCipher(randomKey)
-    var wtSessionTicketKey: ByteArray? = null
+    var wtSessionTicketKey: ByteArray? by Delegates.observable(null) { _, _, newValue ->
+        wtSessionTicketKeyCipher = QQTeaCipher(newValue!!.toUByteArray())
+    }
     var wtSessionTicketKeyCipher: QQTeaCipher? = null
 
     val decoders: Map<String, (OicqPacket.Response.Buffered) -> OicqPacket.Response.Simple> by lazy {

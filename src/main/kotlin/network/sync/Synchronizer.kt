@@ -15,17 +15,15 @@
  */
 package katium.client.qq.network.sync
 
-import com.google.protobuf.ByteString
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.packet.chat.MessageReadReportRequest
-import katium.client.qq.network.pb.PbMessagesReadReport
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Job
 
 class Synchronizer(val client: QQClient) {
 
-    var syncCookie: ByteString? = null
-    var publicAccountCookie: ByteString? = null
+    var syncCookie: ByteArray? = null
+    var publicAccountCookie: ByteArray? = null
 
     val friendInitialSync = atomic(true)
 
@@ -66,17 +64,13 @@ class Synchronizer(val client: QQClient) {
         val time = (System.currentTimeMillis() / 1000).toInt()
         client.send(
             MessageReadReportRequest.create(
-                client, report = PbMessagesReadReport.ReadReportRequest.newBuilder().apply {
-                    friend = PbMessagesReadReport.FriendReadReportRequest.newBuilder().apply {
-                        this.syncCookie = syncCookie
-                        addAllInfo(peerUins.map {
-                            PbMessagesReadReport.UinPairReadInfo.newBuilder().apply {
-                                peerUin = it
-                                lastReadTime = time
-                            }.build()
-                        })
-                    }.build()
-                }.build()
+                client, report = MessageReadReportRequest(
+                    friend = MessageReadReportRequest.Friend.Request(
+                        syncCookie = syncCookie ?: ByteArray(0), info = peerUins.map {
+                            MessageReadReportRequest.Friend.UinPairReadInfo(peerUin = it, lastReadTime = time)
+                        }.toSet()
+                    )
+                )
             )
         )
     }
@@ -104,14 +98,14 @@ class Synchronizer(val client: QQClient) {
         client.logger.info("Reporting ${groups.size} groups as read")
         client.send(
             MessageReadReportRequest.create(
-                client, report = PbMessagesReadReport.ReadReportRequest.newBuilder().addAllGroup(
-                    groups.map { groupCode ->
-                        PbMessagesReadReport.GroupReadReportRequest.newBuilder().apply {
-                            this.groupCode = groupCode
-                            this.lastReadSequence = client.getGroups()[groupCode]!!.lastReadSequence.get()
-                        }.build()
-                    }
-                ).build()
+                client, report = MessageReadReportRequest(
+                    groups = groups.map { groupCode ->
+                        MessageReadReportRequest.Group.Request(
+                            groupCode = groupCode,
+                            lastReadSequence = client.getGroups()[groupCode]!!.lastReadSequence.get()
+                        )
+                    }.toSet()
+                )
             )
         )
     }

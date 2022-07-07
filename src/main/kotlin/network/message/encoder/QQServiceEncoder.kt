@@ -15,12 +15,12 @@
  */
 package katium.client.qq.network.message.encoder
 
-import com.google.protobuf.ByteString
 import katium.client.qq.chat.QQChat
 import katium.client.qq.message.content.QQService
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
+import katium.client.qq.network.message.pb.PbMessageElement
 import java.io.ByteArrayOutputStream
+import java.util.*
 import java.util.zip.DeflaterOutputStream
 
 object QQServiceEncoder : MessageEncoder<QQService> {
@@ -29,38 +29,39 @@ object QQServiceEncoder : MessageEncoder<QQService> {
 
     override suspend fun encode(
         client: QQClient, context: QQChat, message: QQService, withGeneralFlags: Boolean, isStandalone: Boolean
-    ): Array<PbMessageElements.Element> = ByteArrayOutputStream().use { content ->
+    ): Array<PbMessageElement> = ByteArrayOutputStream().use { content ->
         content.write(1)
         DeflaterOutputStream(content).use {
             it.write(message.content.toByteArray())
         }
-        val richMessage = PbMessageElements.Element.newBuilder().setServiceMessage(
-            PbMessageElements.ServiceMessage.newBuilder().setTemplate(ByteString.copyFrom(content.toByteArray()))
-                .setServiceID(message.id)
-        ).build()
+        val richMessage = PbMessageElement(
+            serviceMessage = PbMessageElement.ServiceMessage(
+                template = content.toByteArray(),
+                serviceID = message.id
+            )
+        )
         return run {
             if (message.id == 1) {
-                arrayOf(
-                    PbMessageElements.Element.newBuilder().setText(
-                        PbMessageElements.Text.newBuilder().setString(message.resourceID).build()
-                    ).build(), richMessage
-                )
+                arrayOf(PbMessageElement(text = PbMessageElement.Text(string = message.resourceID)), richMessage)
             } else {
                 arrayOf(richMessage)
             }
         } + (if (withGeneralFlags) arrayOf(
             if (message.type == QQService.Type.LONG_MESSAGE) {
-                PbMessageElements.Element.newBuilder().setGeneralFlags(
-                    PbMessageElements.GeneralFlags.newBuilder().setLongTextFlag(1)
-                        .setLongTextResourceID(message.resourceID).setPbReserve(ByteString.fromHex("7800F80100C80200"))
-                        .build()
-                ).build()
+                PbMessageElement(
+                    generalFlags = PbMessageElement.GeneralFlags(
+                        longTextFlag = 1,
+                        longTextResourceID = message.resourceID,
+                        pbReserve = HexFormat.of().parseHex("7800F80100C80200")
+                    )
+                )
             } else {
-                PbMessageElements.Element.newBuilder().setGeneralFlags(
-                    PbMessageElements.GeneralFlags.newBuilder()
-                        .setPbReserve(ByteString.fromHex("08097800C80100F00100F80100900200C80200980300A00320B00300C00300D00300E803008A04020803900480808010B80400C00400"))
-                        .build()
-                ).build()
+                PbMessageElement(
+                    generalFlags = PbMessageElement.GeneralFlags(
+                        pbReserve = HexFormat.of()
+                            .parseHex("08097800C80100F00100F80100900200C80200980300A00320B00300C00300D00300E803008A04020803900480808010B80400C00400")
+                    )
+                )
             }
         ) else emptyArray())
     }

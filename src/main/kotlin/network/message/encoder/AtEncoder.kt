@@ -15,12 +15,10 @@
  */
 package katium.client.qq.network.message.encoder
 
-import com.google.protobuf.ByteString
 import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
-import katium.core.group.Group
+import katium.client.qq.network.message.pb.PbMessageElement
 import katium.core.message.content.At
 import katium.core.util.netty.toArray
 
@@ -32,19 +30,18 @@ object AtEncoder : MessageEncoder<At> {
         val targetUser = client.bot.getUser(target)
         val text = "@${targetUser.name}" // @TODO: use group nick when At
         arrayOf(
-            PbMessageElements.Element.newBuilder().setText(
-                PbMessageElements.Text.newBuilder().setString(text).setAttribute6Buf(
-                    ByteString.copyFrom(
-                        PooledByteBufAllocator.DEFAULT.heapBuffer().writeShort(1) // constant
-                            .writeShort(0) // start pos
-                            .writeShort(text.length).writeByte(0) // flag
-                            .writeInt(targetUser.id.toInt()) // uin
-                            .writeShort(0) // const
-                            .toArray(release = true)
-                    )
+            PbMessageElement(
+                text = PbMessageElement.Text(
+                    string = text,
+                    attribute6Buf = PooledByteBufAllocator.DEFAULT.heapBuffer().writeShort(1) // constant
+                        .writeShort(0) // start pos
+                        .writeShort(text.length).writeByte(0) // flag
+                        .writeInt(targetUser.id.toInt()) // uin
+                        .writeShort(0) // const
+                        .toArray(release = true)
                 )
-            ).build(),
-            PbMessageElements.Element.newBuilder().setText(PbMessageElements.Text.newBuilder().setString(" ")).build()
+            ),
+            PbMessageElement(text = PbMessageElement.Text(string = " "))
         )
     }
 

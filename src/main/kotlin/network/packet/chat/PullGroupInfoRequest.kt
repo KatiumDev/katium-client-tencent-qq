@@ -15,64 +15,86 @@
  */
 package katium.client.qq.network.packet.chat
 
-import com.google.protobuf.ByteString
 import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oidb.writeOidbPacket
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbOidb0x88D
+import katium.client.qq.network.pb.PbGroupInfo
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
-object PullGroupInfoRequest {
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class PullGroupInfoRequest(
+    @ProtoNumber(1) val appID: Int? = null,
+    @ProtoNumber(2) val info: Set<Info> = emptySet(),
+    @ProtoNumber(3) val pcClientVersion: Int? = null,
+) {
 
-    fun create(
-        client: QQClient,
-        sequenceID: Int = client.allocPacketSequenceID(),
-        groupCode: Long
-    ) =
-        TransportPacket.Request.Buffered(
-            client = client,
-            type = TransportPacket.Type.SIMPLE,
-            encryptType = TransportPacket.EncryptType.D2_KEY,
-            sequenceID = sequenceID,
-            command = "OidbSvc.0x88d_0",
-            body = PooledByteBufAllocator.DEFAULT.heapBuffer()
-                .writeOidbPacket(client, 2189, 0, createRequest(client, groupCode).toByteString())
-        )
+    companion object {
 
-    fun createRequest(client: QQClient, groupCode: Long): PbOidb0x88D.D88DRequest = PbOidb0x88D.D88DRequest.newBuilder()
-        .setAppID(client.version.appID)
-        .addInfo(
-            PbOidb0x88D.D88DRequestInfo.newBuilder()
-                .setGroupCode(groupCode)
-                .setInfo(
-                    PbOidb0x88D.D88DGroupInfo.newBuilder()
-                        .setGroupOwner(0)
-                        .setGroupUin(0)
-                        .setGroupCreateTime(0)
-                        .setGroupFlag(0)
-                        .setGroupMemberMaxNum(0)
-                        .setGroupMemberNum(0)
-                        .setGroupOption(0)
-                        .setGroupLevel(0)
-                        .setGroupFace(0)
-                        .setGroupName(ByteString.empty())
-                        .setGroupMemo(ByteString.empty())
-                        .setGroupFingerMemo(ByteString.empty())
-                        .setGroupLastMessageTime(0)
-                        .setGroupCurrentMessageSequence(0)
-                        .setGroupQuestion(ByteString.empty())
-                        .setGroupAnswer(ByteString.empty())
-                        .setGroupGrade(0)
-                        .setActiveMemberNum(0)
-                        .setHeadPortraitSeq(0)
-                        .setMsgHeadPortrait(PbOidb0x88D.D88DGroupHeaderPortrait.newBuilder())
-                        .setStGroupExInfo(PbOidb0x88D.D88DGroupExInfoOnly.newBuilder())
-                        .setGroupSecLevel(0)
-                        .setCmduinPrivilege(0)
-                        .setNoFingerOpenFlag(0)
-                        .setNoCodeFingerOpenFlag(0)
+        fun create(
+            client: QQClient,
+            sequenceID: Int = client.allocPacketSequenceID(),
+            groupCode: Long
+        ) =
+            TransportPacket.Request.Buffered(
+                client = client,
+                type = TransportPacket.Type.SIMPLE,
+                encryptType = TransportPacket.EncryptType.D2_KEY,
+                sequenceID = sequenceID,
+                command = "OidbSvc.0x88d_0",
+                body = PooledByteBufAllocator.DEFAULT.heapBuffer()
+                    .writeOidbPacket(client, 2189, 0, ProtoBuf.encodeToByteArray(createRequest(client, groupCode)))
+            )
+
+        fun createRequest(client: QQClient, groupCode: Long) = PullGroupInfoRequest(
+            appID = client.version.appID,
+            info = setOf(
+                Info(
+                    groupCode = groupCode,
+                    info = PbGroupInfo(
+                        groupOwner = 0,
+                        groupUin = 0,
+                        groupCreateTime = 0,
+                        groupFlag = 0,
+                        groupMemberMaxNum = 0,
+                        groupMemberNum = 0,
+                        groupOption = 0,
+                        groupLevel = 0,
+                        groupFace = 0,
+                        groupName = ByteArray(0),
+                        groupMemo = ByteArray(0),
+                        groupFingerMemo = ByteArray(0),
+                        groupLastMessageTime = 0,
+                        groupCurrentMessageSequence = 0,
+                        groupQuestion = ByteArray(0),
+                        groupAnswer = ByteArray(0),
+                        groupGrade = 0,
+                        activeMemberNum = 0,
+                        headPortraitSeq = 0,
+                        msgHeadPortrait = PbGroupInfo.GroupHeaderPortrait(),
+                        stGroupExInfo = PbGroupInfo.GroupExInfoOnly(),
+                        groupSecLevel = 0,
+                        cmduinPrivilege = 0,
+                        noFingerOpenFlag = 0,
+                        noCodeFingerOpenFlag = 0
+                    )
                 )
+            ),
+            pcClientVersion = 0
         )
-        .setPcClientVersion(0)
-        .build()
+
+    }
+
+    @Serializable
+    data class Info(
+        @ProtoNumber(1) val groupCode: Long? = null,
+        @ProtoNumber(2) val info: PbGroupInfo? = null,
+        @ProtoNumber(3) val lastGetGroupNameTime: Int? = null,
+    )
+
 }

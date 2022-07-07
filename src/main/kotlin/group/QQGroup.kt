@@ -27,7 +27,7 @@ import katium.client.qq.network.packet.chat.*
 import katium.client.qq.network.packet.chat.image.ImageUploadResult
 import katium.client.qq.network.packet.chat.image.UploadGroupPictureRequest
 import katium.client.qq.network.packet.chat.image.UploadGroupPictureResponse
-import katium.client.qq.network.pb.PbMessagePackets
+import katium.client.qq.network.pb.RoutingHeader
 import katium.core.chat.Chat
 import katium.core.group.Group
 import katium.core.user.User
@@ -37,11 +37,7 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
     Group(bot, QQLocalChatID(id)) {
 
     override val chat: Chat? = if (isContact) QQChat(
-        bot,
-        id,
-        this,
-        PbMessagePackets.RoutingHeader.newBuilder().setGroup(PbMessagePackets.ToGroup.newBuilder().setGroupCode(id))
-            .build()
+        bot, id, this, RoutingHeader(group = RoutingHeader.ToGroup(groupCode = id))
     ) else null
 
     override val members: Set<User>
@@ -53,12 +49,13 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
                 bot.client, groupCode = id
             )
         ) as PullGroupInfoResponse).response
-        if (response.infoCount == 0) throw IllegalStateException(response.errorInfo.toStringUtf8())
-        response.getInfo(0).info
+        if (response.info.isEmpty())
+            throw IllegalStateException(String(response.errorInfo!!))
+        response.info.first().info
     }
 
     var lastReadSequence =
-        CoroutineLazy(bot) { if (isContact) groupInfo.get().groupCurrentMessageSequence.toLong() else 0L }
+        CoroutineLazy(bot) { if (isContact) groupInfo.get().groupCurrentMessageSequence!!.toLong() else 0L }
 
     var groupUin = CoroutineLazy(bot) { groupInfo.get().groupUin }
 
@@ -71,7 +68,7 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
             if (bot.client.highway.ssoAddresses.isEmpty()) bot.client.highway.ssoAddresses += query.uploadServers
             bot.client.highway.upload(
                 HighwayTransaction(
-                    command = 2, ticket = query.uploadKey!!.toByteArray(), body = data
+                    command = 2, ticket = query.uploadKey!!, body = data
                 )
             )
             uploadImage(data, depth = depth + 1)
@@ -95,7 +92,7 @@ class QQGroup(override val bot: QQBot, val id: Long, override val name: String, 
         if (response.errorMessage != null) {
             throw IllegalStateException(response.errorMessage)
         } else {
-            return response.response.messagesList.map {
+            return response.response.messages.map {
                 GroupMessageParser.parse(bot.client, it)
             }
         }

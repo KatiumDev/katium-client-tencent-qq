@@ -18,11 +18,11 @@ package katium.client.qq.network.message.parser
 import katium.client.qq.chat.QQChat
 import katium.client.qq.message.QQMessage
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
 
 object FriendMessageParser : MessageParser {
 
-    override suspend fun parse(client: QQClient, message: PbMessages.Message): QQMessage {
+    override suspend fun parse(client: QQClient, message: PbMessage): QQMessage {
         val sender = client.bot.getUser(message.header.fromUin)
         return QQMessage(
             bot = client.bot,

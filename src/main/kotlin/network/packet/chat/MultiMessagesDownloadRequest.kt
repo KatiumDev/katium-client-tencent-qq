@@ -15,15 +15,18 @@
  */
 package katium.client.qq.network.packet.chat
 
-import com.google.protobuf.ByteString
 import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbMultiMessages
 import katium.core.util.netty.heapBuffer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 
 object MultiMessagesDownloadRequest {
 
+    @OptIn(ExperimentalSerializationApi::class)
     fun create(
         client: QQClient,
         sequenceID: Int = client.allocPacketSequenceID(),
@@ -36,7 +39,13 @@ object MultiMessagesDownloadRequest {
         sequenceID = sequenceID,
         command = "MultiMsg.ApplyDown",
         body = PooledByteBufAllocator.DEFAULT.heapBuffer(
-            createRequest(client, buType, resourceID).toByteArray()
+            ProtoBuf.encodeToByteArray(
+                createRequest(
+                    client,
+                    buType,
+                    resourceID
+                )
+            )
         )
     )
 
@@ -44,13 +53,23 @@ object MultiMessagesDownloadRequest {
         client: QQClient,
         buType: Int,
         resourceID: String,
-    ): PbMultiMessages.MultiMessagesRequest =
-        PbMultiMessages.MultiMessagesRequest.newBuilder().setSubCommand(2).setTermType(5).setPlatformType(9)
-            .setNetworkType(3).setBuildVersion(client.version.version).setBuType(buType).setChannelType(2)
-            .addDownload(PbMultiMessages.MultiMessagesDownloadRequest.newBuilder()
-                .setResourceID(ByteString.copyFrom(resourceID.toByteArray())).setType(3).setFromUin(client.uin).apply {
-                    if (client.highway.sessionKey != null) key = ByteString.copyFrom(client.highway.sessionKey)
-                    if (client.highway.sessionSig != null) sig = ByteString.copyFrom(client.highway.sessionSig)
-                }).build()
+    ) = PbMultiMessages.Request(
+        subCommand = 2,
+        termType = 5,
+        platformType = 9,
+        networkType = 3,
+        buildVersion = client.version.version,
+        buType = buType,
+        channelType = 2,
+        downloads = listOf(
+            PbMultiMessages.Download.Request(
+                resourceID = resourceID.toByteArray(),
+                type = 3,
+                fromUin = client.uin,
+                key = client.highway.sessionKey ?: ByteArray(0),
+                sig = client.highway.sessionSig ?: ByteArray(0)
+            )
+        )
+    )
 
 }

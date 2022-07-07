@@ -22,9 +22,12 @@ import katium.client.qq.network.codec.highway.HighwayTransaction
 import katium.client.qq.network.packet.chat.RecallMessagesRequest
 import katium.client.qq.network.packet.chat.RecallMessagesResponse
 import katium.client.qq.network.packet.chat.image.*
-import katium.client.qq.network.pb.PbMessagePackets
+import katium.client.qq.network.pb.RoutingHeader
 import katium.core.chat.Chat
 import katium.core.user.Contact
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import java.util.HexFormat
 
 class QQContact(override val asUser: QQUser) : Contact(asUser) {
 
@@ -34,8 +37,7 @@ class QQContact(override val asUser: QQUser) : Contact(asUser) {
     override val chat: Chat by lazy {
         QQChat(
             bot, id, this,
-            PbMessagePackets.RoutingHeader.newBuilder().setFriend(PbMessagePackets.ToFriend.newBuilder().setToUin(id))
-                .build()
+            RoutingHeader(friend = RoutingHeader.ToFriend(toUin = id))
         )
     }
 
@@ -52,7 +54,7 @@ class QQContact(override val asUser: QQUser) : Contact(asUser) {
                 bot.client.highway.upload(
                     HighwayTransaction(
                         command = 1,
-                        ticket = query.uploadKey!!.toByteArray(),
+                        ticket = query.uploadKey!!,
                         body = data
                     )
                 )
@@ -62,7 +64,7 @@ class QQContact(override val asUser: QQUser) : Contact(asUser) {
                     bot.client.highway.upload(
                         HighwayTransaction(
                             command = 2,
-                            ticket = groupQuery.uploadKey!!.toByteArray(),
+                            ticket = groupQuery.uploadKey!!,
                             body = data
                         )
                     )

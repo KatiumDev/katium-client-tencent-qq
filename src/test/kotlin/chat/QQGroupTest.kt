@@ -26,7 +26,7 @@ class QQGroupTest {
     @Test
     fun `get name`() {
         runBlocking {
-            BotTests.testGroup?.run {
+            BotTests.testGroup.run {
                 println("Group name: $name")
             }
         }
@@ -35,8 +35,8 @@ class QQGroupTest {
     @Test
     fun `send at`() {
         runBlocking {
-            BotTests.testGroup?.chat?.apply {
-                if (BotTests.testFriend != null) sendMessage(At(BotTests.testFriend.localID))
+            BotTests.testGroup.chat?.apply {
+                sendMessage(At(BotTests.testFriend.localID))
             }
         }
     }
@@ -44,7 +44,7 @@ class QQGroupTest {
     @Test
     fun `send at all`() {
         runBlocking {
-            BotTests.testGroup?.chat?.apply {
+            BotTests.testGroup.chat?.apply {
                 sendMessage(AtAll())
             }
         }

@@ -69,17 +69,15 @@ class QQChatTest {
         runBlocking {
             BotTests.testChats.forEach {
                 val ref = it.sendMessage(PlainText("Actual message"))!!
-                if (BotTests.testFriend != null) {
-                    it.sendMessage(
-                        Forward(
-                            ref,
-                            VirtualMessage(
-                                BotTests.bot, it, sender = BotTests.testFriend, content = PlainText("Virtual message")
-                            ).ref,
-                            VirtualMessage(BotTests.bot, it, sender = BotTests.testFriend, content = Forward(ref)).ref
-                        )
+                it.sendMessage(
+                    Forward(
+                        ref,
+                        VirtualMessage(
+                            BotTests.bot, it, sender = BotTests.testFriend, content = PlainText("Virtual message")
+                        ).ref,
+                        VirtualMessage(BotTests.bot, it, sender = BotTests.testFriend, content = Forward(ref)).ref
                     )
-                }
+                )
                 it.sendMessage(
                     QQForward(listOf(ref), title = "Custom forward title")
                 )

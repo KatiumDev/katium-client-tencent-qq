@@ -17,7 +17,7 @@ package katium.client.qq.network.message.encoder
 
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
+import katium.client.qq.network.message.pb.PbMessageElement
 import katium.core.message.content.MessageContent
 
 interface MessageEncoder<T : MessageContent> {
@@ -30,6 +30,6 @@ interface MessageEncoder<T : MessageContent> {
 
     suspend fun encode(
         client: QQClient, context: QQChat, message: T, withGeneralFlags: Boolean, isStandalone: Boolean
-    ): Array<PbMessageElements.Element>
+    ): Array<PbMessageElement>
 
 }

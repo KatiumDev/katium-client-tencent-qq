@@ -19,24 +19,25 @@ import katium.client.qq.chat.QQChat
 import katium.client.qq.group.QQGroup
 import katium.client.qq.message.QQMessageRef
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.message.pb.PbMessageElement
 import katium.core.message.content.RefMessage
 
-object RefMessageDecoder : MessageDecoder {
+object RefMessageDecoder : MessageDecoder<PbMessageElement.SourceMessage> {
+
+    override fun select(element: PbMessageElement) = element.source
 
     override suspend fun decode(
-        client: QQClient,
-        context: QQChat,
-        message: PbMessages.Message,
-        element: PbMessageElements.Element
-    ) = element.source.run {
-        RefMessage(QQMessageRef(
-            bot = client.bot,
-            message = null,
-            sequence = getOriginSequences(0),
-            contextGroupCode = (context.contextGroup as? QQGroup)?.id
-        ))
+        client: QQClient, context: QQChat, message: PbMessage, element: PbMessageElement.SourceMessage
+    ) = element.run {
+        RefMessage(
+            QQMessageRef(
+                bot = client.bot,
+                message = null,
+                sequence = originSequences.first(),
+                contextGroupCode = (context.contextGroup as? QQGroup)?.id
+            )
+        )
     }
 
 }

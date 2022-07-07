@@ -22,10 +22,10 @@ import katium.client.qq.message.builder.QQJson
 import katium.client.qq.message.builder.QQXml
 import katium.client.qq.message.content.QQService
 import katium.client.qq.network.QQClient
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.message.pb.PbMessageElement
 import katium.client.qq.network.packet.chat.MultiMessagesDownloadRequest
 import katium.client.qq.network.packet.chat.MultiMessagesDownloadResponse
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.redundent.kotlin.xml.TextElement
@@ -33,18 +33,20 @@ import org.redundent.kotlin.xml.parse
 import java.io.ByteArrayInputStream
 import java.util.zip.InflaterInputStream
 
-object QQServiceDecoder : MessageDecoder {
+object QQServiceDecoder : MessageDecoder<PbMessageElement.ServiceMessage> {
+
+    override fun select(element: PbMessageElement) = element.serviceMessage
 
     override suspend fun decode(
-        client: QQClient, context: QQChat, message: PbMessages.Message, element: PbMessageElements.Element
-    ) = element.serviceMessage.run {
-        val templateData = template.toByteArray()
+        client: QQClient, context: QQChat, message: PbMessage, element: PbMessageElement.ServiceMessage
+    ) = element.run {
+        val templateData = template
         val contentData = if (templateData.isEmpty()) null else templateData.copyOfRange(1, templateData.size)
         if (contentData == null) null else {
-            val content = when (template.byteAt(0).toInt()) {
+            val content = when (template[0].toInt()) {
                 0 -> String(contentData)
                 1 -> String(InflaterInputStream(ByteArrayInputStream(contentData)).readAllBytes())
-                else -> throw IllegalStateException("Unknown service message template type: ${template.byteAt(0)}")
+                else -> throw IllegalStateException("Unknown service message template type: ${template[0]}")
             }
             when (serviceID) {
                 33 -> null

@@ -27,7 +27,6 @@ import katium.core.util.event.Subscribe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.*
 
 object LoginResponseHandler : QQClientHandler {
 
@@ -38,18 +37,16 @@ object LoginResponseHandler : QQClientHandler {
         val (_, client, packet) = event
         if (packet is TransportPacket.Response.Oicq && packet.packet is LoginResponsePacket) {
             val response = packet.packet as LoginResponsePacket
+            client.logger.info("Got login response: $response")
             if (response.success) { // Succeeded
-                client.registerClient()
-                client.notifyOnline()
-                client.pullSystemMessages()
-                client.startSyncMessages()
-                client.logger.info("Login succeeded")
+                client.loginSucceeded()
                 return
             } else if (response.deviceLock) { // Device lock
                 client.logger.info("Trying to login with device lock")
                 client.send(DeviceLockLoginPacket.create(client))
                 return
             } else if (response.smsSent) {
+                client.logger.info("SMS sent, resolving with SMS provider...")
                 val code = if (client.bot.options.loginSmsProvider != null) {
                     LoginSmsCodeProvider.lookup.resolve(client.bot.options.loginSmsProvider).provide(client, response)
                         ?: throw IllegalStateException("SMS provider ${client.bot.options.loginSmsProvider} could not provide any SMS code, $response")
@@ -68,6 +65,7 @@ object LoginResponseHandler : QQClientHandler {
                     }
                 }
                 client.submitSms(code)
+                return
             } else if (client.bot.options.loginSolutionProvider != null) { // Resolve login solution
                 val (solutionName, solution) = LoginSolutionProvider.lookup.resolve(client.bot.options.loginSolutionProvider)
                     .find(client, response)

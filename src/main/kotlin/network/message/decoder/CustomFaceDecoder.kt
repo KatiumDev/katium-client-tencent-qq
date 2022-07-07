@@ -20,19 +20,20 @@ import katium.client.qq.chat.QQChat
 import katium.client.qq.group.QQGroup
 import katium.client.qq.message.content.QQImage
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
-import java.util.*
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.message.pb.PbMessageElement
 
-object CustomFaceDecoder : MessageDecoder {
+object CustomFaceDecoder : MessageDecoder<PbMessageElement.CustomFace> {
+
+    override fun select(element: PbMessageElement) = element.customFace
 
     override suspend fun decode(
-        client: QQClient, context: QQChat, message: PbMessages.Message, element: PbMessageElements.Element
-    ) = element.customFace.run {
-        val url = if (hasOrigUrl() && origUrl.isNotEmpty()) {
-            "https://${if(context.context is QQGroup) "gchat" else "c2cpicdw"}.qpic.cn$origUrl"
+        client: QQClient, context: QQChat, message: PbMessage, element: PbMessageElement.CustomFace
+    ) = element.run {
+        val url = if (origUrl != null && origUrl.isNotEmpty()) {
+            "https://${if (context.context is QQGroup) "gchat" else "c2cpicdw"}.qpic.cn$origUrl"
         } else {
-            context.resolveImageUrl(HashCode.fromBytes(md5.toByteArray()), size)
+            context.resolveImageUrl(HashCode.fromBytes(md5), size)
         }
         QQImage(
             resourceKey = fileID.toString(),
@@ -40,8 +41,8 @@ object CustomFaceDecoder : MessageDecoder {
             md5 = md5,
             filePath = filePath,
             size = size,
-            width = if (hasWidth()) width else null,
-            height = if (hasHeight()) height else null
+            width = width,
+            height = height,
         )
     }
 

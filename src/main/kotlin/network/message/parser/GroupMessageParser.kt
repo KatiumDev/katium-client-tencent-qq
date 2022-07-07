@@ -18,12 +18,12 @@ package katium.client.qq.network.message.parser
 import katium.client.qq.chat.QQChat
 import katium.client.qq.message.QQMessage
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
 
 object GroupMessageParser : MessageParser {
 
-    override suspend fun parse(client: QQClient, message: PbMessages.Message): QQMessage {
-        val group = client.bot.getGroup(message.header.groupInfo.groupCode)!!.chat!!
+    override suspend fun parse(client: QQClient, message: PbMessage): QQMessage {
+        val group = client.bot.getGroup(message.header.groupInfo!!.groupCode)!!.chat!!
         val sender = client.bot.getUser(message.header.fromUin)
         return QQMessage(
             bot = client.bot,

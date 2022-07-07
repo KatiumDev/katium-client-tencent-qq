@@ -18,23 +18,22 @@ package katium.client.qq.network.message.decoder
 import katium.client.qq.chat.QQChat
 import katium.client.qq.message.content.QQImage
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.message.pb.PbMessageElement
 
-object NotOnlineImageDecoder : MessageDecoder {
+object NotOnlineImageDecoder : MessageDecoder<PbMessageElement.NotOnlineImage> {
+
+    override fun select(element: PbMessageElement) = element.notOnlineImage
 
     override suspend fun decode(
-        client: QQClient,
-        context: QQChat,
-        message: PbMessages.Message,
-        element: PbMessageElements.Element
-    ) = element.notOnlineImage.run {
+        client: QQClient, context: QQChat, message: PbMessage, element: PbMessageElement.NotOnlineImage
+    ) = element.run {
         QQImage(
             resourceKey = resourceID,
             contentUrl = "https://c2cpicdw.qpic.cn/$origUrl",
             md5 = pictureMd5,
-            width = if (hasPictureWidth()) pictureWidth else null,
-            height = if (hasPictureHeight()) pictureHeight else null
+            width = pictureWidth,
+            height = pictureHeight
         )
     }
 

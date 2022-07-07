@@ -19,7 +19,7 @@ import katium.client.qq.chat.QQChat
 import katium.client.qq.message.content.QQForward
 import katium.client.qq.message.content.QQService
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
+import katium.client.qq.network.message.pb.PbMessageElement
 import katium.core.message.content.Forward
 import org.redundent.kotlin.xml.XmlVersion
 import org.redundent.kotlin.xml.xml
@@ -30,7 +30,7 @@ object ForwardEncoder : MessageEncoder<Forward> {
 
     override suspend fun encode(
         client: QQClient, context: QQChat, message: Forward, withGeneralFlags: Boolean, isStandalone: Boolean
-    ): Array<PbMessageElements.Element> = run {
+    ): Array<PbMessageElement> = run {
         val qqForward = message as? QQForward
         val messages = message.messages.map { it.message!! }
         if (messages.size > client.bot.options.maxForwardMessageLength) throw UnsupportedOperationException("Forward message is too long, current: ${messages.size}, maxLength: ${client.bot.options.maxForwardMessageLength}")

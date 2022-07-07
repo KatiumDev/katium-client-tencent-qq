@@ -16,10 +16,10 @@
 package katium.client.qq.network.event
 
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
 import katium.core.event.BotEvent
 
-class QQReceivedRawMessageEvent(val client: QQClient, val message: PbMessages.Message) : BotEvent(client.bot) {
+class QQReceivedRawMessageEvent(val client: QQClient, val message: PbMessage) : BotEvent(client.bot) {
 
     operator fun component2() = client
     operator fun component3() = message

@@ -23,27 +23,31 @@ import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.pb.PbMultiMessages
 import katium.core.util.CoroutineLazy
 import katium.core.util.netty.toArray
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 import java.net.InetSocketAddress
 
 class MultiMessagesDownloadResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
-    lateinit var response: PbMultiMessages.MultiMessagesResponse
+    lateinit var response: PbMultiMessages.Response
         private set
 
-    lateinit var result: PbMultiMessages.MultiMessagesDownloadResponse
+    lateinit var result: PbMultiMessages.Download.Response
         private set
 
     lateinit var messages: CoroutineLazy<List<QQMessage>>
         private set
 
+    @OptIn(ExperimentalSerializationApi::class)
     override fun readBody(input: ByteBuf) {
-        response = PbMultiMessages.MultiMessagesResponse.parseFrom(input.toArray(release = false))
+        response = ProtoBuf.decodeFromByteArray(input.toArray(release = false))
 
-        if (response.downloadCount != 1) {
-            throw IllegalStateException("Wrong multi messages download response size: ${response.downloadCount}")
+        if (response.downloads.size != 1) {
+            throw IllegalStateException("Wrong multi messages download response size: ${response.downloads.size}")
         } else {
-            val result = response.getDownload(0)
+            val result = response.downloads.first()
             when (result.result) {
                 0 -> this.result = result
                 193 -> throw UnsupportedOperationException("Multi message too large(193)")
@@ -51,20 +55,20 @@ class MultiMessagesDownloadResponse(val client: QQClient, packet: TransportPacke
                 else -> throw IllegalStateException("Unknown multi messages download response result: ${result.result}")
             }
         }
-        val serverAddress = if (!result.hasExtensionInfo() || result.extensionInfo.channelType != 2) {
-            (result.ipList.mapIndexed { index, ip ->
+        val serverAddress = if (result.extension?.channelType != 2) {
+            (result.ip.mapIndexed { index, ip ->
                 InetSocketAddress(
-                    Highway.decodeIPv4(ip), result.getPort(index)
+                    Highway.decodeIPv4(ip), result.port[index]
                 )
-            } + result.ipv6List.mapIndexed { index, ip ->
-                InetSocketAddress(Highway.decodeIPv6(ip.toByteArray()), result.getIpv6Port(index))
+            } + result.ipv6.mapIndexed { index, ip ->
+                InetSocketAddress(Highway.decodeIPv6(ip), result.ipv6Port[index])
             }).first().run {
                 @Suppress("HttpUrlsUsage") "http://${address.hostAddress}:$port"
             }
         } else "https://ssl.htdata.qq.com"
-        val url = serverAddress + result.thumbDownPara.toStringUtf8()
+        val url = serverAddress + String(result.thumbDownPara)
         messages = CoroutineLazy(client) {
-            client.downloadMultiMessages(url, result.key.toByteArray().toUByteArray())
+            client.downloadMultiMessages(url, result.key.toUByteArray())
         }
     }
 

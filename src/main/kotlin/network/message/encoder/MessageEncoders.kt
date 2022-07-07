@@ -73,9 +73,9 @@ class MessageEncoders(val client: QQClient) {
         client, chat, content, withGeneralFlags, isStandalone
     ).run {
         if (withGeneralFlags) {
-            sortedBy { if (it.hasGeneralFlags()) 0 else 1 }
+            sortedBy { if (it.generalFlags != null) 0 else 1 }
         } else {
-            filterNot { it.hasGeneralFlags() }
+            filter { it.generalFlags == null }
         }
     }
 

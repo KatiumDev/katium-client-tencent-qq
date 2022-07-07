@@ -17,13 +17,12 @@ package katium.client.qq.test
 
 import katium.client.qq.QQBotPlatform
 import katium.core.event.BotOnlineEvent
-import katium.core.event.MessageReceivedEvent
 import katium.core.util.event.Subscribe
 import katium.core.util.event.register
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty
+import kotlinx.coroutines.withTimeout
 import java.io.File
 import java.util.*
 import kotlin.test.Test
@@ -34,50 +33,41 @@ object BotTests {
     val properties =
         File("local.properties").reader().use { Properties().apply { load(it) } }.toMap() as Map<String, String>
 
-    val bot = QQBotPlatform.createBot(properties)
-
-    init {
-        bot.register(object : EventListener {
-
-            @Subscribe
-            fun onMessage(event: MessageReceivedEvent) {
-                println("Received message ${event.message}")
-            }
-
-        })
-        bot.start()
-        bot.launch {
-            delay(2400)
-            bot.stop()
-            throw IllegalStateException("Bot test timeout")
-        }
+    val bot by lazy {
         runBlocking {
-            println("waiting for bot online")
-            bot.eventBus.await(BotOnlineEvent::class)
-            println("bot online, test starting")
+            withTimeout(30000) {
+                println("bot creating")
+                val bot = QQBotPlatform.createBot(properties)
+                println("bot created")
+                bot.register(object : EventListener {
+
+                    @Subscribe
+                    fun onMessage(event: katium.core.event.MessageReceivedEvent) {
+                        println("Received message ${event.message}")
+                    }
+
+                })
+                println("bot starting")
+                bot.start()
+                println("bot started")
+                bot.launch {
+                    delay(240000)
+                    bot.stop()
+                    throw IllegalStateException("Bot test timeout")
+                }
+                println("waiting for bot online")
+                bot.eventBus.await(BotOnlineEvent::class)
+                println("bot online, test starting")
+                bot
+            }
         }
     }
 
-    val testFriend = if("test_friend" in properties) bot.getUserSync(properties["test_friend"]!!.toLong()) else null
-    val testGroup = if("test_group" in properties) bot.getGroupSync(properties["test_group"]!!.toLong()) else null
+    val testFriend by lazy { bot.getUserSync(properties["test_friend"]!!.toLong()) }
+    val testGroup by lazy { bot.getGroupSync(properties["test_group"]!!.toLong())!! }
 
-    init {
-        if(testFriend != null) System.setProperty("ktmqq.has_test_friend", "true")
-        if(testGroup != null) System.setProperty("ktmqq.has_test_group", "true")
-    }
-
-    val testChats = arrayOf(testFriend?.chat, testGroup?.chat).filterNotNull().toTypedArray()
-
-    @Test
-    @EnabledIfSystemProperty(named = "ktmqq.has_test_friend", matches = "true")
-    fun hasTestFriend() {
-        println("Current test friend: $testFriend")
-    }
-
-    @Test
-    @EnabledIfSystemProperty(named = "ktmqq.has_test_group", matches = "true")
-    fun hasTestGroup() {
-        println("Current test group: $testGroup")
+    val testChats by lazy {
+        arrayOf(testFriend.chat, testGroup.chat).filterNotNull().toTypedArray()
     }
 
     @Test

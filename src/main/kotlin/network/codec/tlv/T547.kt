@@ -13,4 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package katium.client.qq.test
+package katium.client.qq.network.codec.tlv
+
+import io.netty.buffer.ByteBuf
+
+context(TlvWriterContext) fun ByteBuf.writeT547(t547: ByteArray) = writeTlv(0x547) {
+    writeBytes(t547)
+}

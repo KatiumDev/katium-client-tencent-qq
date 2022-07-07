@@ -15,7 +15,5 @@
  */
 package katium.client.qq.network.codec.highway
 
-import katium.client.qq.network.pb.PbHighway
-
-typealias HighwayRequestFrame = Pair<PbHighway.HighwayRequestHeader, ByteArray?>
-typealias HighwayResponseFrame = Pair<PbHighway.HighwayResponseHeader, ByteArray?>
+typealias HighwayRequestFrame = Pair<PbHighway.RequestHeader, ByteArray?>
+typealias HighwayResponseFrame = Pair<PbHighway.ResponseHeader, ByteArray?>

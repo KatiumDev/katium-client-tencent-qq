@@ -17,7 +17,6 @@ package katium.client.qq.chat
 
 import com.google.common.hash.HashCode
 import com.google.common.hash.Hashing
-import com.google.protobuf.ByteString
 import katium.client.qq.QQBot
 import katium.client.qq.QQLocalChatID
 import katium.client.qq.asQQ
@@ -25,14 +24,14 @@ import katium.client.qq.group.QQGroup
 import katium.client.qq.message.QQMessage
 import katium.client.qq.message.content.QQService
 import katium.client.qq.network.codec.highway.HighwayTransaction
+import katium.client.qq.network.message.pb.PbMessage
 import katium.client.qq.network.packet.chat.MultiMessagesUploadRequest
 import katium.client.qq.network.packet.chat.MultiMessagesUploadResponse
 import katium.client.qq.network.packet.chat.SendMessageRequest
 import katium.client.qq.network.packet.chat.SendMessageResponse
 import katium.client.qq.network.pb.PbLongMessages
-import katium.client.qq.network.pb.PbMessagePackets
-import katium.client.qq.network.pb.PbMessages
 import katium.client.qq.network.pb.PbMultiMessages
+import katium.client.qq.network.pb.RoutingHeader
 import katium.client.qq.user.QQContact
 import katium.core.chat.Chat
 import katium.core.chat.ChatInfo
@@ -45,12 +44,16 @@ import katium.core.message.content.MessageChain
 import katium.core.message.content.MessageContent
 import katium.core.util.event.post
 import kotlinx.coroutines.delay
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 import java.io.ByteArrayOutputStream
 import java.util.*
 import java.util.zip.GZIPOutputStream
 import kotlin.random.Random
 
-class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHeader: PbMessagePackets.RoutingHeader) :
+@OptIn(ExperimentalSerializationApi::class)
+class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHeader: RoutingHeader) :
     Chat(bot, QQLocalChatID(id), context) {
 
     override suspend fun sendMessage(content: MessageContent) = sendMessage(content, false)
@@ -172,32 +175,44 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
         val groupUin = if (context is Group) bot.getGroup(groupCode)!!.groupUin.get() else groupCode
         val pbMessages = messages.map {
             val qqMessage = it as? QQMessage
-            PbMessages.Message.newBuilder().setHeader(
-                PbMessages.MessageHeader.newBuilder().setFromUin(it.senderUser!!.localID.asQQ.uin)
-                    .setSequence(qqMessage?.sequence ?: 0).setTime((it.time / 1000).toInt())
-                    .setUid(0x0100000000000000 or ((qqMessage?.messageRandom ?: 0).toLong() and 0xFFFFFFFF))
-                    .setMultiTransHeader(
-                        PbMessages.MultiTransHeader.newBuilder().setMessageID(1)
-                    ).setType(82).setGroupInfo(
-                        PbMessages.GroupInfo.newBuilder().setGroupCode(groupCode).setGroupRank(ByteString.empty())
-                            .setGroupName(ByteString.empty()).setGroupCard(it.senderUser!!.name)
-                    )
-            ).setBody(
-                PbMessages.MessageBody.newBuilder().setRichText(
-                    PbMessages.RichText.newBuilder().addAllElements(
-                        bot.client.messageEncoders.encode(this, it.content.simplest, isStandalone = false)
+            PbMessage(
+                header = PbMessage.MessageHeader(
+                    fromUin = it.senderUser!!.localID.asQQ.uin,
+                    sequence = qqMessage?.sequence ?: 0,
+                    time = (it.time / 1000).toInt(),
+                    uid = 0x0100000000000000 or ((qqMessage?.messageRandom ?: 0).toLong() and 0xFFFFFFFF),
+                    multiTransHeader = PbMessage.MessageHeader.MultiTransHeader(messageID = 1),
+                    type = 82,
+                    groupInfo = PbMessage.MessageHeader.GroupInfo(
+                        groupCode = groupCode,
+                        groupRank = ByteArray(0),
+                        groupName = ByteArray(0),
+                        groupCard = it.senderUser!!.name
+                    ),
+                    toUin = 0
+                ),
+                body = PbMessage.Body(
+                    richText = PbMessage.Body.RichText(
+                        elements = bot.client.messageEncoders.encode(this, it.content.simplest, isStandalone = false),
+                        attributes = PbMessage.Body.Attributes(random = 0)
                     )
                 )
-            ).build()
+            )
         }
         val body = ByteArrayOutputStream().use {
             GZIPOutputStream(it).use { gzip ->
                 gzip.write(
-                    PbMultiMessages.MultiMessagesHighwayBody.newBuilder().addAllMessage(pbMessages).addItem(
-                        PbMultiMessages.MultiMessagesHighwayItem.newBuilder().setFileName("MultiMsg").setBuffer(
-                            PbMultiMessages.MultiMessagesHighwayNew.newBuilder().addAllMessage(pbMessages)
+                    ProtoBuf.encodeToByteArray(
+                        PbMultiMessages.Highway.Body(
+                            messages = pbMessages,
+                            items = listOf(
+                                PbMultiMessages.Highway.Item(
+                                    fileName = "MultiMsg",
+                                    buffer = PbMultiMessages.Highway.New(messages = pbMessages)
+                                )
+                            )
                         )
-                    ).build().toByteArray()
+                    )
                 )
             }
             it.toByteArray()
@@ -217,12 +232,26 @@ class QQChat(override val bot: QQBot, id: Long, context: ChatInfo, val routingHe
         bot.client.highway.upload(
             HighwayTransaction(
                 command = 27,
-                ticket = response.result.sig.toByteArray(),
-                body = PbLongMessages.LongMessagesRequest.newBuilder().setSubCommand(1).setTermType(5)
-                    .setPlatformType(9).addUpload(
-                        PbLongMessages.LongMessagesUploadRequest.newBuilder().setType(3).setToUin(groupUin)
-                            .setContent(ByteString.copyFrom(body)).setStoreType(2).setUkey(response.result.ukey)
-                    ).build().toByteArray()
+                ticket = response.result.sig,
+                body = ProtoBuf.encodeToByteArray(
+                    PbLongMessages.Request(
+                        subCommand = 1,
+                        termType = 5,
+                        platformType = 9,
+                        uploads = listOf(
+                            PbLongMessages.Upload.Request(
+                                type = 3,
+                                toUin = groupUin,
+                                content = body,
+                                storeType = 2,
+                                ukey = response.result.ukey,
+                                id = 0,
+                                needCache = 0
+                            )
+                        ),
+                        agentType = 0
+                    )
+                )
             )
         )
         return response.result.resourceID

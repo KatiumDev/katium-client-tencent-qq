@@ -15,7 +15,6 @@
  */
 package katium.client.qq.network.packet.chat.image
 
-import com.google.protobuf.ByteString
 import java.net.InetSocketAddress
 
 data class ImageUploadResult(
@@ -23,6 +22,6 @@ data class ImageUploadResult(
     val isExists: Boolean = false,
     val resourceKey: String? = null,
     val uploadServers: Collection<InetSocketAddress> = emptyList(),
-    val uploadKey: ByteString? = null,
+    val uploadKey: ByteArray? = null,
     val contentUrl: String? = null,
 )

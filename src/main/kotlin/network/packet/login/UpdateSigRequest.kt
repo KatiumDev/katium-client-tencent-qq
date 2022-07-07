@@ -18,6 +18,7 @@ package katium.client.qq.network.packet.login
 import com.google.common.hash.Hashing
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
+import katium.client.qq.network.auth.DeviceInfo
 import katium.client.qq.network.codec.oicq.OicqPacket
 import katium.client.qq.network.codec.packet.TransportPacket
 import katium.client.qq.network.codec.tlv.*
@@ -55,7 +56,7 @@ class UpdateSigRequest(client: QQClient, val sequenceID: Int, val mainSigMap: In
             writeT108(ksid = client.sig.ksid)
             @Suppress("DEPRECATION") writeT144(
                 imei = client.deviceInfo.IMEI.toByteArray(),
-                deviceInfo = client.deviceInfo.toProtoBufDeviceInfo(),
+                deviceInfo = DeviceInfo.ProtoBuf(client.deviceInfo),
                 osType = client.deviceInfo.osType.toByteArray(),
                 osVersion = client.deviceInfo.version.release.toByteArray(),
                 simInfo = client.deviceInfo.simInfo.toByteArray(),

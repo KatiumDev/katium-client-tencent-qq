@@ -16,12 +16,10 @@
 package katium.client.qq.network.codec.highway
 
 import com.google.common.hash.Hashing
-import com.google.protobuf.ByteString
 import io.netty.channel.socket.SocketChannel
 import katium.client.qq.network.codec.highway.pipeline.HighwayFrameDecoder
 import katium.client.qq.network.codec.highway.pipeline.HighwayFrameEncoder
 import katium.client.qq.network.codec.highway.pipeline.HighwayResponseHandler
-import katium.client.qq.network.pb.PbHighway
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlin.coroutines.Continuation
@@ -38,9 +36,9 @@ class HighwaySession(val highway: Highway, val channel: SocketChannel) : AutoClo
 
     var responseContinuation: AtomicRef<Continuation<HighwayResponseFrame>?> = atomic(null)
 
-    suspend fun sendAndWait(frame: HighwayRequestFrame) = suspendCoroutine<HighwayResponseFrame> {
+    suspend fun sendAndWait(frame: HighwayRequestFrame) = suspendCoroutine {
         if (responseContinuation.getAndSet(it) != null) {
-            throw IllegalStateException("Coroutine waiting for response")
+            throw IllegalStateException("Another coroutine already waiting for response")
         }
         channel.writeAndFlush(frame).sync()
     }
@@ -51,21 +49,21 @@ class HighwaySession(val highway: Highway, val channel: SocketChannel) : AutoClo
 
     fun createDataHeader(
         command: String, flag: Int = 4096, commandID: Int, locale: Int = 2052
-    ): PbHighway.HighwayDataHeader = PbHighway.HighwayDataHeader.newBuilder().apply {
-        version = 1
-        uin = highway.client.uin.toString()
-        this.command = command
-        sequence = highway.allocSequenceID()
-        appID = appID
-        this.flag = flag
-        this.commandID = commandID
-        localeID = locale
-    }.build()
+    ) = PbHighway.DataHeader(
+        version = 1,
+        uin = highway.client.uin.toString(),
+        command = command,
+        sequence = highway.allocSequenceID(),
+        appID = highway.client.version.appID,
+        flag = flag,
+        commandID = commandID,
+        localeID = locale,
+        buildVersion = highway.client.version.version, // @TODO: test
+        retryTimes = 0
+    )
 
     suspend fun sendEcho() {
-        sendAndWait(PbHighway.HighwayRequestHeader.newBuilder().apply {
-            data = createDataHeader(command = "PicUp.Echo", commandID = 0)
-        }.build() to null)
+        sendAndWait(PbHighway.RequestHeader(data = createDataHeader(command = "PicUp.Echo", commandID = 0)) to null)
     }
 
     suspend fun sendChunk(transaction: HighwayTransaction, chunk: Int): HighwayResponseFrame {
@@ -74,14 +72,17 @@ class HighwaySession(val highway: Highway, val channel: SocketChannel) : AutoClo
         val chunkSize = min(bodySize - chunkOffset, transaction.chunkSize)
         val chunkData = transaction.body.copyOfRange(chunkOffset, chunkOffset + chunkSize)
         @Suppress("DEPRECATION") return sendAndWait(
-            PbHighway.HighwayRequestHeader.newBuilder()
-                .setData(createDataHeader(command = "PicUp.DataUp", commandID = transaction.command)).setSegment(
-                    PbHighway.HighwaySegmentHeader.newBuilder().setFileSize(bodySize.toLong())
-                        .setDataOffset(chunkOffset.toLong()).setDataLength(chunkSize)
-                        .setServiceTicket(ByteString.copyFrom(transaction.ticket))
-                        .setMd5(ByteString.copyFrom(Hashing.md5().hashBytes(chunkData).asBytes()))
-                        .setFileMd5(ByteString.copyFrom(transaction.bodyMd5))
-                ).setExtensionInfo(ByteString.empty()).build() to chunkData
+            PbHighway.RequestHeader(
+                data = createDataHeader(command = "PicUp.DataUp", commandID = transaction.command),
+                segment = PbHighway.SegmentHeader(
+                    fileSize = bodySize.toLong(),
+                    dataOffset = chunkOffset.toLong(),
+                    dataLength = chunkSize,
+                    serviceTicket = transaction.ticket,
+                    md5 = Hashing.md5().hashBytes(chunkData).asBytes(),
+                    fileMd5 = transaction.bodyMd5
+                )
+            ) to chunkData
         )
     }
 

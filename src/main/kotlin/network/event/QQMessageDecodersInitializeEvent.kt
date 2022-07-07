@@ -21,7 +21,7 @@ import katium.core.event.BotEvent
 
 class QQMessageDecodersInitializeEvent(
     val client: QQClient,
-    val decoders: MutableMap<Int, MessageDecoder>
+    val decoders: MutableList<MessageDecoder<*>>
 ) : BotEvent(client.bot) {
 
     operator fun component2() = client

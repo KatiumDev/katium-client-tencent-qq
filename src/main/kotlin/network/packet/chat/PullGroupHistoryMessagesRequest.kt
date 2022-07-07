@@ -18,36 +18,55 @@ package katium.client.qq.network.packet.chat
 import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.util.netty.heapBuffer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
-object PullGroupHistoryMessagesRequest {
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class PullGroupHistoryMessagesRequest(
+    @ProtoNumber(1) val groupCode: Long,
+    @ProtoNumber(2) val beginSequence: Long,
+    @ProtoNumber(3) val endSequence: Long,
+    @ProtoNumber(4) val filter: Int? = null,
+    @ProtoNumber(5) val memberSequence: Long? = null,
+    @ProtoNumber(6) val publicGroup: Boolean,
+    @ProtoNumber(7) val shieldFlag: Int? = null,
+    @ProtoNumber(8) val saveTrafficFlag: Int? = null,
+) {
 
-    fun create(
-        client: QQClient,
-        sequenceID: Int = client.allocPacketSequenceID(),
-        groupCode: Long,
-        beginSequence: Long,
-        endSequence: Long
-    ) =
-        TransportPacket.Request.Buffered(
+    companion object {
+
+        fun create(
+            client: QQClient,
+            sequenceID: Int = client.allocPacketSequenceID(),
+            groupCode: Long,
+            beginSequence: Long,
+            endSequence: Long
+        ) = TransportPacket.Request.Buffered(
             client = client,
             type = TransportPacket.Type.SIMPLE,
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "MessageSvc.PbGetGroupMsg",
-            body = PooledByteBufAllocator.DEFAULT.heapBuffer(createRequest(groupCode, beginSequence, endSequence).toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(
+                ProtoBuf.encodeToByteArray(
+                    createRequest(
+                        groupCode, beginSequence, endSequence
+                    )
+                )
+            )
         )
 
-    fun createRequest(
-        groupCode: Long,
-        beginSequence: Long,
-        endSequence: Long
-    ): PbMessagePackets.PullGroupHistoryMessagesRequest = PbMessagePackets.PullGroupHistoryMessagesRequest.newBuilder()
-        .setGroupCode(groupCode)
-        .setBeginSequence(beginSequence)
-        .setEndSequence(endSequence)
-        .setPublicGroup(false)
-        .build()
+        fun createRequest(
+            groupCode: Long, beginSequence: Long, endSequence: Long
+        ) = PullGroupHistoryMessagesRequest(
+            groupCode = groupCode, beginSequence = beginSequence, endSequence = endSequence, publicGroup = false
+        )
+
+    }
 
 }

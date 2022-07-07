@@ -18,23 +18,128 @@ package katium.client.qq.network.packet.chat
 import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessagesReadReport
 import katium.core.util.netty.heapBuffer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
-object MessageReadReportRequest {
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class MessageReadReportRequest(
+    @ProtoNumber(1) val groups: Set<Group.Request> = emptySet(),
+    @ProtoNumber(2) val discussions: Set<Discussion.Request> = emptySet(),
+    @ProtoNumber(3) val friend: Friend.Request? = null,
+    @ProtoNumber(4) val boundUin: BoundUin.Request? = null,
+) {
 
-    fun create(
-        client: QQClient,
-        sequenceID: Int = client.allocPacketSequenceID(),
-        report: PbMessagesReadReport.ReadReportRequest
-    ) =
-        TransportPacket.Request.Buffered(
+    companion object {
+
+        fun create(
+            client: QQClient, sequenceID: Int = client.allocPacketSequenceID(), report: MessageReadReportRequest
+        ) = TransportPacket.Request.Buffered(
             client = client,
             type = TransportPacket.Type.SIMPLE,
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "PbMessageSvc.PbMsgReadedReport",
-            body = PooledByteBufAllocator.DEFAULT.heapBuffer(report.toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(ProtoBuf.encodeToByteArray(report))
         )
+
+    }
+
+    @Serializable
+    data class Response(
+        @ProtoNumber(1) val groups: Set<Group.Response> = emptySet(),
+        @ProtoNumber(2) val discussions: Set<Discussion.Response> = emptySet(),
+        @ProtoNumber(3) val friend: Friend.Response? = null,
+        @ProtoNumber(4) val boundUin: BoundUin.Response? = null,
+    )
+
+    object Group {
+
+        @Serializable
+        data class Request(
+            @ProtoNumber(1) val groupCode: Long,
+            @ProtoNumber(2) val lastReadSequence: Long,
+        )
+
+        @Serializable
+        data class Response(
+            @ProtoNumber(1) val result: Int,
+            @ProtoNumber(2) val error: String? = null,
+            @ProtoNumber(3) val groupCode: Long? = null,
+            @ProtoNumber(4) val memberSequence: Long? = null,
+            @ProtoNumber(5) val groupMessageSequence: Long? = null,
+        )
+
+    }
+
+    object Discussion {
+
+        @Serializable
+        data class Request(
+            @ProtoNumber(1) val confUin: Long? = null,
+            @ProtoNumber(2) val lastReadSequence: Long? = null,
+        )
+
+        @Serializable
+        data class Response(
+            @ProtoNumber(1) val result: Int? = null,
+            @ProtoNumber(2) val error: String? = null,
+            @ProtoNumber(3) val confUin: Long? = null,
+            @ProtoNumber(4) val memberSequence: Long? = null,
+            @ProtoNumber(5) val confSeq: Long? = null,
+        )
+
+    }
+
+    object Friend {
+
+        @Serializable
+        data class Request(
+            @ProtoNumber(1) val syncCookie: ByteArray,
+            @ProtoNumber(2) val info: Set<UinPairReadInfo> = emptySet(),
+        )
+
+        @Serializable
+        data class UinPairReadInfo(
+            @ProtoNumber(1) val peerUin: Long,
+            @ProtoNumber(2) val lastReadTime: Int,
+            @ProtoNumber(3) val crmSig: ByteArray? = null,
+            @ProtoNumber(4) val peerType: Int? = null,
+            @ProtoNumber(5) val chatType: Int? = null,
+            @ProtoNumber(6) val cpid: Long? = null,
+            @ProtoNumber(7) val aioType: Int? = null,
+            @ProtoNumber(9) val toTinyId: Long? = null,
+        )
+
+        @Serializable
+        data class Response(
+            @ProtoNumber(1) val result: Int,
+            @ProtoNumber(2) val error: String? = null,
+            @ProtoNumber(3) val syncCookie: ByteArray? = null,
+        )
+
+    }
+
+    object BoundUin {
+
+        @Serializable
+        data class Request(
+            @ProtoNumber(1) val syncCookie: ByteArray? = null,
+            @ProtoNumber(2) val boundUin: Long,
+        )
+
+        @Serializable
+        data class Response(
+            @ProtoNumber(1) val result: Int,
+            @ProtoNumber(2) val error: String? = null,
+            @ProtoNumber(3) val syncCookie: ByteArray? = null,
+            @ProtoNumber(4) val boundUin: Long,
+        )
+
+    }
 
 }

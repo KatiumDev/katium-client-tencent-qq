@@ -17,13 +17,15 @@ package katium.client.qq.network.message.decoder
 
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.message.pb.PbMessageElement
 
-object FallbackDecoder : MessageDecoder {
+object FallbackDecoder : MessageDecoder<PbMessageElement> {
+
+    override fun select(element: PbMessageElement) = element
 
     override suspend fun decode(
-        client: QQClient, context: QQChat, message: PbMessages.Message, element: PbMessageElements.Element
+        client: QQClient, context: QQChat, message: PbMessage, element: PbMessageElement
     ) = null
 
 }

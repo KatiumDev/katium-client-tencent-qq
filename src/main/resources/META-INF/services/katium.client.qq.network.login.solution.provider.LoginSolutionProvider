@@ -1,1 +1,3 @@
 katium.client.qq.network.login.solution.provider.SmsVerifyProvider
+katium.client.qq.network.login.solution.provider.RetryLoginProvider
+katium.client.qq.network.login.solution.provider.TxCaptchaHelperProvider

@@ -18,9 +18,14 @@ package katium.client.qq.network.packet.chat
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.util.netty.toArray
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
+@OptIn(ExperimentalSerializationApi::class)
 class RecallMessagesResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
@@ -33,29 +38,47 @@ class RecallMessagesResponse(val client: QQClient, packet: TransportPacket.Respo
 
     }
 
-    lateinit var response: PbMessagePackets.RecallMessagesResponse
+    lateinit var response: Data
         private set
 
     var errorMessage: String? = null
         private set
 
     override fun readBody(input: ByteBuf) {
-        response = PbMessagePackets.RecallMessagesResponse.parseFrom(input.toArray(release = false))
+        response = ProtoBuf.decodeFromByteArray(input.toArray(release = false))
 
         errorMessage = ""
-        response.friendList
+        response.friends
             .filter { it.result != 2 && it.result != 3 }
-            .filter(PbMessagePackets.RecallFriendMessagesResponse::hasError)
+            .filter { it.error != null }
             .forEach {
                 errorMessage += "friend: result=${it.result}, error=${it.error}, diagnosis=${diagnosis[it.result]}"
             }
-        response.groupList
+        response.friends
             .filter { it.result != 0 }
-            .filter(PbMessagePackets.RecallGroupMessagesResponse::hasError)
+            .filter { it.error != null }
             .forEach {
                 errorMessage += "group: result=${it.result}, error=${it.error}, diagnosis=${diagnosis[it.result]}"
             }
         if (errorMessage!!.isEmpty()) errorMessage = null
     }
+
+    @Serializable
+    data class Data(
+        @ProtoNumber(1) val friends: Set<FriendResponse> = emptySet(),
+        @ProtoNumber(2) val groups: Set<GroupResponse> = emptySet(),
+    )
+
+    @Serializable
+    data class FriendResponse(
+        @ProtoNumber(1) val result: Int,
+        @ProtoNumber(2) val error: String? = null,
+    )
+
+    @Serializable
+    data class GroupResponse(
+        @ProtoNumber(1) val result: Int,
+        @ProtoNumber(2) val error: String? = null,
+    )
 
 }

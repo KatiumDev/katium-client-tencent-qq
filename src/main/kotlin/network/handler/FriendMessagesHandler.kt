@@ -15,22 +15,19 @@
  */
 package katium.client.qq.network.handler
 
-import com.google.protobuf.ByteString
 import katium.client.qq.network.event.QQPacketReceivedEvent
 import katium.client.qq.network.event.QQReceivedRawMessageEvent
 import katium.client.qq.network.packet.chat.DeleteMessagesRequest
 import katium.client.qq.network.packet.chat.PullMessagesRequest
 import katium.client.qq.network.packet.chat.PullMessagesResponse
 import katium.client.qq.network.packet.chat.PushNotifyPacket
-import katium.client.qq.network.pb.PbDeleteMessages
-import katium.client.qq.network.pb.PbMessagePackets
+import katium.client.qq.network.sync.SyncFlag
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
 import katium.core.util.netty.toArray
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.*
 
 object FriendMessagesHandler : QQClientHandler {
 
@@ -41,11 +38,7 @@ object FriendMessagesHandler : QQClientHandler {
         val (_, client, packet) = event
         if (packet is PushNotifyPacket) {
             val data = packet.data
-            client.send(
-                PullMessagesRequest.create(
-                    client, syncCookies = ByteString.copyFrom(data.notifyCookie.toArray(release = false))
-                )
-            )
+            client.send(PullMessagesRequest.create(client, syncCookies = data.notifyCookie.toArray(release = false)))
         } else if (packet is PullMessagesResponse) {
             val response = packet.response
             if (response.result != 0) { // Retry if error
@@ -65,20 +58,21 @@ object FriendMessagesHandler : QQClientHandler {
                 else -> throw UnsupportedOperationException("Unknown sync type: ${response.syncType}")
             }
             val isInitialSync = synchronzier.friendInitialSync.getAndSet(false)
-            if (response.messagesList.isEmpty()) return
-            val messages = response.messagesList.asSequence().filterNot { it.messagesList.isEmpty() }.flatMap { pair ->
-                pair.messagesList.asSequence().filter { it.header.time > pair.lastReadTime }
+            if (response.messages.isEmpty()) return
+            val messages = response.messages.asSequence().filterNot { it.messages.isEmpty() }.flatMap { pair ->
+                pair.messages.asSequence().filter { it.header.time > pair.lastReadTime }
             }.toList().also {
                 // Delete messages
                 if (it.isNotEmpty()) {
-                    client.send(DeleteMessagesRequest.create(client, items = it.map {
-                        PbDeleteMessages.MessageItem.newBuilder().apply {
-                            fromUin = it.header.fromUin
-                            toUin = it.header.toUin
-                            type = 187
-                            sequence = it.header.sequence
-                            uid = it.header.uid
-                        }.build()
+                    client.send(DeleteMessagesRequest.create(client, items = it.map { message ->
+                        DeleteMessagesRequest.Item(
+                            fromUin = message.header.fromUin,
+                            toUin = message.header.toUin,
+                            type = 187,
+                            sequence = message.header.sequence,
+                            uid = message.header.uid,
+                            sig = ByteArray(0)
+                        )
                     }))
                 }
             }.filter {
@@ -86,12 +80,12 @@ object FriendMessagesHandler : QQClientHandler {
                     it.header.uid, it.header.sequence, it.header.time
                 )
             }
-            synchronzier.recordUnreadFriendMessages(response.messagesList.map(PbMessagePackets.UinPairMessage::getPeerUin))
+            synchronzier.recordUnreadFriendMessages(response.messages.map { it.peerUin })
             if (isInitialSync) return
             for (message in messages.map { QQReceivedRawMessageEvent(client, it) }) {
                 client.bot.post(message)
             }
-            if (response.syncFlag != PbMessagePackets.SyncFlag.STOP) { // Continue
+            if (response.syncFlag != SyncFlag.STOP) { // Continue
                 client.send(PullMessagesRequest.create(client, syncFlag = response.syncFlag))
             }
         }

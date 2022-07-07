@@ -25,6 +25,9 @@ import katium.client.qq.network.codec.taf.RequestPacket
 import katium.client.qq.network.codec.taf.wrapUniRequestData
 import katium.client.qq.network.pb.PbD50
 import katium.core.util.netty.heapBuffer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 
 class PullFriendListRequest(other: SimpleJceStruct) : SimpleJceStruct(other) {
 
@@ -48,6 +51,7 @@ class PullFriendListRequest(other: SimpleJceStruct) : SimpleJceStruct(other) {
                 body = createRequestPacket(client, friends, groups).dump()
             )
 
+        @OptIn(ExperimentalSerializationApi::class)
         fun createRequestPacket(client: QQClient, friends: Pair<Short, Short>, groups: Pair<Short, Short>) =
             RequestPacket(
                 version = 3,
@@ -63,14 +67,20 @@ class PullFriendListRequest(other: SimpleJceStruct) : SimpleJceStruct(other) {
                         groupStartIndex = groups.first.toByte()
                         groupCount = groups.second.toByte()
                         d50 = PooledByteBufAllocator.DEFAULT.heapBuffer(
-                            PbD50.D50Request.newBuilder()
-                                .setAppID(1002)
-                                .setMusicSwitch(1)
-                                .setMutualMarkAlienation(1)
-                                .setKsingSwitch(1)
-                                .setMutualMarkLbsshare(1)
-                                .build()
-                                .toByteArray()
+                            ProtoBuf.encodeToByteArray(
+                                PbD50.Request(
+                                    appID = 1002,
+                                    musicSwitch = 1,
+                                    mutualMarkAlienation = 1,
+                                    ksingSwitch = 1,
+                                    mutualMarkLbsshare = 1,
+                                    maxPackageSize = 0,
+                                    mutualMarkScore = 0,
+                                    requestNumber = 0,
+                                    startIndex = 0,
+                                    startTime = 0
+                                )
+                            )
                         )
                     }.dump().wrapUniRequestData()
                 ).dump()

@@ -21,7 +21,6 @@ import katium.core.event.MessageSentEvent
 import katium.core.util.event.AsyncMode
 import katium.core.util.event.Subscribe
 import katium.core.util.event.post
-import java.util.*
 
 object RawMessageHandler : QQClientHandler {
 

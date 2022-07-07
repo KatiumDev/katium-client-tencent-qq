@@ -16,9 +16,10 @@
 package katium.client.qq.network.auth
 
 import com.google.common.hash.Hashing
-import katium.client.qq.network.pb.PbDeviceInfo
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoNumber
 import kotlin.random.Random
 
 /**
@@ -65,18 +66,6 @@ data class DeviceInfo(
     var tgtgtKey: ByteArray = Hashing.md5().hashBytes(Random.Default.nextBytes(16) + guid).asBytes()
 
     fun computeKsid() = "|${IMEI}|A8.2.7.27f6ea96".toByteArray()
-
-    fun toProtoBufDeviceInfo(): PbDeviceInfo.DeviceInfo = PbDeviceInfo.DeviceInfo.newBuilder()
-        .setBootloader(bootloader)
-        .setProcVersion(procVersion)
-        .setCodeName(version.codeName)
-        .setIncremental(version.incremental)
-        .setFingerprint(fingerprint)
-        .setBootId(bootID)
-        .setAndroidId(androidID)
-        .setBaseBand(baseBand)
-        .setInnerVersion(version.incremental)
-        .build()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -136,6 +125,34 @@ data class DeviceInfo(
         result = 31 * result + vendorName.hashCode()
         result = 31 * result + vendorOSName.hashCode()
         return result
+    }
+
+    @Serializable
+    @OptIn(ExperimentalSerializationApi::class)
+    data class ProtoBuf(
+        @ProtoNumber(1) val bootloader: String,
+        @ProtoNumber(2) val procVersion: String,
+        @ProtoNumber(3) val codeName: String,
+        @ProtoNumber(4) val incremental: String,
+        @ProtoNumber(5) val fingerprint: String,
+        @ProtoNumber(6) val bootID: String,
+        @ProtoNumber(7) val androidID: String,
+        @ProtoNumber(8) val baseBand: String,
+        @ProtoNumber(9) val innerVersion: String,
+    ) {
+
+        constructor(info: DeviceInfo) : this(
+            bootloader = info.bootloader,
+            procVersion = info.procVersion,
+            codeName = info.version.codeName,
+            incremental = info.version.incremental,
+            fingerprint = info.fingerprint,
+            bootID = info.bootID,
+            androidID = info.androidID,
+            baseBand = info.baseBand,
+            innerVersion = info.version.incremental,
+        )
+
     }
 
 }

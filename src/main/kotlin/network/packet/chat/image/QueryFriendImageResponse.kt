@@ -19,46 +19,53 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.highway.Highway
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbCmd0x352
 import katium.core.util.netty.toArray
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 import java.net.InetSocketAddress
 
+@OptIn(ExperimentalSerializationApi::class)
 class QueryFriendImageResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
-    lateinit var response: PbCmd0x352.C352Response
+    lateinit var response: Data
         private set
 
     lateinit var result: ImageUploadResult
         private set
 
     override fun readBody(input: ByteBuf) {
-        response = PbCmd0x352.C352Response.parseFrom(input.toArray(release = false))
+        response = ProtoBuf.decodeFromByteArray(input.toArray(release = false))
 
-        result = if (response.hasFailMessage()) {
-            ImageUploadResult(message = "failMessage: ${response.failMessage}")
+        result = if (response.failMessage != null) {
+            ImageUploadResult(message = "failMessage: ${String(response.failMessage!!)}")
         } else if (response.subCommand != 1) {
             ImageUploadResult(message = "subCommand: ${response.subCommand}")
-        } else if (response.uploadResponseCount == 0) {
+        } else if (response.uploadResponses.isEmpty()) {
             ImageUploadResult(message = "no upload response")
         } else {
-            val uploadResponse = response.uploadResponseList.first()
+            val uploadResponse = response.uploadResponses.first()
             if (uploadResponse.result != 0) {
                 ImageUploadResult(message = "result: ${uploadResponse.result}, failMessage: ${uploadResponse.failMessage}")
             } else if (uploadResponse.fileExists) {
                 ImageUploadResult(
                     isExists = true,
-                    resourceKey = uploadResponse.uploadResourceID.toStringUtf8(),
-                    contentUrl = "https://c2cpicdw.qpic.cn/${uploadResponse.originalDownPara.toStringUtf8()}"
+                    resourceKey = String(uploadResponse.uploadResourceID!!),
+                    contentUrl = if (uploadResponse.originalDownPara != null)
+                        "https://c2cpicdw.qpic.cn/${String(uploadResponse.originalDownPara)}"
+                    else null
                 )
             } else {
                 ImageUploadResult(
                     isExists = false,
-                    resourceKey = uploadResponse.uploadResourceID.toStringUtf8(),
-                    uploadServers = uploadResponse.uploadIPList.mapIndexed { index, ip ->
+                    resourceKey = String(uploadResponse.uploadResourceID!!),
+                    uploadServers = uploadResponse.uploadIPs.mapIndexed { index, ip ->
                         InetSocketAddress(
                             Highway.decodeIPv4(ip),
-                            uploadResponse.getUploadPort(index)
+                            uploadResponse.uploadPorts[index]
                         )
                     },
                     uploadKey = uploadResponse.uploadUkey
@@ -66,5 +73,43 @@ class QueryFriendImageResponse(val client: QQClient, packet: TransportPacket.Res
             }
         }
     }
+
+    @Serializable
+    data class Data(
+        @ProtoNumber(1) val subCommand: Int? = null,
+        @ProtoNumber(2) val uploadResponses: Set<C352UploadResponse> = emptySet(),
+        // @ProtoNumber(3) val getimgUrlRsp: Set<GetImgUrlRsp> = emptySet(),
+        @ProtoNumber(4) val newBigchan: Boolean? = null,
+        // @ProtoNumber(5) val delImgRsp: Set<DelImgRsp> = emptySet(),
+        @ProtoNumber(10) val failMessage: ByteArray? = null,
+    )
+
+    @Serializable
+    data class C352UploadResponse(
+        @ProtoNumber(1) val fileID: Long? = null,
+        @ProtoNumber(2) val clientIP: Int? = null,
+        @ProtoNumber(3) val result: Int,
+        @ProtoNumber(4) val failMessage: ByteArray? = null,
+        @ProtoNumber(5) val fileExists: Boolean,
+        // @ProtoNumber(6) val imgInfo: ImgInfo? = null,
+        @ProtoNumber(7) val uploadIPs: List<Int> = emptyList(),
+        @ProtoNumber(8) val uploadPorts: List<Int> = emptyList(),
+        @ProtoNumber(9) val uploadUkey: ByteArray? = null,
+        @ProtoNumber(10) val uploadResourceID: ByteArray? = null,
+        @ProtoNumber(11) val uploadUuid: ByteArray? = null,
+        @ProtoNumber(12) val upOffset: Long? = null,
+        @ProtoNumber(13) val blockSize: Long? = null,
+        @ProtoNumber(14) val encryptToIP: ByteArray? = null,
+        @ProtoNumber(15) val roamdays: Int? = null,
+        // @ProtoNumber(26) val upIp6: List<IPv6Info> = emptyList(),
+        @ProtoNumber(27) val clientIP6: ByteArray? = null,
+        @ProtoNumber(60) val thumbDownPara: ByteArray? = null,
+        @ProtoNumber(61) val originalDownPara: ByteArray? = null,
+        @ProtoNumber(62) val downDomain: ByteArray? = null,
+        @ProtoNumber(64) val bigDownPara: ByteArray? = null,
+        @ProtoNumber(65) val bigThumbDownPara: ByteArray? = null,
+        @ProtoNumber(66) val httpsUrlFlag: Int? = null,
+        // @ProtoNumber(1001) val info4Busi: TryUpInfo4Busi? = null,
+    )
 
 }

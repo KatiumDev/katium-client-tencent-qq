@@ -18,17 +18,32 @@ package katium.client.qq.network.packet.chat
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessagePackets
+import katium.client.qq.network.message.pb.PbMessage
 import katium.core.util.netty.toArray
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
+@OptIn(ExperimentalSerializationApi::class)
 class PushGroupMessagesPacket(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
-    lateinit var response: PbMessagePackets.OnlinePushRequest
+    lateinit var response: Data
         private set
 
     override fun readBody(input: ByteBuf) {
-        response = PbMessagePackets.OnlinePushRequest.parseFrom(input.toArray(release = false))
+        response = ProtoBuf.decodeFromByteArray(input.toArray(release = false))
     }
+
+    @Serializable
+    data class Data(
+        @ProtoNumber(1) val message: PbMessage,
+        @ProtoNumber(2) val serverIP: Int? = null,
+        @ProtoNumber(3) val pushToken: ByteArray? = null,
+        @ProtoNumber(4) val pingFlag: Int? = null,
+        @ProtoNumber(9) val generateFlag: Int? = null,
+    )
 
 }

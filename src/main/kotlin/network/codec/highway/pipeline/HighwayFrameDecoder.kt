@@ -18,7 +18,11 @@ package katium.client.qq.network.codec.highway.pipeline
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
-import katium.client.qq.network.pb.PbHighway
+import katium.client.qq.network.codec.highway.PbHighway
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import java.util.HexFormat
 
 class HighwayFrameDecoder : ByteToMessageDecoder() {
 
@@ -26,6 +30,7 @@ class HighwayFrameDecoder : ByteToMessageDecoder() {
         const val MAX_FRAME_SIZE = 1024 * 100 // 100k
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override fun decode(ctx: ChannelHandlerContext, `in`: ByteBuf, out: MutableList<Any>) {
         if (`in`.readableBytes() >= 9) {
             `in`.skipBytes(1)
@@ -45,7 +50,7 @@ class HighwayFrameDecoder : ByteToMessageDecoder() {
                 buffer.toUByteArray()
             }
             `in`.skipBytes(1)
-            out.add(PbHighway.HighwayResponseHeader.parseFrom(header) to body)
+            out.add(ProtoBuf.decodeFromByteArray<PbHighway.ResponseHeader>(header) to body)
         }
     }
 

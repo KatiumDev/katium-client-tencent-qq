@@ -17,12 +17,19 @@ package katium.client.qq.network.message.decoder
 
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.message.pb.PbMessageElement
 import katium.core.message.content.MessageContent
 
-interface MessageDecoder {
+interface MessageDecoder<T> {
 
-    suspend fun decode(client: QQClient, context: QQChat, message: PbMessages.Message, element: PbMessageElements.Element): MessageContent?
+    fun select(element: PbMessageElement): T?
+
+    suspend fun decode(
+        client: QQClient,
+        context: QQChat,
+        message: PbMessage,
+        element: T
+    ): MessageContent?
 
 }

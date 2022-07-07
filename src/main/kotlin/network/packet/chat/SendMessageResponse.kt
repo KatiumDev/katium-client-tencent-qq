@@ -18,27 +18,39 @@ package katium.client.qq.network.packet.chat
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessagePackets
 import katium.core.util.netty.toArray
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
+@OptIn(ExperimentalSerializationApi::class)
 class SendMessageResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
-    lateinit var response: PbMessagePackets.SendMessageResponse
+    lateinit var response: Data
         private set
 
     var errorMessage: String? = null
         private set
 
     override fun readBody(input: ByteBuf) {
-        response = PbMessagePackets.SendMessageResponse.parseFrom(input.toArray(release = false))
+        response = ProtoBuf.decodeFromByteArray(input.toArray(release = false))
 
         errorMessage = when (response.result) {
             0 -> null
             55 -> "Bot blocked target content"
+            121 -> "Too many @ALL"
             else -> "Unknown error"
         }
         if (errorMessage != null) errorMessage += ", result=${response.result}, error=${response.error}"
     }
+
+    @Serializable
+    data class Data(
+        @ProtoNumber(1) val result: Int,
+        @ProtoNumber(2) val error: String? = null,
+    )
 
 }

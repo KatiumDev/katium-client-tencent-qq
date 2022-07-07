@@ -18,35 +18,34 @@ package katium.client.qq.network.message.decoder
 import katium.client.qq.QQLocalChatID
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.message.pb.PbMessageElement
 import katium.core.message.builder.AtAll
 import katium.core.message.content.At
 import katium.core.message.content.PlainText
+import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 
-object PlainTextDecoder : MessageDecoder {
+object PlainTextDecoder : MessageDecoder<PbMessageElement.Text> {
+
+    override fun select(element: PbMessageElement) = element.text
 
     override suspend fun decode(
-        client: QQClient,
-        context: QQChat,
-        message: PbMessages.Message,
-        element: PbMessageElements.Element
-    ) =
-        element.text.run {
-            if (!hasAttribute6Buf() || attribute6Buf.isEmpty) {
-                PlainText(string)
+        client: QQClient, context: QQChat, message: PbMessage, element: PbMessageElement.Text
+    ) = element.run {
+        if (attribute6Buf == null || attribute6Buf.isEmpty()) {
+            PlainText(string)
+        } else {
+            val uin = DataInputStream(ByteArrayInputStream(attribute6Buf)).use {
+                it.skip(7)
+                it.readInt().toLong()
+            }
+            if (uin != 0L) {
+                At(QQLocalChatID(uin))
             } else {
-                val uin = DataInputStream(attribute6Buf.newInput()).use {
-                    it.skip(7)
-                    it.readInt().toLong()
-                }
-                if (uin != 0L) {
-                    At(QQLocalChatID(uin))
-                } else {
-                    AtAll()
-                }
+                AtAll()
             }
         }
+    }
 
 }

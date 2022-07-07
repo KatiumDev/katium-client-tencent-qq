@@ -18,26 +18,42 @@ package katium.client.qq.network.packet.chat
 import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbDeleteMessages
 import katium.core.util.netty.heapBuffer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
-object DeleteMessagesRequest {
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class DeleteMessagesRequest(
+    @ProtoNumber(1) val items: List<Item> = emptyList(),
+) {
 
-    fun create(
-        client: QQClient,
-        sequenceID: Int = client.allocPacketSequenceID(),
-        items: Collection<PbDeleteMessages.MessageItem>
-    ) =
-        TransportPacket.Request.Buffered(
+    companion object {
+
+        fun create(
+            client: QQClient, sequenceID: Int = client.allocPacketSequenceID(), items: List<Item>
+        ) = TransportPacket.Request.Buffered(
             client = client,
             type = TransportPacket.Type.SIMPLE,
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "MessageSvc.PbDeleteMsg",
-            body = PooledByteBufAllocator.DEFAULT.heapBuffer(createRequest(items).toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(ProtoBuf.encodeToByteArray(DeleteMessagesRequest(items)))
         )
 
-    fun createRequest(items: Collection<PbDeleteMessages.MessageItem>): PbDeleteMessages.DeleteMessagesRequest =
-        PbDeleteMessages.DeleteMessagesRequest.newBuilder().addAllItems(items).build()
+    }
+
+    @Serializable
+    data class Item(
+        @ProtoNumber(1) val fromUin: Long,
+        @ProtoNumber(2) val toUin: Long,
+        @ProtoNumber(3) val type: Int,
+        @ProtoNumber(4) val sequence: Int,
+        @ProtoNumber(5) val uid: Long,
+        @ProtoNumber(7) val sig: ByteArray,
+    )
 
 }

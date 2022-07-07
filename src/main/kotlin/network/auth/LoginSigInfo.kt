@@ -48,8 +48,9 @@ data class LoginSigInfo(
     var dpwd: ByteArray? = null,
 
     // TLV cache
-    var t104: ByteArray = ByteArray(0), // SMS verify
-    var t174: ByteArray = ByteArray(0), // SMS verify
+    var t104: ByteArray = ByteArray(0), // login
+    var t174: ByteArray = ByteArray(0), // login
+    var t547: ByteArray = ByteArray(0), // login
     var g: ByteArray? = null,
     var t402: ByteArray? = null,
     /**

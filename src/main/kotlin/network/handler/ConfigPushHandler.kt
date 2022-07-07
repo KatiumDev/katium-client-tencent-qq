@@ -28,13 +28,16 @@ import katium.client.qq.network.sso.SsoServerRecord
 import katium.core.util.event.Subscribe
 import katium.core.util.netty.toArray
 import kotlinx.coroutines.launch
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 import java.net.InetSocketAddress
-import java.util.*
 
 object ConfigPushHandler : QQClientHandler {
 
     override val id: String get() = "config_push_handler"
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Subscribe
     fun onPacket(event: QQPacketReceivedEvent) {
         val (_, client, packet) = event
@@ -54,13 +57,14 @@ object ConfigPushHandler : QQClientHandler {
                     }
                     2 -> {
                         FileStorageConfigPushData(action.buffer.duplicate().readJceStruct()).use { list ->
-                            val response =
-                                PbCmd0x6ff.C501ResponseBody.parseFrom(list.bigDataChannel.buffer.toArray(release = false))
-                            client.highway.sessionSig = response.body.sigSession.toByteArray()
-                            client.highway.sessionKey = response.body.sessionKey.toByteArray()
+                            val response = ProtoBuf.decodeFromByteArray<PbCmd0x6ff.Response>(
+                                list.bigDataChannel.buffer.toArray(release = false)
+                            )
+                            client.highway.sessionSig = response.body.sigSession
+                            client.highway.sessionKey = response.body.sessionKey
                             client.logger.info("Retrieved highway session key and sig from ConfigPush")
-                            response.body.addressesList.forEach {
-                                val addresses = it.addressesList.map { address ->
+                            response.body.addresses.forEach {
+                                val addresses = it.addresses.map { address ->
                                     InetSocketAddress(Highway.decodeIPv4(address.ip), address.port)
                                 }
                                 when (it.serviceType) {

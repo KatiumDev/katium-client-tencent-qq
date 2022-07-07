@@ -15,56 +15,74 @@
  */
 package katium.client.qq.network.packet.chat
 
-import com.google.protobuf.ByteString
 import io.netty.buffer.PooledByteBufAllocator
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessagePackets
+import katium.client.qq.network.sync.SyncCookie
+import katium.client.qq.network.sync.SyncFlag
 import katium.core.util.netty.heapBuffer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
-object PullMessagesRequest {
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class PullMessagesRequest(
+    @ProtoNumber(1) val syncFlag: SyncFlag? = null,
+    @ProtoNumber(2) val syncCookie: ByteArray? = null,
+    @ProtoNumber(3) val rambleFlag: Int? = null,
+    @ProtoNumber(4) val latestRambleNumber: Int? = null,
+    @ProtoNumber(5) val otherRambleNumber: Int? = null,
+    @ProtoNumber(6) val onlineSyncFlag: Int? = null,
+    @ProtoNumber(7) val contextFlag: Int? = null,
+    @ProtoNumber(8) val whisperSessionId: Int? = null,
+    @ProtoNumber(9) val requestType: Int? = null,
+    @ProtoNumber(10) val publicAccountCookie: ByteArray? = null,
+    @ProtoNumber(11) val messageControlBuffer: ByteArray? = null,
+    @ProtoNumber(12) val serverBuffer: ByteArray? = null,
+) {
 
-    fun create(
-        client: QQClient,
-        sequenceID: Int = client.allocPacketSequenceID(),
-        syncFlag: PbMessagePackets.SyncFlag = PbMessagePackets.SyncFlag.START,
-        syncCookies: ByteString? = null
-    ) =
-        TransportPacket.Request.Buffered(
+    companion object {
+
+        fun create(
+            client: QQClient,
+            sequenceID: Int = client.allocPacketSequenceID(),
+            syncFlag: SyncFlag = SyncFlag.START,
+            syncCookies: ByteArray? = null
+        ) = TransportPacket.Request.Buffered(
             client = client,
             type = TransportPacket.Type.SIMPLE,
             encryptType = TransportPacket.EncryptType.D2_KEY,
             sequenceID = sequenceID,
             command = "MessageSvc.PbGetMsg",
-            body = PooledByteBufAllocator.DEFAULT.heapBuffer(createRequest(client, syncFlag, syncCookies).toByteArray())
+            body = PooledByteBufAllocator.DEFAULT.heapBuffer(
+                ProtoBuf.encodeToByteArray(
+                    createRequest(
+                        client,
+                        syncFlag,
+                        syncCookies
+                    )
+                )
+            )
         )
 
-    fun createRequest(
-        client: QQClient,
-        flag: PbMessagePackets.SyncFlag,
-        syncCookies: ByteString? = null
-    ): PbMessagePackets.PullMessagesRequest =
-        PbMessagePackets.PullMessagesRequest.newBuilder().apply {
-            syncFlag = flag
-            syncCookie = syncCookies ?: client.synchronzier.syncCookie ?: createInitialSyncCookies()
-            latestRambleNumber = 20
-            otherRambleNumber = 3
-            onlineSyncFlag = 1
-            contextFlag = 1
-            requestType = 1
-            publicAccountCookie = client.synchronzier.publicAccountCookie ?: ByteString.empty()
-            messageControlBuffer = ByteString.empty()
-            serverBuffer = ByteString.empty()
-        }.build()
+        fun createRequest(
+            client: QQClient, flag: SyncFlag, syncCookies: ByteArray? = null
+        ) = PullMessagesRequest(
+            syncFlag = flag,
+            syncCookie = syncCookies ?: client.synchronzier.syncCookie ?: SyncCookie.createInitialSyncCookies(),
+            latestRambleNumber = 20,
+            otherRambleNumber = 3,
+            onlineSyncFlag = 1,
+            contextFlag = 1,
+            requestType = 1,
+            publicAccountCookie = client.synchronzier.publicAccountCookie ?: ByteArray(0),
+            messageControlBuffer = ByteArray(0),
+            serverBuffer = ByteArray(0),
+        )
 
-    fun createInitialSyncCookies(messageTime: Long = System.currentTimeMillis() / 1000): ByteString =
-        PbMessagePackets.SyncCookie.newBuilder().apply {
-            time = messageTime
-            ran1 = 758330138L
-            ran2 = 2480149246L
-            const1 = 1167238020L
-            const2 = 3913056418L
-            const3 = 0x1D
-        }.build().toByteString()
+    }
 
 }

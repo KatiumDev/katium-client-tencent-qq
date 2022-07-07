@@ -18,8 +18,8 @@ package katium.client.qq.network.message.decoder
 import katium.client.qq.chat.QQChat
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.event.QQMessageDecodersInitializeEvent
-import katium.client.qq.network.pb.PbMessageElements
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.message.pb.PbMessageElement
 import katium.core.message.content.MessageChain
 import katium.core.util.CoroutineLazy
 import katium.core.util.event.post
@@ -27,33 +27,36 @@ import katium.core.util.event.post
 class MessageDecoders(val client: QQClient) {
 
     val decoders = CoroutineLazy(client) {
-        val decoders = mutableMapOf<Int, MessageDecoder>()
+        val decoders = mutableListOf<MessageDecoder<*>>()
         registerBuiltinParsers(decoders)
         client.bot.post(QQMessageDecodersInitializeEvent(client, decoders))
-        decoders.toMap()
+        decoders.reversed().toList()
     }
 
-    private fun registerBuiltinParsers(decoders: MutableMap<Int, MessageDecoder>) {
-        decoders[1] = PlainTextDecoder
-        decoders[4] = NotOnlineImageDecoder
-        decoders[8] = CustomFaceDecoder
-        decoders[12] = QQServiceDecoder
-        decoders[45] = RefMessageDecoder
+    private fun registerBuiltinParsers(decoders: MutableList<MessageDecoder<*>>) {
+        decoders += FallbackDecoder
+        decoders += PlainTextDecoder
+        decoders += NotOnlineImageDecoder
+        decoders += CustomFaceDecoder
+        decoders += QQServiceDecoder
+        decoders += RefMessageDecoder
     }
 
     operator fun get(type: Int) = decoders.getSync()[type]
 
-    operator fun get(element: PbMessageElements.Element): MessageDecoder? {
-        val fieldKeys = element.allFields.keys
-        if (fieldKeys.isEmpty()) return null
-        if (fieldKeys.size != 1) throw UnsupportedOperationException("Too many fields: $fieldKeys in $element")
-        return get(fieldKeys.first().number) ?: FallbackDecoder
-        //?: throw UnsupportedOperationException("Unknown element type: ${fieldKeys.first()}(${fieldKeys.first().number})"))
+    operator fun get(element: PbMessageElement): Pair<MessageDecoder<*>, Any>? {
+        decoders.getSync().forEach {
+            val selected = it.select(element)
+            if (selected != null) return it to selected
+        }
+        throw UnsupportedOperationException("Unknown element: $element")
     }
 
-    suspend fun decode(context: QQChat, message: PbMessages.Message) =
-        MessageChain(*message.body.richText.elementsList.mapNotNull {
-            get(it)?.decode(client, context, message, it)
-        }.toTypedArray()).simplest
+    suspend fun decode(context: QQChat, message: PbMessage) = MessageChain(*message.body.richText.elements.mapNotNull {
+        get(it)?.run {
+            val (decoder, selected) = this
+            @Suppress("UNCHECKED_CAST") (decoder as MessageDecoder<Any>).decode(client, context, message, selected)
+        }
+    }.toTypedArray()).simplest
 
 }

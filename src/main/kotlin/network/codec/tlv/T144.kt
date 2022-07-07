@@ -16,15 +16,15 @@
 package katium.client.qq.network.codec.tlv
 
 import io.netty.buffer.ByteBuf
+import katium.client.qq.network.auth.DeviceInfo
 import katium.client.qq.network.auth.NetworkType
 import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
-import katium.client.qq.network.pb.PbDeviceInfo
 import katium.core.util.netty.buffer
 import katium.core.util.netty.use
 
 context(TlvWriterContext) fun ByteBuf.writeT144(
     imei: ByteArray, // T109
-    deviceInfo: PbDeviceInfo.DeviceInfo, // T52D
+    deviceInfo: DeviceInfo.ProtoBuf, // T52D
     // T124
     osType: ByteArray,
     osVersion: ByteArray,

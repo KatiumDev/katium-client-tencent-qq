@@ -15,27 +15,35 @@
  */
 package katium.client.qq.network.codec.oidb
 
-import com.google.protobuf.ByteString
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbOidbPacket
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 
-fun ByteBuf.writeOidbPacket(client: QQClient, command: Int, serviceType: Int, body: ByteString): ByteBuf {
-    writeBytes(PbOidbPacket.OIDBPacket.newBuilder()
-        .setCommand(command)
-        .setServiceType(serviceType)
-        .setBuffer(body)
-        .setClientVersion("Android ${client.version.version}")
-        .build()
-        .toByteArray())
+@OptIn(ExperimentalSerializationApi::class)
+fun ByteBuf.writeOidbPacket(client: QQClient, command: Int, serviceType: Int, body: ByteArray): ByteBuf {
+    writeBytes(
+        ProtoBuf.encodeToByteArray(
+            PbOidbPacket(
+                command = command,
+                serviceType = serviceType,
+                buffer = body,
+                clientVersion = "Android ${client.version.version}",
+                error = "",
+                result = 0
+            )
+        )
+    )
     return this
 }
 
-fun ByteBuf.readOidbPacket(): PbOidbPacket.OIDBPacket {
+@OptIn(ExperimentalSerializationApi::class)
+fun ByteBuf.readOidbPacket(): PbOidbPacket {
     val buffer = ByteArray(readableBytes())
     readBytes(buffer)
-    val packet = PbOidbPacket.OIDBPacket.parseFrom(buffer)
-    if(packet.result != 0)
-        throw IllegalStateException("Oidb packet result=${packet.result}, error=${packet.error}")
+    val packet = ProtoBuf.decodeFromByteArray<PbOidbPacket>(buffer)
+    if (packet.result != 0) throw IllegalStateException("Oidb packet result=${packet.result}, error=${packet.error}")
     return packet
 }

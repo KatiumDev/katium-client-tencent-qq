@@ -19,16 +19,35 @@ import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.oidb.readOidbPacket
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbOidb0x88D
+import katium.client.qq.network.pb.PbGroupInfo
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
+@OptIn(ExperimentalSerializationApi::class)
 class PullGroupInfoResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
-    lateinit var response: PbOidb0x88D.D88DResponse
+    lateinit var response: Data
         private set
 
     override fun readBody(input: ByteBuf) {
-        response = PbOidb0x88D.D88DResponse.parseFrom(input.readOidbPacket().buffer)
+        response = ProtoBuf.decodeFromByteArray(input.readOidbPacket().buffer)
     }
+
+    @Serializable
+    data class Data(
+        @ProtoNumber(1) val info: Set<Info> = emptySet(),
+        @ProtoNumber(2) val errorInfo: ByteArray? = null,
+    )
+
+    @Serializable
+    data class Info(
+        @ProtoNumber(1) val groupCode: Long,
+        @ProtoNumber(2) val result: Int,
+        @ProtoNumber(3) val info: PbGroupInfo,
+    )
 
 }

@@ -17,7 +17,7 @@ package katium.client.qq.review.group
 
 import katium.client.qq.QQLocalChatID
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbSystemMessages
+import katium.client.qq.network.packet.review.PullGroupSystemMessagesResponse
 import katium.core.chat.ChatInfo
 import katium.core.review.group.JoinGroupRequestMessage
 import katium.core.user.User
@@ -31,13 +31,13 @@ class QQJoinGroupRequestMessage(
     override val suspicious: Boolean,
 ) : JoinGroupRequestMessage(chatInfo) {
 
-    constructor(client: QQClient, message: PbSystemMessages.StructMessage) : this(
+    constructor(client: QQClient, message: PullGroupSystemMessagesResponse.StructMessage) : this(
         chatInfo = client.bot.getGroupSync(QQLocalChatID(message.message.groupCode))!!,
         sequence = message.messageSequence,
         message = message.message.addition,
         requester = client.bot.getUserSync(QQLocalChatID(message.requesterUin))!!,
         processed = message.message.subType == 2,
-        suspicious = message.message.warningTips.size() > 0
+        suspicious = message.message.warningTips.isNotEmpty()
     )
 
     override val id: String = sequence.toString()

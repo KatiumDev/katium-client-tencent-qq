@@ -16,13 +16,14 @@
 package katium.client.qq.network.codec.highway
 
 import io.netty.buffer.ByteBuf
-import katium.client.qq.network.pb.PbHighway
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
 
-fun ByteBuf.writeHighwayFrame(
-    header: PbHighway.HighwayRequestHeader, body: ByteArray?
-) {
+@OptIn(ExperimentalSerializationApi::class)
+fun ByteBuf.writeHighwayFrame(header: PbHighway.RequestHeader, body: ByteArray?): ByteBuf {
     writeByte(40)
-    val headerBytes = header.toByteArray()
+    val headerBytes = ProtoBuf.encodeToByteArray(header)
     writeInt(headerBytes.size)
     writeInt(body?.size ?: 0)
     writeBytes(headerBytes)
@@ -30,4 +31,5 @@ fun ByteBuf.writeHighwayFrame(
         writeBytes(body)
     }
     writeByte(41)
+    return this
 }

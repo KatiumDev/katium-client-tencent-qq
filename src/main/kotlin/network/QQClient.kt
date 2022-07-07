@@ -16,7 +16,6 @@
 package katium.client.qq.network
 
 import com.google.common.hash.Hashing
-import com.google.protobuf.ByteString
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.PooledByteBufAllocator
@@ -31,6 +30,7 @@ import katium.client.qq.message.QQMessage
 import katium.client.qq.network.auth.DeviceInfo
 import katium.client.qq.network.auth.LoginSigInfo
 import katium.client.qq.network.auth.ProtocolType
+import katium.client.qq.network.auth.SavedSession
 import katium.client.qq.network.codec.crypto.tea.QQTeaCipher
 import katium.client.qq.network.codec.crypto.tea.TeaCipher
 import katium.client.qq.network.codec.highway.Highway
@@ -43,16 +43,12 @@ import katium.client.qq.network.message.decoder.MessageDecoders
 import katium.client.qq.network.message.encoder.MessageEncoders
 import katium.client.qq.network.message.parser.MessageParsers
 import katium.client.qq.network.packet.chat.*
-import katium.client.qq.network.packet.login.PasswordLoginPacket
-import katium.client.qq.network.packet.login.SmsRequestPacket
-import katium.client.qq.network.packet.login.SmsSubmitPacket
-import katium.client.qq.network.packet.login.UpdateSigRequest
+import katium.client.qq.network.packet.login.*
 import katium.client.qq.network.packet.meta.ClientRegisterPacket
 import katium.client.qq.network.packet.review.PullGroupSystemMessagesRequest
 import katium.client.qq.network.packet.review.PullGroupSystemMessagesResponse
 import katium.client.qq.network.pb.PbLongMessages
 import katium.client.qq.network.pb.PbMultiMessages
-import katium.client.qq.network.pb.PbSessionToken
 import katium.client.qq.network.sso.SsoServerListManager
 import katium.client.qq.network.sync.Synchronizer
 import katium.client.qq.user.QQContact
@@ -72,14 +68,19 @@ import katium.core.util.okhttp.await
 import katium.core.util.okhttp.expected
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
 import okhttp3.Request
 import okio.IOException
 import java.io.ByteArrayInputStream
 import java.io.Closeable
 import java.io.File
 import java.net.InetSocketAddress
+import java.nio.file.Path
 import java.util.*
 import java.util.zip.GZIPInputStream
 import kotlin.coroutines.Continuation
@@ -91,6 +92,7 @@ import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 import kotlin.random.Random
 
+@OptIn(ExperimentalSerializationApi::class)
 class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
 
     val logger by bot::logger
@@ -145,7 +147,7 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     }
 
     val sig = LoginSigInfo(ksid = deviceInfo.computeKsid())
-    val sessionFile = bot.dataPath.resolve("qq.session_token.dat")
+    val sessionFile: Path = bot.dataPath.resolve("qq.session_token.dat")
     val oicqCodec = OicqPacketCodec(this)
     val highway = Highway(this)
     var heartbeatJob: Job? = null
@@ -156,37 +158,40 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
 
     internal fun loadSession(): Boolean {
         if (sessionFile.exists()) {
-            val session = PbSessionToken.SessionToken.parseFrom(sessionFile.readBytes())
+            val session =
+                ProtoBuf.decodeFromByteArray<SavedSession>(sessionFile.readBytes())
             if (session.uin != uin) {
-                logger.warn("Session cache found at ${sessionFile.absolutePathString()}, but uin is not matched")
+                logger.warn("Session cache found at ${sessionFile.absolutePathString()}, but uin is not matched, cached for ${session.uin} but current is $uin")
                 return false
             }
-            sig.d2 = session.d2.toByteArray()
-            sig.d2KeyEncoded = session.d2Key.toByteArray().toUByteArray()
+            sig.d2 = session.d2
+            sig.d2KeyEncoded = session.d2Key.toUByteArray()
             synchronized(sig) { sig.d2Key = TeaCipher.decodeByteKey(sig.d2KeyEncoded) }
-            sig.tgt = session.tgt.toByteArray()
-            deviceInfo.tgtgtKey = session.tgtgtKey.toByteArray()
-            if (session.hasT133()) sig.t133 = session.t133.toByteArray()
-            if (session.hasEncryptedA1()) sig.encryptedA1 = session.encryptedA1.toByteArray()
-            if (session.hasWtSessionTicketKey()) {
-                oicqCodec.wtSessionTicketKey = session.wtSessionTicketKey.toByteArray()
-                oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(oicqCodec.wtSessionTicketKey!!.toUByteArray())
-            }
+            sig.tgt = session.tgt
+            deviceInfo.tgtgtKey = session.tgtgtKey
+            if (session.t133 != null) sig.t133 = session.t133
+            if (session.encryptedA1 != null) sig.encryptedA1 = session.encryptedA1
+            if (session.wtSessionTicketKey != null) oicqCodec.wtSessionTicketKey = session.wtSessionTicketKey
             logger.info("Session cache loaded from ${sessionFile.absolutePathString()}")
             return true
         } else return false
     }
 
     internal fun writeSession() {
-        sessionFile.writeBytes(PbSessionToken.SessionToken.newBuilder().setUin(uin).setD2(ByteString.copyFrom(sig.d2))
-            .setD2Key(ByteString.copyFrom(sig.d2KeyEncoded.toByteArray())).setTgt(ByteString.copyFrom(sig.tgt))
-            .setTgtgtKey(ByteString.copyFrom(deviceInfo.tgtgtKey))
-            .apply { if (sig.t133 != null) t133 = ByteString.copyFrom(sig.t133!!) }.apply {
-                if (sig.encryptedA1 != null) encryptedA1 = ByteString.copyFrom(sig.encryptedA1!!)
-            }.apply {
-                if (oicqCodec.wtSessionTicketKey != null) wtSessionTicketKey =
-                    ByteString.copyFrom(oicqCodec.wtSessionTicketKey!!)
-            }.build().toByteArray()
+        sessionFile.writeBytes(
+            ProtoBuf.encodeToByteArray(
+                SavedSession(
+                    uin = uin,
+                    d2 = sig.d2,
+                    d2Key = sig.d2KeyEncoded.toByteArray(),
+                    tgt = sig.tgt,
+                    tgtgtKey = deviceInfo.tgtgtKey,
+                    t133 = sig.t133,
+                    encryptedA1 = sig.encryptedA1,
+                    wtSessionTicketKey = oicqCodec.wtSessionTicketKey,
+                    srmToken = sig.srmToken,
+                )
+            )
         )
         logger.info("Session cache wrote")
     }
@@ -264,8 +269,6 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
         send(packet)
     }
 
-    suspend fun sendAndWaitOicq(packet: TransportPacket.Request) = sendAndWait(packet) as TransportPacket.Response.Oicq
-
     suspend fun login() = if (bot.options.cacheSession && loadSession()) {
         loginWithToken()
     } else {
@@ -280,7 +283,9 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
                 oicqCodec.ecdh.v2Waiters!!.add(it)
             }
         }
-        send(UpdateSigRequest.create(this, mainSigMap = version.mainSigMap))
+        sendAndWait(UpdateSigRequest.create(this, mainSigMap = version.mainSigMap))
+        logger.info("Login succeeded with token")
+        loginSucceeded()
     }
 
     fun loginWithPassword() {
@@ -294,8 +299,22 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
     }
 
     fun submitSms(code: String) {
-        logger.info("Submitting SMS code for login...")
+        logger.info("Submitting SMS code for login, code: $code")
         send(SmsSubmitPacket.create(this, code = code))
+    }
+
+    fun submitCaptcha(ticket: String) {
+        logger.info("Submitting captcha ticket for login, ticket: $ticket")
+        send(CaptchaSubmitPacket.create(this, ticket = ticket))
+    }
+
+    internal suspend fun loginSucceeded() {
+        if (bot.options.cacheSession) writeSession()
+        registerClient()
+        notifyOnline()
+        pullSystemMessages()
+        startSyncMessages()
+        logger.info("Login succeeded")
     }
 
     suspend fun registerClient() {
@@ -309,7 +328,6 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
 
     internal suspend fun notifyOnline() {
         isLoggedIn = true
-        if (bot.options.cacheSession) writeSession()
         bot.post(BotOnlineEvent(bot))
     }
 
@@ -394,17 +412,17 @@ class QQClient(val bot: QQBot) : CoroutineScope by bot, Closeable {
             val headerSize = reader.readInt()
             val bodySize = reader.readInt()
             reader.skipBytes(headerSize)
-            val body = PbLongMessages.LongMessagesResponse.parseFrom(
+            val body = ProtoBuf.decodeFromByteArray<PbLongMessages.Response>(
                 QQTeaCipher(key).decrypt(reader.readRetainedSlice(bodySize)).toArray(release = true)
             )
-            if (body.downloadCount != 1) {
-                throw IllegalStateException("Wrong long messages download response size: ${body.downloadCount}")
+            if (body.downloads.size != 1) {
+                throw IllegalStateException("Wrong long messages download response size: ${body.downloads.size}")
             } else {
                 val content = withContext(Dispatchers.IO) {
-                    GZIPInputStream(ByteArrayInputStream(body.getDownload(0).content.toByteArray())).readAllBytes()
+                    GZIPInputStream(ByteArrayInputStream(body.downloads.first().content)).readAllBytes()
                 }
                 val messages = mutableListOf<QQMessage>()
-                for (message in PbMultiMessages.MultiMessagesHighwayBody.parseFrom(content).messageList) {
+                for (message in ProtoBuf.decodeFromByteArray<PbMultiMessages.Highway.Body>(content).messages) {
                     messages += messageParsers.parsers.get()[message.header.type]!!.parse(this, message)
                 }
                 return messages.toList()

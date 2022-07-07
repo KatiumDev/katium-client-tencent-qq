@@ -18,17 +18,47 @@ package katium.client.qq.network.packet.chat
 import io.netty.buffer.ByteBuf
 import katium.client.qq.network.QQClient
 import katium.client.qq.network.codec.packet.TransportPacket
-import katium.client.qq.network.pb.PbMessagePackets
+import katium.client.qq.network.message.pb.PbMessage
+import katium.client.qq.network.sync.SyncFlag
 import katium.core.util.netty.toArray
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 
+@OptIn(ExperimentalSerializationApi::class)
 class PullMessagesResponse(val client: QQClient, packet: TransportPacket.Response.Buffered) :
     TransportPacket.Response.Simple(packet) {
 
-    lateinit var response: PbMessagePackets.PullMessagesResponse
+    lateinit var response: Data
         private set
 
     override fun readBody(input: ByteBuf) {
-        response = PbMessagePackets.PullMessagesResponse.parseFrom(input.toArray(release = false))
+        response = ProtoBuf.decodeFromByteArray(input.toArray(release = false))
     }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @Serializable
+    data class Data(
+        @ProtoNumber(1) val result: Int,
+        @ProtoNumber(2) val errorMessage: String? = null,
+        @ProtoNumber(3) val syncCookie: ByteArray? = null,
+        @ProtoNumber(4) val syncFlag: SyncFlag,
+        @ProtoNumber(5) val messages: List<UinPairMessage> = emptyList(),
+        @ProtoNumber(6) val uin: Long? = null,
+        @ProtoNumber(7) val syncType: Int,
+        @ProtoNumber(8) val publicAccountCookie: ByteArray? = null,
+        @ProtoNumber(9) val isPartialSync: Boolean? = null,
+        @ProtoNumber(10) val controlBuffer: ByteArray? = null,
+    )
+
+    @Serializable
+    data class UinPairMessage(
+        @ProtoNumber(1) val lastReadTime: Int,
+        @ProtoNumber(2) val peerUin: Long,
+        @ProtoNumber(3) val completed: Int? = null,
+        @ProtoNumber(4) val messages: List<PbMessage> = emptyList(),
+    )
 
 }

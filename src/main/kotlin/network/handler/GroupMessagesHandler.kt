@@ -32,7 +32,7 @@ object GroupMessagesHandler : QQClientHandler {
         if (packet is PushGroupMessagesPacket) {
             val response = packet.response
             val message = response.message
-            val groupCode = message.header.groupInfo.groupCode
+            val groupCode = message.header.groupInfo!! .groupCode
             client.getGroups()[groupCode]!!.lastReadSequence.set(message.header.sequence.toLong())
             client.synchronzier.recordUnreadGroupMessage(groupCode)
             client.bot.post(QQReceivedRawMessageEvent(client, message))

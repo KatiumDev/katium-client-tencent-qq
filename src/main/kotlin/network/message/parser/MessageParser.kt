@@ -17,10 +17,10 @@ package katium.client.qq.network.message.parser
 
 import katium.client.qq.message.QQMessage
 import katium.client.qq.network.QQClient
-import katium.client.qq.network.pb.PbMessages
+import katium.client.qq.network.message.pb.PbMessage
 
 interface MessageParser {
 
-    suspend fun parse(client: QQClient, message: PbMessages.Message): QQMessage
+    suspend fun parse(client: QQClient, message: PbMessage): QQMessage
 
 }

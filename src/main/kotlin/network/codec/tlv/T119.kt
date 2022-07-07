@@ -71,7 +71,6 @@ fun TlvMap.applyT119(client: QQClient) {
     }
     if (0x134 in this) {
         client.oicqCodec.wtSessionTicketKey = this[0x134]!!.toArray(false)
-        client.oicqCodec.wtSessionTicketKeyCipher = QQTeaCipher(client.oicqCodec.wtSessionTicketKey!!.toUByteArray())
     }
     client.sig.loginBitmap = 0uL
     if (0x16A in this) {
