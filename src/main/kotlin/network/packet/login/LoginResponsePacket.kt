@@ -56,7 +56,7 @@ class LoginResponsePacket(other: OicqPacket.Response.Buffered) : OicqPacket.Resp
                 client.sig.g =
                     Hashing.md5().hashBytes(client.deviceInfo.guid + client.sig.dpwd!! + client.sig.t402!!).asBytes()
             }
-            /*if (0x546 in tlv) { // @TODO: https://cs.github.com/Mrs4s/MiraiGo/blob/master/client/internal/auth/pow.go#L12
+            /*if (0x546 in tlv) {
                 client.sig.t547 = pow(tlv[0x546]!!.toArray(release = false))
             }*/
             when (type) {

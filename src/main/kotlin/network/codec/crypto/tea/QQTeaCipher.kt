@@ -22,12 +22,6 @@ import java.util.*
 import kotlin.experimental.and
 import kotlin.random.Random
 
-/**
- * https://github.com/lz1998/rs-qq/blob/master/rq-engine/src/crypto/qqtea.rs
- * https://github.com/Mrs4s/MiraiGo/blob/master/binary/tea.go
- * https://github.com/mamoe/mirai/blob/master/mirai-core/src/commonMain/kotlin/utils/crypto/TEA.kt
- * https://github.com/takayama-lily/oicq/blob/main/lib/core/tea.ts
- */
 class QQTeaCipher(val cipher: TeaCipher, val random: Random = Random.Default) {
 
     companion object {

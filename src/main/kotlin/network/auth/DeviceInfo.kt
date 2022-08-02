@@ -22,10 +22,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 import kotlin.random.Random
 
-/**
- * https://github.com/lz1998/rs-qq/blob/master/rq-engine/src/protocol/device.rs
- * https://github.com/Mrs4s/MiraiGo/blob/master/client/internal/auth/device.go
- */
 // @TODO: random generator
 @Serializable
 data class DeviceInfo(

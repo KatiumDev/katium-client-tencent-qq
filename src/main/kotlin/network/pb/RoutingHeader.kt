@@ -6,9 +6,6 @@ import kotlinx.serialization.protobuf.ProtoNumber
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
-/**
- * https://cs.github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/protocol/data/proto/MsgSvc.kt#L426
- */
 data class RoutingHeader(
     @ProtoNumber(1) val friend: ToFriend? = null,
     @ProtoNumber(2) val group: ToGroup? = null,

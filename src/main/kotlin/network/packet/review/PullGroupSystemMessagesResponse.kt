@@ -44,7 +44,7 @@ class PullGroupSystemMessagesResponse(val client: QQClient, packet: TransportPac
                     when (message.message.groupMessageType) {
                         1 -> reviewMessages += QQJoinGroupRequestMessage(client, message)
                         2 -> reviewMessages += QQGroupInvitationMessage(client, message)
-                        22 -> TODO("https://cs.github.com/Mrs4s/MiraiGo/blob/master/client/system_msg.go#L230")
+                        22 -> TODO()
                         else -> throw UnsupportedOperationException("Unknown system group message type: ${message.message.groupMessageType} $message")
                     }
                 }

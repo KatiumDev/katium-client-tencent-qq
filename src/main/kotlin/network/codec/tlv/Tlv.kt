@@ -46,12 +46,6 @@ class TlvWriterContext {
 
 }
 
-/**
- * https://cs.github.com/Mrs4s/MiraiGo/tree/master/internal/tlv
- * https://cs.github.com/lz1998/rs-qq/blob/master/rq-engine/src/command/wtlogin/tlv_writer.rs
- * https://github.com/takayama-lily/oicq/blob/main/lib/core/tlv.ts
- * https://github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/protocol/packet/Tlv.kt
- */
 context(TlvWriterContext) inline fun ByteBuf.writeTlv(type: Int, crossinline writer: ByteBuf.() -> Unit): ByteBuf {
     recordTlvWrite()
     writeShort(type)
@@ -73,7 +67,4 @@ inline fun <T> ByteBuf.readTlv(release: Boolean, crossinline reader: ByteBuf.() 
     return result
 }
 
-/**
- * https://github.com/mamoe/mirai/blob/dev/mirai-core/src/commonMain/kotlin/network/protocol/packet/Tlv.kt#L464
- */
 internal const val GUID_FLAG: Long = (1L shl 24 and 0xFF000000) or (0L shl 8 and 0xFF00)
